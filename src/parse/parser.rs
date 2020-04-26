@@ -2,18 +2,18 @@ use super::rule::{RuleType, Rule};
 use super::lexer::{ParsedToken};
 
 #[derive(Debug)]
-pub enum ASTNode<'a> {
+pub enum ASTNode<'a, T: Rule> {
     Node {
-        rule: Box<dyn Rule>,
+        rule: Box<T>,
         token: Option<&'a ParsedToken<'a>>,
-        children: Vec<ASTNode<'a>>,
+        children: Vec<ASTNode<'a, T>>,
     },
     Leaf
 }
 
 #[derive(Debug)]
-pub struct ParserResult<'a> {
-    pub node: ASTNode<'a>,
+pub struct ParserResult<'a, T: Rule> {
+    pub node: ASTNode<'a, T>,
     // child_index: usize,
     remaining_tokens: &'a [ParsedToken<'a>],
 }
@@ -21,12 +21,12 @@ pub struct ParserResult<'a> {
 pub struct Parser {}
 
 impl Parser {
-    pub fn parse<'a>(&self, tokens: &'a [ParsedToken<'a>], rule: &dyn Rule) -> Result<ParserResult<'a>, &str> {
+    pub fn parse<'a, T: Rule>(&self, tokens: &'a [ParsedToken<'a>], rule: &T) -> Result<ParserResult<'a, T>, &str> {
         let mut child_indices: Vec<usize> = vec!(0);
         self._parse(tokens, rule, &mut child_indices, 0)
     }
 
-    fn _parse<'a>(&self, tokens: &'a [ParsedToken<'a>], rule: &dyn Rule, child_indices: &mut Vec<usize>, depth: usize) -> Result<ParserResult<'a>, &str> {
+    fn _parse<'a, T: Rule>(&self, tokens: &'a [ParsedToken<'a>], rule: &T, child_indices: &mut Vec<usize>, depth: usize) -> Result<ParserResult<'a, T>, &str> {
         println!("Parsing rule: {:?}", rule);
         if child_indices.len() == depth {
             child_indices.push(0);

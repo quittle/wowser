@@ -20,14 +20,14 @@ struct InterpreterState<T: Rule> {
 struct Interpreter {}
 
 impl Interpreter {
-    pub fn interpret<T: Rule>(&self, ast: &ParserResult<MathRule>) -> Option<i32> {
+    pub fn interpret<T: Rule>(&self, ast: &ParserResult<MathRule>) -> Option<f32> {
         let mut state = InterpreterState::<MathRule> {
             parents: vec!()
         };
         self._interpret::<MathRule>(&ast.node, &mut state)
     }
 
-    fn _interpret<T: Rule>(&self, ast: &ASTNode<MathRule>, state: &mut InterpreterState<MathRule>) -> Option<i32> {
+    fn _interpret<T: Rule>(&self, ast: &ASTNode<MathRule>, state: &mut InterpreterState<MathRule>) -> Option<f32> {
         match ast {
             ASTNode::Leaf => None,
             ASTNode::Node { rule, token, children } => {
@@ -82,7 +82,10 @@ impl Interpreter {
                             let number = &children[0];
                             let operator = &children[1];
                             let expression = &children[2];
+                            
                             let v1 = self._interpret::<MathRule>(&number, state);
+                            let v2 = self._interpret::<MathRule>(&expression, state);
+
                             let operator: &str = if let ASTNode::Node { rule, token, children } = operator {
                                 if let Some(token) = token {
                                     token.1
@@ -93,18 +96,25 @@ impl Interpreter {
                                 panic!("Node required")
                             };
 
-                            let v2 = self._interpret::<MathRule>(&expression, state);
 
                             if let [Some(v1), Some(v2)] = [v1, v2] {
-                                if operator.eq("+") {
+                                if operator.trim().eq("+") {
                                     Some(v1 + v2)
                                 } else {
                                     panic!("Unsupported operator")
                                 }
                             } else {
-                                panic!("Invalid some")
+                                panic!("Invalid some {:?} {:?}", v1, v2)
                             }
-                        }
+                        },
+                        MathRule::Number => {
+                            // if let ASTNode::Node { rule, token, children } = &children[0] {
+                                if let Some(token) = token {
+                                    return Some(token.1.trim().parse().expect(format!("Number ({}) cannot be parsed", token.1).as_str()));
+                                }
+                            // }
+                            panic!("Invalid number")
+                        },
                         _ => None
                     }
                 // } else {

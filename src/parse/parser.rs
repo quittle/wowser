@@ -26,21 +26,21 @@ impl Parser {
         self._parse(tokens, rule, &mut child_indices, 0)
     }
 
-    fn _parse<'a, T: Rule>(&self, tokens: &'a [ParsedToken<'a>], rule: &T, child_indices: &mut Vec<usize>, depth: usize) -> Result<ParserResult<'a, T>, &str> {
-        println!("Parsing rule: {:?}", rule);
+    fn _parse<'a, T: Rule>(&self, tokens: &'a [ParsedToken<'a>], root_rule: &T, child_indices: &mut Vec<usize>, depth: usize) -> Result<ParserResult<'a, T>, &str> {
+        println!("Parsing rule: {:?}", root_rule);
         if child_indices.len() == depth {
             child_indices.push(0);
         }
 
         if let Some(first_token) = tokens.get(0) {
-            for (i, child_rule_type) in rule.children()[child_indices[depth]..].iter().enumerate() {
+            for (i, child_rule_type) in root_rule.children()[child_indices[depth]..].iter().enumerate() {
                 let result = match child_rule_type {
                     RuleType::Token(token) => {
                         println!("token rule parse. Comparing {:?} to {:?}", token, first_token.0);
                         if token.eq(first_token.0.as_ref()) {
                             Ok(ParserResult {
                                 node: ASTNode::Node {
-                                    rule: rule.clone_box(),
+                                    rule: root_rule.clone_box(),
                                     token: Some(first_token),
                                     children: vec!(),
                                 },
@@ -56,7 +56,7 @@ impl Parser {
                         match self._parse(tokens, &**rule, child_indices, depth + 1) {
                             Ok(result) => Ok(ParserResult {
                                 node: ASTNode::Node {
-                                    rule: rule.clone_box(),
+                                    rule: root_rule.clone_box(),
                                     token: None,
                                     children: vec!(result.node),
                                 },
@@ -77,7 +77,7 @@ impl Parser {
 
                         Ok(ParserResult {
                             node: ASTNode::Node {
-                                rule: rule.clone_box(),
+                                rule: root_rule.clone_box(),
                                 token: None,
                                 children,
                             },
@@ -103,7 +103,7 @@ impl Parser {
                         } else {
                             Ok(ParserResult {
                                 node: ASTNode::Node {
-                                    rule: rule.clone_box(),
+                                    rule: root_rule.clone_box(),
                                     token: None,
                                     children,
                                 },

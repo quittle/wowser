@@ -1,6 +1,7 @@
 use super::rule::{RuleType, Rule};
 use super::lexer::{ParsedToken};
 
+/// Represents a node in an AST representation of a language
 #[derive(Debug)]
 pub struct ASTNode<'a, T: Rule> {
     pub rule: Box<T>,
@@ -8,15 +9,18 @@ pub struct ASTNode<'a, T: Rule> {
     pub children: Vec<ASTNode<'a, T>>,
 }
 
+/// The results of interpretting a rule over tokens
 #[derive(Debug)]
 pub struct ParserResult<'a, T: Rule> {
     pub node: ASTNode<'a, T>,
     remaining_tokens: &'a [ParsedToken<'a>],
 }
 
+/// Parses tokens into an AST representation
 pub struct Parser {}
 
 impl Parser {
+    /// Performs the parsing
     pub fn parse<'a, T: Rule>(&self, tokens: &'a [ParsedToken<'a>], rule: &T) -> Result<ParserResult<'a, T>, &str> {
         let mut child_indices: Vec<usize> = vec!(0);
         self._parse(tokens, rule, &mut child_indices, 0)

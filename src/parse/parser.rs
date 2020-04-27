@@ -2,13 +2,10 @@ use super::rule::{RuleType, Rule};
 use super::lexer::{ParsedToken};
 
 #[derive(Debug)]
-pub enum ASTNode<'a, T: Rule> {
-    Node {
-        rule: Box<T>,
-        token: Option<&'a ParsedToken<'a>>,
-        children: Vec<ASTNode<'a, T>>,
-    },
-    Leaf
+pub struct ASTNode<'a, T: Rule> {
+    pub rule: Box<T>,
+    pub token: Option<&'a ParsedToken<'a>>,
+    pub children: Vec<ASTNode<'a, T>>,
 }
 
 #[derive(Debug)]
@@ -31,12 +28,12 @@ impl Parser {
         }
 
         if let Some(first_token) = tokens.get(0) {
-            for (i, child_rule_type) in root_rule.children()[child_indices[depth]..].iter().enumerate() {
+            for child_rule_type in root_rule.children()[child_indices[depth]..].iter() {
                 let result = match child_rule_type {
                     RuleType::Token(token) => {
                         if token.eq(first_token.0.as_ref()) {
                             Ok(ParserResult {
-                                node: ASTNode::Node {
+                                node: ASTNode {
                                     rule: root_rule.clone_box(),
                                     token: Some(first_token),
                                     children: vec!(),
@@ -50,7 +47,7 @@ impl Parser {
                     RuleType::Rule(rule) => {
                         match self._parse(tokens, &**rule, child_indices, depth + 1) {
                             Ok(result) => Ok(ParserResult {
-                                node: ASTNode::Node {
+                                node: ASTNode {
                                     rule: root_rule.clone_box(),
                                     token: None,
                                     children: vec!(result.node),
@@ -69,7 +66,7 @@ impl Parser {
                         }
 
                         Ok(ParserResult {
-                            node: ASTNode::Node {
+                            node: ASTNode {
                                 rule: root_rule.clone_box(),
                                 token: None,
                                 children,
@@ -94,7 +91,7 @@ impl Parser {
                             Err("Failed to parse sequence")
                         } else {
                             Ok(ParserResult {
-                                node: ASTNode::Node {
+                                node: ASTNode {
                                     rule: root_rule.clone_box(),
                                     token: None,
                                     children,

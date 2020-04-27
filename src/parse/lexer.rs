@@ -28,7 +28,6 @@ impl Lexer {
         let tokens = root_token.next_tokens();
         for token in tokens.into_iter() {
             if let Some(captures) = token.built_regex().captures(source) {
-                println!("match found!: {:?}", captures);
                 let capture = captures.get(0).expect("must be present").as_str();
                 if let Some(mut subpath) = self.recursive_parse(&source[capture.len()..], &*token) {
                     subpath.push((token.clone_box(), capture));

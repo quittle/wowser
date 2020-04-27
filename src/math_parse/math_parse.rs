@@ -40,7 +40,7 @@ impl Rule for MathRule {
             MathRule::DocumentBody => vec!(RuleType::RepeatableRule(MathRule::Statement.b())),
             MathRule::Statement => vec!(RuleType::Sequence(vec!(MathRule::Expression.b(), MathRule::Semicolon.b()))),
             MathRule::Expression => vec!(RuleType::Rule(MathRule::BinaryExpression.b()), RuleType::Rule(MathRule::Number.b())),
-            MathRule::BinaryExpression => vec!(RuleType::Sequence(vec!(MathRule::Number.b(), MathRule::BinaryOperator.b(), MathRule::Expression.b()))), // should be expression, operator, expression
+            MathRule::BinaryExpression => vec!(RuleType::Sequence(vec!(MathRule::Number.b(), MathRule::BinaryOperator.b(), MathRule::Expression.b()))),
             MathRule::BinaryOperator => vec!(RuleType::Token(MathToken::Plus.b())),
             MathRule::Semicolon => vec!(RuleType::Token(MathToken::Semicolon.b())),
             MathRule::Number => vec!(RuleType::Token(MathToken::Number.b())),
@@ -77,7 +77,7 @@ impl Token for MathToken {
             MathToken::Number => vec!(Box::new(MathToken::Plus), Box::new(MathToken::Semicolon), Box::new(MathToken::Whitespace)),
             MathToken::Plus => vec!(Box::new(MathToken::Number)),
             MathToken::Whitespace => vec!(Box::new(MathToken::Whitespace), Box::new(MathToken::Terminator)),
-            MathToken::Semicolon => vec!(Box::new(MathToken::Number), Box::new(MathToken::Whitespace), Box::new(MathToken::Semicolon), Box::new(MathToken::Terminator)), // eh
+            MathToken::Semicolon => vec!(Box::new(MathToken::Number), Box::new(MathToken::Whitespace), Box::new(MathToken::Semicolon), Box::new(MathToken::Terminator)),
             MathToken::Terminator => vec!(),
         }
     }

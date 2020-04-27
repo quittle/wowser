@@ -8,47 +8,29 @@ mod math_parse;
 use parse::{Lexer, Parser, ParserResult, ASTNode, Rule};
 use math_parse::{MathRule, MathToken};
 
-// use std::convert::TryFrom;
-use std::borrow::Borrow;
 use std::env;
 use std::fs;
-
-struct InterpreterState<T: Rule> {
-    parents: Vec<Box<T>>
-}
 
 struct Interpreter {}
 
 impl Interpreter {
     pub fn interpret<T: Rule>(&self, ast: &ParserResult<MathRule>) -> Option<f32> {
-        let mut state = InterpreterState::<MathRule> {
-            parents: vec!()
-        };
-        self._interpret::<MathRule>(&ast.node, &mut state)
+        self._interpret::<MathRule>(&ast.node)
     }
 
-    fn _interpret<T: Rule>(&self, ast: &ASTNode<MathRule>, state: &mut InterpreterState<MathRule>) -> Option<f32> {
+    fn _interpret<T: Rule>(&self, ast: &ASTNode<MathRule>) -> Option<f32> {
         match ast {
             ASTNode::Leaf => None,
             ASTNode::Node { rule, token, children } => {
-                // let rb = MathRule::try_from(*rule);
-                // let rule = rule.clone().into_any().downcast::<MathRule>();
-                // let box_rule: Box<dyn Rule> = rule.into_any().downcast::<MathRule>().ok().expect("a");
-                // let rule = MathRule::try_from(Box::new(*rb));
-                // if let Ok(ruleb) = Ok(rule) {
-                    // let ruleb = Box::from(ruleb);
-                    // state.parents.push(*rule);
-                    // *rule as MathRule;
                     match **rule {
-                    // match *state.parents[state.parents.len() - 1] {
                         MathRule::Document => {
-                            self._interpret::<T>(&children[0], state)
+                            self._interpret::<T>(&children[0])
                         },
                         MathRule::DocumentBody => {
                             let mut result = None;
                             
                             for child in children {
-                                if let Some(value) = self._interpret::<T>(child, state) {
+                                if let Some(value) = self._interpret::<T>(child) {
                                     println!("Computed: {}", value);
 
                                     result = Some(value);
@@ -57,36 +39,20 @@ impl Interpreter {
                             result
                         },
                         MathRule::Statement => {
-                            // Expression + Semicolon
-                            self._interpret::<T>(&children[0], state)
+                            self._interpret::<T>(&children[0])
                         },
                         MathRule::Expression => {
-                            self._interpret::<T>(&children[0], state)
-                            // if let ASTNode::Node { rule, token, children } = children[0] {
-                            //     if rule.eq(&MathRule::BinaryExpression) {
-                            //         self._interpret(children[0], state)
-                            //     }
-                            // }
-                            // match child {
-
-                            // }
-                            // if &children[0] 
-                            // // Expression + Semicolon
-                            // self._interpret::<T>(&children[0], state)
+                            self._interpret::<T>(&children[0])
                         },
                         MathRule::BinaryExpression => {
-                            println!("Rule: {:?} Child: {}", rule, children.iter().map(|c| format!("{:?}", c))
-                            .fold(String::new(), |acc, c| {
-                                acc + &c + "+++"
-                            }));
                             let number = &children[0];
                             let operator = &children[1];
                             let expression = &children[2];
                             
-                            let v1 = self._interpret::<MathRule>(&number, state);
-                            let v2 = self._interpret::<MathRule>(&expression, state);
+                            let v1 = self._interpret::<MathRule>(&number);
+                            let v2 = self._interpret::<MathRule>(&expression);
 
-                            let operator: &str = if let ASTNode::Node { rule, token, children } = operator {
+                            let operator: &str = if let ASTNode::Node { rule: _, token, children: _ } = operator {
                                 if let Some(token) = token {
                                     token.1
                                 } else {
@@ -108,18 +74,13 @@ impl Interpreter {
                             }
                         },
                         MathRule::Number => {
-                            // if let ASTNode::Node { rule, token, children } = &children[0] {
-                                if let Some(token) = token {
-                                    return Some(token.1.trim().parse().expect(format!("Number ({}) cannot be parsed", token.1).as_str()));
-                                }
-                            // }
+                            if let Some(token) = token {
+                                return Some(token.1.trim().parse().expect(format!("Number ({}) cannot be parsed", token.1).as_str()));
+                            }
                             panic!("Invalid number")
                         },
                         _ => None
                     }
-                // } else {
-                //     None
-                // }
             }
         }
     }

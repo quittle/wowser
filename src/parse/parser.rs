@@ -14,7 +14,6 @@ pub enum ASTNode<'a, T: Rule> {
 #[derive(Debug)]
 pub struct ParserResult<'a, T: Rule> {
     pub node: ASTNode<'a, T>,
-    // child_index: usize,
     remaining_tokens: &'a [ParsedToken<'a>],
 }
 
@@ -27,7 +26,6 @@ impl Parser {
     }
 
     fn _parse<'a, T: Rule>(&self, tokens: &'a [ParsedToken<'a>], root_rule: &T, child_indices: &mut Vec<usize>, depth: usize) -> Result<ParserResult<'a, T>, &str> {
-        println!("Parsing rule: {:?}", root_rule);
         if child_indices.len() == depth {
             child_indices.push(0);
         }
@@ -36,7 +34,6 @@ impl Parser {
             for (i, child_rule_type) in root_rule.children()[child_indices[depth]..].iter().enumerate() {
                 let result = match child_rule_type {
                     RuleType::Token(token) => {
-                        println!("token rule parse. Comparing {:?} to {:?}", token, first_token.0);
                         if token.eq(first_token.0.as_ref()) {
                             Ok(ParserResult {
                                 node: ASTNode::Node {
@@ -44,7 +41,6 @@ impl Parser {
                                     token: Some(first_token),
                                     children: vec!(),
                                 },
-                                // child_index: i,
                                 remaining_tokens: &tokens[1..]
                             })
                         } else {
@@ -52,7 +48,6 @@ impl Parser {
                         }
                     },
                     RuleType::Rule(rule) => {
-                        println!("Rule rule parse");
                         match self._parse(tokens, &**rule, child_indices, depth + 1) {
                             Ok(result) => Ok(ParserResult {
                                 node: ASTNode::Node {
@@ -60,14 +55,12 @@ impl Parser {
                                     token: None,
                                     children: vec!(result.node),
                                 },
-                                // child_index: i,
                                 remaining_tokens: result.remaining_tokens
                             }),
                             err => err,
                         }
                     },
                     RuleType::RepeatableRule(rule) => {
-                        println!("RepeatableRule rule parse");
                         let mut children = vec!();
                         let mut cur_tokens = tokens;
                         while let Ok(result) = self._parse(cur_tokens, &**rule, child_indices, depth + 1) {
@@ -85,9 +78,8 @@ impl Parser {
                         })
                     },
                     RuleType::Sequence(rules) => {
-                        println!("Sequence rule parse");
                         let mut children = vec!();
-                        let mut cur_tokens = tokens;
+                        let mut cur_tokens: &[ParsedToken] = tokens;
                         let mut failed = false;
                         for rule in rules {
                             if let Ok(child) = self._parse(cur_tokens, &**rule, child_indices, depth + 1) {
@@ -114,7 +106,6 @@ impl Parser {
                 };
 
                 if result.is_ok() {
-                    child_indices[depth] = i;
                     return result;
                 }
             }

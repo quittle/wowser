@@ -17,7 +17,7 @@ struct GenericTag<'a> {
 //             static ref TAG_REGEX: Regex =
 //                 Regex::new(r"^<(\w+)\s([^>]*)>(.*)</(?i)html(?-i)>$").unwrap();
 //         }
-        
+
 //     }
 // }
 
@@ -52,7 +52,7 @@ impl HtmlElement {
         HtmlElement {
             head: HeadElement {},
             body: BodyElement {},
-            attrs: HashMap::new()
+            attrs: HashMap::new(),
         }
     }
 }

@@ -1,6 +1,6 @@
 use super::token::Token;
-use std::fmt;
 use std::any::Any;
+use std::fmt;
 
 pub trait RuleClone {
     fn clone_box(&self) -> Box<Self>;
@@ -35,7 +35,10 @@ pub enum RuleType<T: Rule> {
     Token(Box<dyn Token>),
 }
 
-pub trait Rule: RuleClone + fmt::Debug where Self: std::marker::Sized {
+pub trait Rule: RuleClone + fmt::Debug
+where
+    Self: std::marker::Sized,
+{
     /// One of these children must match for the rule to match
     fn children(&self) -> Vec<RuleType<Self>>;
 

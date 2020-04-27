@@ -1,5 +1,5 @@
-use std::fmt;
 use regex::Regex;
+use std::fmt;
 
 pub trait TokenClone {
     fn clone_box(&self) -> Box<dyn Token>;

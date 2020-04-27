@@ -1,11 +1,11 @@
-use super::rule::{Rule};
-use super::parser::{ParserResult, ASTNode};
+use super::parser::{ASTNode, ParserResult};
+use super::rule::Rule;
 
 /// Interprets the results of a parsing
 pub trait Interpreter {
     /// The type of rules it can interpret
     type RuleType: Rule;
-    
+
     /// The output of interpreting the result
     type Result;
 

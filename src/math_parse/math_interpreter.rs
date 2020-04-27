@@ -8,12 +8,14 @@ impl Interpreter for MathInterpreter {
     type Result = f32;
 
     fn on_node(&self, ast: &ASTNode<MathRule>) -> Option<f32> {
-        let ASTNode { rule, token, children } = ast;
+        let ASTNode {
+            rule,
+            token,
+            children,
+        } = ast;
 
         match **rule {
-            MathRule::Document => {
-                self.on_node(&children[0])
-            },
+            MathRule::Document => self.on_node(&children[0]),
             MathRule::DocumentBody => {
                 let mut result = None;
 
@@ -25,13 +27,9 @@ impl Interpreter for MathInterpreter {
                     }
                 }
                 result
-            },
-            MathRule::Statement => {
-                self.on_node(&children[0])
-            },
-            MathRule::Expression => {
-                self.on_node(&children[0])
-            },
+            }
+            MathRule::Statement => self.on_node(&children[0]),
+            MathRule::Expression => self.on_node(&children[0]),
             MathRule::BinaryExpression => {
                 let number = &children[0];
                 let operator = &children[1];
@@ -55,13 +53,19 @@ impl Interpreter for MathInterpreter {
                 } else {
                     panic!("Invalid some {:?} {:?}", v1, v2)
                 }
-            },
+            }
             MathRule::Number => {
                 if let Some(token) = token {
-                    return Some(token.1.trim().parse().expect(format!("Number ({}) cannot be parsed", token.1).as_str()));
+                    return Some(
+                        token
+                            .1
+                            .trim()
+                            .parse()
+                            .expect(format!("Number ({}) cannot be parsed", token.1).as_str()),
+                    );
                 }
                 panic!("Invalid number")
-            },
+            }
             MathRule::BinaryOperator | MathRule::Semicolon | MathRule::Terminator => None,
         }
     }

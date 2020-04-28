@@ -35,7 +35,7 @@ pub enum RuleType<T: Rule> {
     Token(Box<dyn Token>),
 }
 
-pub trait Rule: RuleClone + fmt::Debug
+pub trait Rule: RuleClone + fmt::Debug + fmt::Display
 where
     Self: std::marker::Sized,
 {

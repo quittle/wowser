@@ -1,7 +1,8 @@
 use super::super::parse::*;
 use super::math_token::MathToken;
+use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, DisplayFromDebug)]
 pub enum MathRule {
     Document,
     DocumentBody,

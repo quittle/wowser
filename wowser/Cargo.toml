@@ -1,0 +1,12 @@
+[package]
+name = "wowser"
+version = "0.0.1"
+authors = ["Dustin Toff <me@dustintoff.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wowser-macros = { path = "../wowser-macros" }
+regex = "1"
+lazy_static = "1"

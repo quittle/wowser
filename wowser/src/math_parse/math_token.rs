@@ -17,7 +17,7 @@ impl Token for MathToken {
             MathToken::Number => r"\s*-?\d+(\.\d+)?",
             MathToken::Plus => r"\s*\+",
             MathToken::Whitespace => r"\s+",
-            MathToken::Semicolon => r";",
+            MathToken::Semicolon => r"\s*;\s*",
             MathToken::Terminator => r"^$",
         }
     }

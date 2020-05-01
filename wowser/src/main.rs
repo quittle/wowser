@@ -24,6 +24,13 @@ fn main() {
             let parser = Parser {};
             let ast = parser.parse(&tokens, &html::HtmlRule::Document);
             println!("AST: {:?}", ast);
+            if let Ok(ast) = ast {
+                let interpreter = html::HtmlInterpreter {};
+                if let Some(result) = interpreter.interpret(&ast) {
+                    println!("Evaulated result {:?}", result);
+                    println!("Rendered doc {}", html::stringify_node(&result));
+                }
+            }
         }
     } else if document_file.ends_with(".txt") {
         let lexer = Lexer::new(Box::new(MathToken::Document));

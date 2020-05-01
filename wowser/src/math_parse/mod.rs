@@ -8,13 +8,15 @@ pub use math_token::MathToken;
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::*;
     use super::*;
+    use crate::parse::*;
 
     fn parse(document: &str) -> Option<f32> {
         let lexer = Lexer::new(Box::new(MathToken::Document));
         let tokens = lexer.parse(document).expect("Failed to lex");
-        let ast = Parser {}.parse(&tokens, &MathRule::Document).expect("Failed to parse");
+        let ast = Parser {}
+            .parse(&tokens, &MathRule::Document)
+            .expect("Failed to parse");
         MathInterpreter {}.interpret(&ast)
     }
 

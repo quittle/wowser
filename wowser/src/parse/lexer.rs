@@ -36,9 +36,20 @@ impl Lexer {
         let tokens = root_token.next_tokens();
         for token in tokens.into_iter() {
             if let Some(captures) = token.built_regex().captures(source) {
-                let capture = captures.get(0).expect("must be present").as_str();
+                let real_capture;
+                if let Some(capture) = captures.name("token") {
+                    real_capture = capture;
+                } else if let Some(capture) = captures.get(1) {
+                    real_capture = capture;
+                } else if let Some(capture) = captures.get(0) {
+                    real_capture = capture;
+                } else {
+                    panic!("Unable to capture token");
+                }
+                let real_capture = real_capture.as_str();
+                let capture = captures.get(0).expect("Match must exist").as_str();
                 if let Some(mut subpath) = self.recursive_parse(&source[capture.len()..], &*token) {
-                    subpath.push((token.clone_box(), capture));
+                    subpath.push((token.clone_box(), real_capture));
                     return Option::Some(subpath);
                 }
             }

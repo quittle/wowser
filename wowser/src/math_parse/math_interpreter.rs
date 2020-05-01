@@ -3,7 +3,7 @@ use super::math_rule::MathRule;
 
 pub struct MathInterpreter {}
 
-impl Interpreter for MathInterpreter {
+impl Interpreter<'_> for MathInterpreter {
     type RuleType = MathRule;
     type Result = f32;
 
@@ -45,7 +45,7 @@ impl Interpreter for MathInterpreter {
                 };
 
                 if let [Some(v1), Some(v2)] = [v1, v2] {
-                    if operator.trim().eq("+") {
+                    if operator.eq("+") {
                         Some(v1 + v2)
                     } else {
                         panic!("Unsupported operator")
@@ -59,7 +59,7 @@ impl Interpreter for MathInterpreter {
                     return Some(
                         token
                             .1
-                            .trim()
+                            // .trim()
                             .parse()
                             .expect(format!("Number ({}) cannot be parsed", token.1).as_str()),
                     );

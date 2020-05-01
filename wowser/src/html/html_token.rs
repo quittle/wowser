@@ -1,6 +1,7 @@
 use super::super::parse::*;
+use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
 pub enum HtmlToken {
     Document,
     DoctypeOpen,
@@ -23,12 +24,12 @@ impl Token for HtmlToken {
         match self {
             HtmlToken::Document => "",
             HtmlToken::DoctypeOpen => r"\s*<!(?i)doctype(?-i)",
-            HtmlToken::DoctypeUnquotedString => r#"\s*[^"\s]+"#,
-            HtmlToken::DoctypeQuotedString => r#"\s*"[^"]*""#,
-            HtmlToken::TagStart => r"\s*<\w+",
-            HtmlToken::AttributeName => r"\s*\w[\w\d\-_]*",
+            HtmlToken::DoctypeUnquotedString => r#"\s*([^"\s]+)"#,
+            HtmlToken::DoctypeQuotedString => r#"\s*"([^"]*)""#,
+            HtmlToken::TagStart => r"\s*<(\w+)",
+            HtmlToken::AttributeName => r"\s*(\w[\w\d\-_]*)",
             HtmlToken::Equals => r"\s*=",
-            HtmlToken::QuotedString => r#"\s*"[^"]"#,
+            HtmlToken::QuotedString => r#"\s*"([^"]*)""#,
             HtmlToken::UnquotedString => r"\S+",
             HtmlToken::TagSelfClosingEnd => r"\s*/>",
             HtmlToken::TagEnd => r"\s*>",

@@ -1,6 +1,7 @@
 use super::super::parse::*;
+use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
 pub enum MathToken {
     Document,
     Number,
@@ -14,8 +15,8 @@ impl Token for MathToken {
     fn regex(&self) -> &str {
         match self {
             MathToken::Document => "",
-            MathToken::Number => r"\s*-?\d+(\.\d+)?",
-            MathToken::Plus => r"\s*\+",
+            MathToken::Number => r"\s*(-?\d+(\.\d+)?)",
+            MathToken::Plus => r"\s*(\+)",
             MathToken::Whitespace => r"\s+",
             MathToken::Semicolon => r"\s*;\s*",
             MathToken::Terminator => r"^$",

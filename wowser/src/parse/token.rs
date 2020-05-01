@@ -16,7 +16,7 @@ impl<T: 'static + Token + Clone> TokenClone for T {
     }
 }
 
-pub trait Token: TokenClone + fmt::Debug {
+pub trait Token: TokenClone + fmt::Debug + fmt::Display {
     fn built_regex(&self) -> Regex {
         Regex::new(format!("^{}", self.regex()).as_str()).expect("valid regex")
     }

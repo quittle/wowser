@@ -1,4 +1,5 @@
 use super::token::Token;
+
 use std::any::Any;
 use std::fmt;
 
@@ -24,6 +25,7 @@ impl<T: 'static + Rule + Clone> RuleClone for T {
     }
 }
 
+#[derive(fmt::Debug)]
 pub enum RuleType<T: Rule> {
     /// Single, unrepeatable rule
     Rule(Box<T>),

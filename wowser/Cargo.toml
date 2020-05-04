@@ -9,4 +9,3 @@ edition = "2018"
 [dependencies]
 wowser-macros = { path = "../wowser-macros" }
 regex = "1"
-lazy_static = "1"

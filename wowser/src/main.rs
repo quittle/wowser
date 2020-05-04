@@ -1,9 +1,8 @@
-// #[macro_use]
-// extern crate lazy_static;
-
 mod html;
 mod math_parse;
+mod net;
 mod parse;
+mod util;
 
 use math_parse::{MathInterpreter, MathRule, MathToken};
 use parse::{Interpreter, Lexer, Parser};
@@ -14,9 +13,16 @@ use std::fs;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let document_file = args.get(1).expect("Document not passed in");
-    let document = fs::read_to_string(document_file).expect("Unable to read file");
 
-    if document_file.ends_with(".html") {
+    match net::resolve(document_file) {
+        Ok(result) => println!("Result {}", result),
+        Err(e) => println!("Err {:?}", e),
+    }
+
+    if document_file.starts_with("http") {
+        println!("Fetching HTML page");
+    } else if document_file.ends_with(".html") {
+        let document = fs::read_to_string(document_file).expect("Unable to read file");
         let lexer = Lexer::new(Box::new(html::HtmlToken::Document));
         let tokens = lexer.parse(document.as_str());
         println!("Tokens: {:?}", tokens);
@@ -33,6 +39,7 @@ fn main() {
             }
         }
     } else if document_file.ends_with(".txt") {
+        let document = fs::read_to_string(document_file).expect("Unable to read file");
         let lexer = Lexer::new(Box::new(MathToken::Document));
         let tokens = lexer.parse(document.as_str());
         println!("Tokens: {:?}", tokens);

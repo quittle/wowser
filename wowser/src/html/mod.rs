@@ -27,7 +27,7 @@ mod tests {
     }
 
     #[test]
-    fn simple_number() {
+    fn simple_html() {
         assert_eq!(
             Some(String::from("<!DOCTYPE \"HTML\" \"PUBLIC\" \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\"><img preload=\"\" src=\"foo\" />text<br />here as well\n")),
             parse(include_str!("../../data/simple.html")));

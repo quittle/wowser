@@ -1,3 +1,4 @@
+use std::str;
 pub trait HexConversion {
     fn hex_to_byte(&self) -> Result<u8, String>;
 }
@@ -57,6 +58,7 @@ pub fn byte_to_hex(byte: u8) -> String {
     format!("{}{}", u4_to_hex(a), u4_to_hex(b))
 }
 
+#[allow(dead_code)]
 pub fn bytes_to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| byte_to_hex(*b)).collect::<String>()
 }
@@ -87,6 +89,16 @@ pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
     Ok(ret)
 }
 
+pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
+    str::from_utf8(&bytes).or_else(|e| {
+        Err(format!(
+            "{} - Original String<{}>",
+            e.to_string(),
+            String::from_utf8_lossy(&bytes)
+        ))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,8 +119,15 @@ mod tests {
         assert_eq!(byte_to_hex(0), "00");
         assert_eq!(byte_to_hex(255), "ff");
         assert_eq!(byte_to_hex(171), "ab");
+        assert_eq!(bytes_to_hex(&[0]), "00");
+    }
 
-        let arr: [u8; 1] = [0];
-        assert_eq!(bytes_to_hex(&arr), "00");
+    #[test]
+    fn test_u8_to_str() {
+        assert_eq!(
+            u8_to_str([0xc0].as_ref()).expect_err(""),
+            "invalid utf-8 sequence of 1 bytes from index 0 - Original String<�>"
+        );
+        assert_eq!(u8_to_str([b'a'].as_ref()).expect(""), "a");
     }
 }

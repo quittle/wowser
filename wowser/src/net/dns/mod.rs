@@ -1,6 +1,6 @@
 mod message;
 
 pub use message::{
-    DNSFlagsHeader, DNSHeaders, DNSMessage, DNSQuestion, OpCode, RecordClass, RecordType,
-    ResponseCode,
+    DNSAnswer, DNSFlagsHeader, DNSHeaders, DNSMessage, DNSQuestion, DNSRecord, OpCode, RecordClass,
+    RecordData, RecordType, ResponseCode,
 };

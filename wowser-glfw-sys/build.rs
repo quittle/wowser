@@ -1,3 +1,4 @@
+use bindgen;
 use cmake;
 use git2::{build::CheckoutBuilder, Repository};
 use std::env;
@@ -25,6 +26,22 @@ fn build_glfw(dir: &Path) {
         .build();
 }
 
+fn generate_c_bindings(out_dir: &Path) {
+    let bindings = bindgen::Builder::default()
+        .header(
+            out_dir
+                .join("include/GLFW/glfw3.h")
+                .to_str()
+                .expect("Invalid header path"),
+        )
+        .generate_comments(true)
+        .generate()
+        .expect("Unable to generate bindings");
+    bindings
+        .write_to_file(out_dir.join("bindings.rs"))
+        .expect("Unable to write bindings");
+}
+
 fn main() {
     let out_dir = env::var("OUT_DIR").expect("OUT_DIR not provided");
     let out_dir = Path::new(&out_dir);
@@ -38,6 +55,7 @@ fn main() {
 
     checkout_glfw(&glfw_dir);
     build_glfw(&glfw_dir);
+    generate_c_bindings(out_dir);
 
     // Link against the compiled GLFW
     println!("cargo:rustc-link-lib=static=glfw3");

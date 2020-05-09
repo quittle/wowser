@@ -8,5 +8,5 @@ edition = "2018"
 
 [dependencies]
 wowser-macros = { path = "../wowser-macros" }
-wowser-glfw-sys = { path = "../wowser-glfw-sys" }
+wowser-glfw = { path = "../wowser-glfw" }
 regex = "1"

@@ -1,3 +1,5 @@
+extern crate libc;
+
 mod glfw;
 
 pub use glfw::*;
@@ -7,9 +9,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn smoke_test() {
-        unsafe {
-            glfwInit();
-        }
+    fn test_init() {
+        glfw_init();
     }
 }

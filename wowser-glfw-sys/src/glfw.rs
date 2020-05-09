@@ -1,44 +1,7 @@
-use libc::{c_char, c_int};
-use std::ffi::CString;
-use std::ptr;
+//! Contains all rust declarations of generated bindings.
 
-pub fn glfw_init() -> bool {
-    unsafe { glfwInit() != 0 }
-}
+#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+#![allow(non_upper_case_globals)]
 
-pub fn glfw_terminate() {
-    unsafe {
-        glfwTerminate();
-    }
-}
-
-pub fn glfw_create_window(width: i32, height: i32, title: &str) {
-    unsafe {
-        glfwCreateWindow(
-            width,
-            height,
-            CString::new(title).expect("Invalid string").as_ptr(),
-            ptr::null_mut(),
-            ptr::null_mut(),
-        );
-    }
-}
-
-#[repr(C)]
-pub struct GLFWmonitor {}
-
-#[repr(C)]
-pub struct GLFWwindow {}
-
-#[link(name = "glfw3")]
-extern "C" {
-    pub fn glfwInit() -> c_int;
-    pub fn glfwTerminate() -> ();
-    pub fn glfwCreateWindow(
-        width: c_int,
-        height: c_int,
-        title: *const c_char,
-        monitor: *mut GLFWmonitor,
-        share: *mut GLFWwindow,
-    ) -> *mut GLFWwindow;
-}
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

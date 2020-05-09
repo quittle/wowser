@@ -3,5 +3,6 @@
 members = [
     "wowser",
     "wowser-macros",
+    "wowser-glfw",
     "wowser-glfw-sys",
 ]

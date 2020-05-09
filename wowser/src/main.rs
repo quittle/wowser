@@ -1,3 +1,5 @@
+extern crate wowser_glfw_sys;
+
 mod html;
 mod math_parse;
 mod net;
@@ -9,8 +11,14 @@ use parse::{Interpreter, Lexer, Parser};
 
 use std::env;
 use std::fs;
+use std::thread;
 
 fn main() {
+    wowser_glfw_sys::glfw_init();
+    wowser_glfw_sys::glfw_create_window(800, 600, "Wowser - what a browser!");
+    thread::sleep(std::time::Duration::from_millis(1000));
+    wowser_glfw_sys::glfw_terminate();
+
     let args: Vec<String> = env::args().collect();
     let document_file = args.get(1).expect("Document not passed in");
 

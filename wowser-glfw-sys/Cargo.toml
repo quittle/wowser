@@ -1,0 +1,13 @@
+[package]
+name = "wowser-glfw-sys"
+version = "0.0.1"
+authors = ["Dustin Toff <me@dustintoff.com>"]
+edition = "2018"
+links = "glfw3"
+
+[dependencies]
+libc = "0"
+
+[build-dependencies]
+cmake = "0"
+git2 = "0"

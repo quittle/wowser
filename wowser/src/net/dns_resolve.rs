@@ -113,7 +113,7 @@ fn parse_dns_response(message: &[u8; 512]) -> Result<DNSMessage, String> {
         offset += rdata_len;
         let rdata = parse_rdata(&record_type, rdata_bytes)?;
         sections.push(DNSRecord::Answer(DNSAnswer {
-            domain_name: domain_name,
+            domain_name,
             record_type,
             class,
             ttl,
@@ -155,21 +155,21 @@ pub fn compute_domain(message: &[u8], offset: usize) -> Result<(String, usize), 
 
     if first_bit && second_bit {
         let pointer = offset_bit_merge(first_byte, Bit::Two, second_byte) as usize;
-        return Ok((compute_domain(message, pointer)?.0, offset + 2));
+        Ok((compute_domain(message, pointer)?.0, offset + 2))
     } else if !first_bit && !second_bit {
         let len = first_byte as usize;
         let cur_value = u8_to_str(&message[offset + 1..(offset + 1 + len)])?;
         let rest = compute_domain(message, offset + 1 + len)?;
         let value = format!("{}.{}", cur_value, &rest.0);
 
-        return Ok((value, rest.1));
+        Ok((value, rest.1))
     } else {
-        return Err("Unsupported domain label identifier".to_string());
+        Err("Unsupported domain label identifier".to_string())
     }
 }
 
 fn proper_domain_name(domain_name: &str) -> Cow<str> {
-    if domain_name.ends_with(".") {
+    if domain_name.ends_with('.') {
         Cow::Borrowed(domain_name)
     } else {
         Cow::Owned(format!("{}.", domain_name))

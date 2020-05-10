@@ -1,8 +1,5 @@
-extern crate proc_macro;
-
 use proc_macro::TokenStream;
 use quote::quote;
-use syn;
 
 pub fn display_from_debug_derive(input: TokenStream) -> TokenStream {
     // Construct a representation of Rust code as a syntax tree

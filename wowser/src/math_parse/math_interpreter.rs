@@ -59,7 +59,6 @@ impl Interpreter<'_> for MathInterpreter {
                     return Some(
                         token
                             .1
-                            // .trim()
                             .parse()
                             .expect(format!("Number ({}) cannot be parsed", token.1).as_str()),
                     );

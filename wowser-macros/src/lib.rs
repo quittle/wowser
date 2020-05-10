@@ -1,3 +1,6 @@
+extern crate proc_macro;
+extern crate syn;
+
 mod macros;
 
 use proc_macro::TokenStream;

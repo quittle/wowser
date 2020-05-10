@@ -1,5 +1,3 @@
-use bindgen;
-use cmake;
 use git2::{build::CheckoutBuilder, Repository};
 use std::env;
 use std::path::Path;
@@ -8,12 +6,11 @@ const URL: &str = "https://github.com/glfw/glfw.git";
 const TAG: &str = "3.3.2";
 
 fn checkout_glfw(dir: &Path) {
-    let repo: Repository;
-    if !dir.exists() {
-        repo = Repository::clone(URL, dir).expect("Failed to clone");
+    let repo = if !dir.exists() {
+        Repository::clone(URL, dir).expect("Failed to clone")
     } else {
-        repo = Repository::init(dir).expect("Invalid repository");
-    }
+        Repository::init(dir).expect("Invalid repository")
+    };
 
     let object = repo.revparse_single(TAG).expect("Failed to find tag");
     repo.checkout_tree(&object, Some(CheckoutBuilder::new().force()))
@@ -37,6 +34,7 @@ fn generate_c_bindings(out_dir: &Path) {
         .generate_comments(true)
         .generate()
         .expect("Unable to generate bindings");
+
     bindings
         .write_to_file(out_dir.join("bindings.rs"))
         .expect("Unable to write bindings");

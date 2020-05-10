@@ -16,8 +16,14 @@ pub fn glfw_terminate() {
 }
 
 pub fn glfw_create_window(width: i32, height: i32, title: &str) {
-    let c_title = CString::new(title).expect("Invalid string").as_ptr();
+    let c_title = CString::new(title).expect("Invalid string");
     unsafe {
-        glfwCreateWindow(width, height, c_title, ptr::null_mut(), ptr::null_mut());
+        glfwCreateWindow(
+            width,
+            height,
+            c_title.as_ptr(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+        );
     }
 }

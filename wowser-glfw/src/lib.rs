@@ -1,8 +1,37 @@
 extern crate libc;
+extern crate wowser_glfw_sys;
+extern crate wowser_macros;
 
 mod glfw;
 
 pub use glfw::*;
+
+/// Used to convert a callback for usage with this module's set_error_callback
+/// ```
+/// wowser_glfw::ErrorCallback!(fn my_callback(err: wowser_glfw::GlfwError, m: str) {
+///     println!("Err {}: {}", err, m);
+/// });
+///
+/// fn setup() {
+///     wowser_glfw::set_error_callback(Some(my_callback));
+/// }
+/// ```
+#[macro_export]
+macro_rules! ErrorCallback {
+    (fn $fname:ident($arg_err:ident : wowser_glfw::GlfwError, $arg_message:ident : str) $body:block ) => {
+        #[no_mangle]
+        unsafe extern "C" fn $fname(i: i32, cstr: *const i8) {
+            let err = ::wowser_glfw::get_error();
+            let s = ::std::ffi::CStr::from_ptr(cstr).to_string_lossy();
+            wowser_ErrorCallback::$fname(err, s);
+        }
+
+        mod wowser_ErrorCallback {
+            pub fn $fname($arg_err: ::wowser_glfw::GlfwError, $arg_message: ::std::borrow::Cow<str>) $body
+        }
+
+    };
+}
 
 #[cfg(test)]
 mod tests {
@@ -10,6 +39,6 @@ mod tests {
 
     #[test]
     fn test_init() {
-        glfw_init();
+        init().unwrap();
     }
 }

@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 libc = "0"
 wowser-glfw-sys = { path = "../wowser-glfw-sys" }
+wowser-macros = { path = "../wowser-macros" }

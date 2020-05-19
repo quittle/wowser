@@ -18,5 +18,5 @@ Download and [install Windows C++ build tools](https://visualstudio.microsoft.co
 
 ### Ubuntu (Including within a WSL distribution)
 ```
-sudo apt install cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev pkg-config libssl-dev
+sudo apt install cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev pkg-config libssl-dev libgl1-mesa-dev
 ```

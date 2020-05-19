@@ -62,4 +62,5 @@ fn main() {
     // Link against the system X11 library. This needs to come after glfw3
     // for some, unknown reason.
     println!("cargo:rustc-link-lib=dylib=X11");
+    println!("cargo:rustc-link-lib=dylib=GL");
 }

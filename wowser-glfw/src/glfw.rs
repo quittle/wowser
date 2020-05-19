@@ -42,6 +42,25 @@ impl Window {
     ) -> Result<Window, GlfwError> {
         create_window(width, height, title, share)
     }
+
+    pub fn set_window_size(&self, width: i32, height: i32) -> Result<(), GlfwError> {
+        set_window_size(self, width, height)
+    }
+
+    pub fn set_window_pos(&self, xpos: i32, ypos: i32) -> Result<(), GlfwError> {
+        set_window_pos(self, xpos, ypos)
+    }
+
+    pub fn make_context_current(&self) -> Result<(), GlfwError> {
+        match make_context_current(&self) {
+            GlfwError::NoError => Ok(()),
+            err => Err(err),
+        }
+    }
+
+    pub fn swap_buffers(&self) {
+        swap_buffers(self);
+    }
 }
 
 impl Drop for Window {
@@ -97,9 +116,41 @@ pub fn create_window(
     }
 }
 
+pub fn set_window_size(window: &Window, width: i32, height: i32) -> Result<(), GlfwError> {
+    unsafe {
+        glfwSetWindowSize(window.window, width, height);
+    }
+
+    match get_error() {
+        GlfwError::NoError => Ok(()),
+        err => Err(err),
+    }
+}
+
+pub fn set_window_pos(window: &Window, xpos: i32, ypos: i32) -> Result<(), GlfwError> {
+    unsafe {
+        glfwSetWindowPos(window.window, xpos, ypos);
+    }
+
+    match get_error() {
+        GlfwError::NoError => Ok(()),
+        err => Err(err),
+    }
+}
+
 pub fn destroy_window(window: &mut Window) {
     unsafe { glfwDestroyWindow(window.window) }
     window.window = ptr::null_mut();
+}
+
+pub fn make_context_current(window: &Window) -> GlfwError {
+    unsafe { glfwMakeContextCurrent(window.window) }
+
+    get_error()
+}
+
+pub fn swap_buffers(window: &Window) {
+    unsafe { glfwSwapBuffers(window.window) }
 }
 
 pub fn get_error() -> GlfwError {
@@ -107,9 +158,13 @@ pub fn get_error() -> GlfwError {
 
     let err_code = unsafe { glfwGetError(&mut value) } as u32;
 
-    let err_message = unsafe { CStr::from_ptr(value) }
-        .to_string_lossy()
-        .to_string();
+    let err_message = if err_code == GLFW_NO_ERROR && !value.is_null() {
+        unsafe { CStr::from_ptr(value) }
+            .to_string_lossy()
+            .to_string()
+    } else {
+        String::default()
+    };
 
     match err_code {
         GLFW_NO_ERROR => GlfwError::NoError,

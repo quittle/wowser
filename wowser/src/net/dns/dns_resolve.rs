@@ -176,7 +176,7 @@ fn proper_domain_name(domain_name: &str) -> Cow<str> {
     }
 }
 
-pub fn resolve(domain_name: &str) -> Result<Ipv4Addr, String> {
+pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> {
     let proper_domain_name = proper_domain_name(domain_name);
     let bytes = build_resolve_bytes(domain_name);
     let socket = find_local_udp_socket().map_err(|e| e.to_string())?;
@@ -209,12 +209,6 @@ pub fn resolve(domain_name: &str) -> Result<Ipv4Addr, String> {
         }
     }
     Err(format!("No valid record found: {:?}", &response))
-    // match parse_dns_response(&response) {
-    //     Ok(message) => println!("{:?}", message),
-    //     Err(e) => println!("{}", e),
-    // }
-
-    // Ok(result)
 }
 
 pub fn build_resolve_bytes(domain_name: &str) -> Vec<u8> {

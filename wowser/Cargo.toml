@@ -11,3 +11,4 @@ wowser-macros = { path = "../wowser-macros" }
 wowser-glfw = { path = "../wowser-glfw" }
 wowser-glfw-sys = { path = "../wowser-glfw-sys" }
 regex = "1"
+futures = "0.3"

@@ -37,6 +37,7 @@ macro_rules! ErrorCallback {
 mod tests {
     use super::*;
 
+    /// This test fails if no X server is running.
     #[test]
     fn test_init() {
         init().unwrap();

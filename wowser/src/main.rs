@@ -16,7 +16,7 @@ use std::env;
 use std::fs;
 use std::thread;
 
-fn main() {
+fn show_ui() {
     startup::start();
     {
         let mut window = Window::new().expect("Unable to make ui.");
@@ -38,17 +38,31 @@ fn main() {
         thread::sleep(std::time::Duration::from_millis(2000));
     }
     wowser_glfw::terminate();
+}
 
+fn main() {
     let args: Vec<String> = env::args().collect();
     let document_file = args.get(1).expect("Document not passed in");
 
-    match net::resolve(document_file) {
-        Ok(result) => println!("Result {}", result),
-        Err(e) => println!("Err {:?}", e),
-    }
+    if document_file == "gui" {
+        show_ui();
+    } else if document_file.ends_with(".com") {
+        let mut request = net::HttpRequest::new(net::Url::new(
+            net::UrlProtocol::HTTP,
+            net::UrlHost::DomainName(document_file.to_string()),
+            80,
+            "",
+            "",
+            "",
+        ));
+        println!("Created request");
+        let response = futures::executor::block_on(request.get()).expect("HttpRequest failed");
+        println!("http response {:?}", response);
 
-    if document_file.starts_with("http") {
-        println!("Fetching HTML page");
+        match net::resolve_domain_name_to_ip(document_file) {
+            Ok(result) => println!("Result {}", result),
+            Err(e) => println!("Err {:?}", e),
+        }
     } else if document_file.ends_with(".html") {
         let document = fs::read_to_string(document_file).expect("Unable to read file");
         let lexer = Lexer::new(Box::new(html::HtmlToken::Document));

@@ -190,22 +190,21 @@ pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> 
     let response = parse_dns_response(&response)?;
 
     for section in &response.sections {
-        match section {
-            DNSRecord::Answer(DNSAnswer {
-                domain_name,
-                rdata,
-                class: RecordClass::Internet,
-                ..
-            }) => {
-                if domain_name.as_str() != proper_domain_name {
-                    continue;
-                }
-                match rdata {
-                    RecordData::A(ip) => return Ok(*ip),
-                    _ => (),
-                }
+        if let DNSRecord::Answer(DNSAnswer {
+            domain_name,
+            rdata,
+            class: RecordClass::Internet,
+            ..
+        }) = section
+        {
+            if domain_name.as_str() != proper_domain_name {
+                continue;
             }
-            _ => (),
+            match rdata {
+                RecordData::A(ip) => return Ok(*ip),
+                RecordData::CanonicalName(_cname) => (), // CNAMEs not supported yet
+                _ => (),
+            }
         }
     }
     Err(format!("No valid record found: {:?}", &response))

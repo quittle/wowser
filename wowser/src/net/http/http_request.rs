@@ -55,7 +55,7 @@ impl HttpRequest {
     }
 
     async fn get_tcp(&mut self, host: String, ip: &IpAddr) -> Result<Vec<u8>, std::io::Error> {
-        let mut stream = TcpStream::connect(SocketAddr::new(ip.clone(), self.url.port))?;
+        let mut stream = TcpStream::connect(SocketAddr::new(*ip, self.url.port))?;
         let request = format!(
             "GET {} HTTP/1.1\r\nHost: {}\r\n\r\n",
             self.url.http_request_path(),

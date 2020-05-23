@@ -60,7 +60,7 @@ impl Interpreter<'_> for MathInterpreter {
                         token
                             .1
                             .parse()
-                            .expect(format!("Number ({}) cannot be parsed", token.1).as_str()),
+                            .unwrap_or_else(|_| panic!("Number ({}) cannot be parsed", token.1)),
                     );
                 }
                 panic!("Invalid number")

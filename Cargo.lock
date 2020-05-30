@@ -685,6 +685,7 @@ name = "wowser"
 version = "0.0.1"
 dependencies = [
  "futures",
+ "futures-util",
  "regex",
  "wowser-glfw",
  "wowser-glfw-sys",

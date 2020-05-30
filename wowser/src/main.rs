@@ -42,29 +42,37 @@ fn show_ui() {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let document_file = args.get(1).expect("Document not passed in");
+    let arg_1 = args.get(1).expect("Document not passed in");
 
-    if document_file == "gui" {
+    if arg_1 == "gui" {
         show_ui();
-    } else if document_file.ends_with(".com") {
+    } else if arg_1 == "http" {
+        let verb = args.get(2).expect("Verb not passed in");
+        let domain = args.get(3).expect("domain not passed in");
+
         let mut request = net::HttpRequest::new(net::Url::new(
             net::UrlProtocol::HTTP,
-            net::UrlHost::DomainName(document_file.to_string()),
+            net::UrlHost::DomainName(domain.to_string()),
             80,
             "",
             "",
             "",
         ));
         println!("Created request");
-        let response = futures::executor::block_on(request.get()).expect("HttpRequest failed");
+        let result = match verb.as_str() {
+            "get" => futures::executor::block_on(request.get()),
+            "head" => futures::executor::block_on(request.head()),
+            _ => panic!("Unsupported HTTP verb {}", domain),
+        };
+        let response = result.expect("HttpRequest failed");
         println!("http response {:?}", response);
 
-        match net::resolve_domain_name_to_ip(document_file) {
+        match net::resolve_domain_name_to_ip(arg_1) {
             Ok(result) => println!("Result {}", result),
             Err(e) => println!("Err {:?}", e),
         }
-    } else if document_file.ends_with(".html") {
-        let document = fs::read_to_string(document_file).expect("Unable to read file");
+    } else if arg_1.ends_with(".html") {
+        let document = fs::read_to_string(arg_1).expect("Unable to read file");
         let lexer = Lexer::new(Box::new(html::HtmlToken::Document));
         let tokens = lexer.parse(document.as_str());
         println!("Tokens: {:?}", tokens);
@@ -80,8 +88,8 @@ fn main() {
                 }
             }
         }
-    } else if document_file.ends_with(".txt") {
-        let document = fs::read_to_string(document_file).expect("Unable to read file");
+    } else if arg_1.ends_with(".txt") {
+        let document = fs::read_to_string(arg_1).expect("Unable to read file");
         let lexer = Lexer::new(Box::new(MathToken::Document));
         let tokens = lexer.parse(document.as_str());
         println!("Tokens: {:?}", tokens);

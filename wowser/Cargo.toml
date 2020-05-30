@@ -12,3 +12,4 @@ wowser-glfw = { path = "../wowser-glfw" }
 wowser-glfw-sys = { path = "../wowser-glfw-sys" }
 regex = "1"
 futures = "0.3"
+futures-util = "0.3"

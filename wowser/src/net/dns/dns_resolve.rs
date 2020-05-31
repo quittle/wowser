@@ -1,7 +1,8 @@
-use crate::net::dns::{
+use super::{
     DNSAnswer, DNSFlagsHeader, DNSHeaders, DNSMessage, DNSQuestion, DNSRecord, OpCode, RecordClass,
     RecordData, RecordType, ResponseCode,
 };
+use crate::net::NETWORK_BUFFER_SIZE;
 use crate::util::{
     get_bit, offset_bit_merge, u4_from_u8, u8_arr_to_u16, u8_to_i32, u8_to_str, Bit, U4Bit,
 };
@@ -27,7 +28,7 @@ fn find_local_udp_socket() -> Result<UdpSocket, std::io::Error> {
     Err(err)
 }
 
-fn parse_dns_response(message: &[u8; 512]) -> Result<DNSMessage, String> {
+fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage, String> {
     let transaction_id = u8_arr_to_u16(message[0], message[1]);
     let flags_a = message[2];
     let flags_b = message[3];
@@ -180,7 +181,7 @@ pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> 
     let proper_domain_name = proper_domain_name(domain_name);
     let bytes = build_resolve_bytes(domain_name);
     let socket = find_local_udp_socket().map_err(|e| e.to_string())?;
-    let mut response = [0u8; 512];
+    let mut response = [0u8; NETWORK_BUFFER_SIZE];
     let bytes_sent = socket
         .send_to(&bytes, "8.8.8.8:53")
         .map_err(|e| e.to_string())?;
@@ -338,6 +339,7 @@ fn pack_flags_byte_2(ra: bool, rcode: u8) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::NETWORK_BUFFER_SIZE;
     use super::*;
     use crate::util::string_to_bytes;
 
@@ -378,7 +380,7 @@ mod tests {
         )
         .expect("");
 
-        let mut byte_arr = [0u8; 512];
+        let mut byte_arr = [0u8; NETWORK_BUFFER_SIZE];
         byte_arr[..bytes.len()].copy_from_slice(bytes.as_ref());
 
         parse_dns_response(&byte_arr).expect("Must be valid");

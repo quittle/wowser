@@ -1,5 +1,6 @@
 use super::super::dns::resolve_domain_name_to_ip;
 use super::super::stream::AsyncTcpStream;
+use super::{structures::HttpVerb, HttpHeader, HttpRequestError, HttpResponse, HttpStatus, Result};
 use crate::{
     net::{Url, UrlHost},
     util::{vec_contains, vec_window_split, StringError},
@@ -8,35 +9,9 @@ use core::result;
 use futures_util::stream::StreamExt;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpStream};
-use std::{error::Error, fmt::Display};
 
-pub type Result<T> = core::result::Result<T, HttpRequestError>;
-
-static SINGLE_NEWLINE_BYTES: &[u8] = b"\r\n";
-static DOUBLE_NEWLINE_BYTES: &[u8] = b"\r\n\r\n";
-
-enum HttpVerb {
-    GET,
-    HEAD,
-}
-
-/// Represents errors that occur when making an HTTP request
-#[derive(Debug)]
-pub struct HttpRequestError {
-    err: Box<dyn Error>,
-}
-
-impl Error for HttpRequestError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(self.err.as_ref())
-    }
-}
-
-impl Display for HttpRequestError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "HTTP Request error: {}", self.err)
-    }
-}
+const SINGLE_NEWLINE_BYTES: &[u8] = b"\r\n";
+const DOUBLE_NEWLINE_BYTES: &[u8] = b"\r\n\r\n";
 
 fn contains_end_of_headers(vec: &[u8]) -> bool {
     vec_contains(vec, DOUBLE_NEWLINE_BYTES)
@@ -77,8 +52,35 @@ fn parse_headers(vec: &[u8]) -> Option<(HttpStatus, Vec<HttpHeader>, &[u8])> {
         ret_headers.push(header?);
     }
 
+    offset += SINGLE_NEWLINE_BYTES.len();
+
     Some((status, ret_headers, &vec[offset..]))
 }
+
+fn determine_content_length(
+    verb: &HttpVerb,
+    status: &HttpStatus,
+    headers: &[HttpHeader],
+) -> Result<u32> {
+    if *verb == HttpVerb::HEAD {
+        return Ok(0);
+    }
+
+    match status.status_code {
+        100..=199 | 204 | 304 => return Ok(0),
+        _ => (),
+    };
+
+    for header in headers {
+        if header.name == "Content-Length" {
+            return u32::from_str_radix(header.value.trim(), 10)
+                .map_err(|e| HttpRequestError::from(Box::new(e)));
+        }
+    }
+
+    Ok(u32::MAX)
+}
+
 /// Holds the state of an HTTP request
 pub struct HttpRequest {
     url: Url,
@@ -105,21 +107,17 @@ impl HttpRequest {
         let stream = self
             .get_tcp(host, &ip, &verb)
             .await
-            .map_err(|e| HttpRequestError { err: Box::new(e) })?;
+            .map_err(|e| HttpRequestError::from(Box::new(e)))?;
 
-        self.read_full_response(stream)
-            .await
-            .map_err(|e| HttpRequestError { err: Box::new(e) })
+        self.read_full_response(verb, stream).await
     }
 
     async fn get_ip_address(&self, url: &Url) -> Result<(String, IpAddr)> {
         match &(url.host) {
             UrlHost::IP(ip) => Ok((ip.to_string(), *ip)),
             UrlHost::DomainName(domain) => {
-                let ip =
-                    resolve_domain_name_to_ip(domain.as_str()).map_err(|e| HttpRequestError {
-                        err: Box::new(StringError::from(e)),
-                    })?;
+                let ip = resolve_domain_name_to_ip(domain.as_str())
+                    .map_err(|e| HttpRequestError::from(Box::new(StringError::from(e))))?;
                 Ok((domain.to_string(), IpAddr::V4(ip)))
             }
         }
@@ -138,10 +136,10 @@ impl HttpRequest {
 
         let mut stream = TcpStream::connect(SocketAddr::new(*ip, self.url.port))?;
         let request = format!(
-            "{} {} HTTP/1.1\r\nHost: {}\r\n\r\n",
-            verb_str,
-            self.url.http_request_path(),
-            host
+            "{verb} {path} HTTP/1.1\r\nHost: {domain}\r\n\r\n",
+            verb = verb_str,
+            path = self.url.http_request_path(),
+            domain = host
         );
         stream.write_all(request.as_bytes())?;
         Ok(AsyncTcpStream::from_tcp_stream(stream))
@@ -149,47 +147,39 @@ impl HttpRequest {
 
     async fn read_full_response(
         &self,
+        verb: &HttpVerb,
         mut stream: AsyncTcpStream,
-    ) -> result::Result<HttpResponse, std::io::Error> {
+    ) -> Result<HttpResponse> {
         let mut result = vec![];
         let mut status: HttpStatus = Default::default();
         let mut headers: Vec<HttpHeader> = vec![];
+        let mut content_length = u32::MAX;
+        let mut preamble_length = 0;
         while let Some(bytes) = stream.next().await {
-            result.extend(&bytes?);
-            if contains_end_of_headers(&result) {
+            result.extend(&bytes.map_err(|e| HttpRequestError::from(Box::new(e)))?);
+            if preamble_length == 0 && contains_end_of_headers(&result) {
                 let parsed = parse_headers(&result);
-                println!("Response Headers: {:?}", parsed);
-                if let Some((parsed_status, parsed_headers, _remainer)) = parsed {
+                if let Some((parsed_status, parsed_headers, remainder)) = parsed {
                     status = parsed_status;
                     headers = parsed_headers;
+                    preamble_length = result.len() - remainder.len();
+                    content_length = determine_content_length(&verb, &status, &headers)?;
+                    result = remainder.to_vec();
+
+                    if content_length == 0 {
+                        break;
+                    }
                 }
+            } else if result.len() >= content_length as usize {
+                result.truncate(content_length as usize);
+                break;
             }
         }
 
         Ok(HttpResponse {
             status,
             headers,
-            body: vec![],
+            body: result,
         })
     }
-}
-
-#[derive(Debug, Default)]
-pub struct HttpStatus {
-    http_version: String,
-    status_code: u16,
-    reason_phrase: String,
-}
-
-#[derive(Debug)]
-pub struct HttpResponse {
-    status: HttpStatus,
-    headers: Vec<HttpHeader>,
-    body: Vec<u8>,
-}
-
-#[derive(Debug)]
-pub struct HttpHeader {
-    name: String,
-    value: String,
 }

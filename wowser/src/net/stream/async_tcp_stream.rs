@@ -1,3 +1,4 @@
+use super::super::NETWORK_BUFFER_SIZE;
 use std::net;
 use std::{io::Read, task};
 
@@ -22,9 +23,9 @@ impl futures::stream::Stream for AsyncTcpStream {
         match read_amt {
             Ok(0) => task::Poll::Pending,
             Ok(_) => {
-                let mut ret = [0u8; 512];
+                let mut ret = [0u8; NETWORK_BUFFER_SIZE];
                 match self.get_mut().stream.read(&mut ret) {
-                    Ok(_) => task::Poll::Ready(Some(Ok(ret.to_vec()))),
+                    Ok(amt) => task::Poll::Ready(Some(Ok(ret[..amt].to_vec()))),
                     Err(e) => task::Poll::Ready(Some(Err(e))),
                 }
             }

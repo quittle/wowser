@@ -65,12 +65,11 @@ fn main() {
             _ => panic!("Unsupported HTTP verb {}", domain),
         };
         let response = result.expect("HttpRequest failed");
-        println!("http response {:?}", response);
-
-        match net::resolve_domain_name_to_ip(arg_1) {
-            Ok(result) => println!("Result {}", result),
-            Err(e) => println!("Err {:?}", e),
-        }
+        println!(
+            "HTTP Response {:?}\nBody\n{}",
+            response,
+            String::from_utf8_lossy(&response.body)
+        );
     } else if arg_1.ends_with(".html") {
         let document = fs::read_to_string(arg_1).expect("Unable to read file");
         let lexer = Lexer::new(Box::new(html::HtmlToken::Document));

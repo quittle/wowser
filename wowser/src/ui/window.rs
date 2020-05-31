@@ -69,7 +69,7 @@ impl Window {
                     1.0,
                 );
 
-                glClearColor(0f32, 1f32, 1f32, 0.5f32);
+                glClearColor(0_f32, 1_f32, 1_f32, 0.5_f32);
                 glClear(GL_COLOR_BUFFER_BIT);
 
                 self.window.swap_buffers();
@@ -81,8 +81,6 @@ impl Window {
 
     pub fn draw_rect(&mut self, rect: &Rect) -> Option<String> {
         unsafe {
-            glClearColor(0f32, 1f32, 1f32, 0.5f32);
-            glClear(GL_COLOR_BUFFER_BIT);
             glPointSize(10.0);
             glLineWidth(2.5);
             glColor3f(1.0, 0.0, 0.0);

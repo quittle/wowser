@@ -1,7 +1,38 @@
+use wowser::render;
 use wowser::startup;
 use wowser::ui::{Rect, Window};
 
 use std::thread;
+
+fn render(window: &mut Window) {
+    let example_root = render::example_style_nodes();
+    let style_root = render::style_to_scene(&example_root);
+
+    for node in style_root {
+        match node {
+            render::SceneNode::TextSceneNode(render::TextSceneNode {
+                bounds: _bounds,
+                text: _text,
+                font_size: _font_size,
+                text_color: _text_color,
+            }) => {}
+            render::SceneNode::RectangleSceneNode(render::RectangleSceneNode {
+                bounds,
+                fill: _fill,
+                border_color: _border_color,
+                border_width: _border_width,
+            }) => {
+                println!("Rect: {:?}", bounds);
+                window.draw_rect(&Rect {
+                    x: bounds.x as i32,
+                    y: bounds.y as i32,
+                    width: bounds.width as i32,
+                    height: bounds.height as i32,
+                });
+            }
+        }
+    }
+}
 
 fn main() {
     startup::start();
@@ -13,7 +44,8 @@ fn main() {
             width: 100,
             height: 100,
         });
-        thread::sleep(std::time::Duration::from_millis(2000));
+        render(&mut window);
+        thread::sleep(std::time::Duration::from_millis(20000));
         window
             .resize(&Rect {
                 x: 100,

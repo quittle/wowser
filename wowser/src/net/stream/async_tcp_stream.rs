@@ -19,11 +19,11 @@ impl futures::stream::Stream for AsyncTcpStream {
         self: std::pin::Pin<&mut Self>,
         _context: &mut futures::task::Context,
     ) -> task::Poll<Option<Self::Item>> {
-        let read_amt = self.stream.peek(&mut [0u8; 1]);
+        let read_amt = self.stream.peek(&mut [0_u8; 1]);
         match read_amt {
             Ok(0) => task::Poll::Pending,
             Ok(_) => {
-                let mut ret = [0u8; NETWORK_BUFFER_SIZE];
+                let mut ret = [0_u8; NETWORK_BUFFER_SIZE];
                 match self.get_mut().stream.read(&mut ret) {
                     Ok(amt) => task::Poll::Ready(Some(Ok(ret[..amt].to_vec()))),
                     Err(e) => task::Poll::Ready(Some(Err(e))),

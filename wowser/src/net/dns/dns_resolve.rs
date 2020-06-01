@@ -169,7 +169,7 @@ pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> 
     let proper_domain_name = proper_domain_name(domain_name);
     let bytes = build_resolve_bytes(domain_name);
     let socket = find_local_udp_socket().map_err(|e| e.to_string())?;
-    let mut response = [0u8; NETWORK_BUFFER_SIZE];
+    let mut response = [0_u8; NETWORK_BUFFER_SIZE];
     let bytes_sent = socket.send_to(&bytes, "8.8.8.8:53").map_err(|e| e.to_string())?;
     debug_assert_eq!(bytes_sent, bytes.len());
     socket.recv(&mut response).map_err(|e| e.to_string())?;
@@ -222,15 +222,17 @@ pub fn build_resolve_bytes(domain_name: &str) -> Vec<u8> {
         })],
     };
 
-    let mut header_buf = [0u8; (
-        6 * 16
-        // Header bits
-    ) / 8];
+    let mut header_buf = [0_u8;
+        (
+            6 * 16
+            // Header bits
+        ) / 8];
 
-    let mut question_suffix_buf = [0u8; (
-        2 * 16
-        // Rest of question
-    ) / 8];
+    let mut question_suffix_buf = [0_u8;
+        (
+            2 * 16
+            // Rest of question
+        ) / 8];
 
     let transaction_bytes = message.headers.transaction_id.to_be_bytes();
     header_buf[0] = transaction_bytes[0];
@@ -274,7 +276,7 @@ pub fn build_resolve_bytes(domain_name: &str) -> Vec<u8> {
     let domain_name = question_section.domain_name.as_str();
     let split_domain_name: Vec<&str> = domain_name.split('.').collect();
     let query_name_length = domain_name.len() + 1 /* "." becomes length + 1 */ + 1;
-    let mut question_domain_name = vec![0u8; query_name_length];
+    let mut question_domain_name = vec![0_u8; query_name_length];
     let mut index = 0;
     for part in split_domain_name {
         question_domain_name[index] = part.len() as u8;
@@ -304,7 +306,7 @@ pub fn build_resolve_bytes(domain_name: &str) -> Vec<u8> {
 }
 
 fn pack_flags_byte_1(qr: bool, opcode: u8, aa: bool, tc: bool, rd: bool) -> u8 {
-    let mut ret = 0u8;
+    let mut ret = 0_u8;
     ret |= (qr as u8) << 7;
     ret |= opcode << 3;
     ret |= (aa as u8) << 2;
@@ -314,7 +316,7 @@ fn pack_flags_byte_1(qr: bool, opcode: u8, aa: bool, tc: bool, rd: bool) -> u8 {
 }
 
 fn pack_flags_byte_2(ra: bool, rcode: u8) -> u8 {
-    let mut ret = 0u8;
+    let mut ret = 0_u8;
     ret |= (ra as u8) << 7;
     // Middle 4 bits are 0 and rcode should have top-4 bits empty
     ret |= rcode;
@@ -329,7 +331,7 @@ mod tests {
 
     #[test]
     fn bit_shift() {
-        let one = 1u8;
+        let one = 1_u8;
         assert_eq!(1, one);
         assert_eq!(2, one << 1);
         assert_eq!(4, one << 2);
@@ -364,7 +366,7 @@ mod tests {
         )
         .expect("");
 
-        let mut byte_arr = [0u8; NETWORK_BUFFER_SIZE];
+        let mut byte_arr = [0_u8; NETWORK_BUFFER_SIZE];
         byte_arr[..bytes.len()].copy_from_slice(bytes.as_ref());
 
         parse_dns_response(&byte_arr).expect("Must be valid");

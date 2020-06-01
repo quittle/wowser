@@ -23,6 +23,7 @@ impl Token for MathToken {
         }
     }
 
+    #[rustfmt::skip]
     fn next_tokens(&self) -> Vec<Box<dyn Token>> {
         match self {
             MathToken::Document => vec![
@@ -38,7 +39,7 @@ impl Token for MathToken {
             MathToken::Plus => vec![Box::new(MathToken::Number)],
             MathToken::Whitespace => vec![
                 Box::new(MathToken::Whitespace),
-                Box::new(MathToken::Terminator),
+                Box::new(MathToken::Terminator)
             ],
             MathToken::Semicolon => vec![
                 Box::new(MathToken::Number),

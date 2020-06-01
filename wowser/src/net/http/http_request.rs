@@ -26,11 +26,7 @@ fn parse_headers(vec: &[u8]) -> Option<(HttpStatus, Vec<HttpHeader>, &[u8])> {
     let status_code = u16::from_str_radix(parts.next()?, 10).ok()?;
     let reason_phrase = parts.next()?.to_owned();
 
-    let status = HttpStatus {
-        http_version,
-        status_code,
-        reason_phrase,
-    };
+    let status = HttpStatus { http_version, status_code, reason_phrase };
 
     let mut offset = first_line_bytes.len() + 2;
     let headers = headers[1..]
@@ -176,10 +172,6 @@ impl HttpRequest {
             }
         }
 
-        Ok(HttpResponse {
-            status,
-            headers,
-            body: result,
-        })
+        Ok(HttpResponse { status, headers, body: result })
     }
 }

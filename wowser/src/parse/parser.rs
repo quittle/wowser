@@ -82,11 +82,7 @@ impl Parser {
                         }
 
                         Ok(ParserResult {
-                            node: ASTNode {
-                                rule: root_rule.clone_box(),
-                                token: None,
-                                children,
-                            },
+                            node: ASTNode { rule: root_rule.clone_box(), token: None, children },
                             remaining_tokens: cur_tokens,
                         })
                     }

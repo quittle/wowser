@@ -44,7 +44,7 @@ fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage,
 
     if get_bit(flags_b, Bit::One) || get_bit(flags_b, Bit::Two) || get_bit(flags_b, Bit::Three) {
         return Err(
-            "Invalid message. Non-zero bits found in reserved field of flag header".to_string(),
+            "Invalid message. Non-zero bits found in reserved field of flag header".to_string()
         );
     }
 
@@ -85,11 +85,7 @@ fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage,
         let class = RecordClass::try_from(u8_arr_to_u16(message[offset], message[offset + 1]))?;
         offset += 2;
 
-        let question = DNSQuestion {
-            domain_name,
-            record_type,
-            class,
-        };
+        let question = DNSQuestion { domain_name, record_type, class };
         sections.push(DNSRecord::Question(question));
     }
 
@@ -113,13 +109,7 @@ fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage,
         let rdata_bytes: &[u8] = &message[offset..offset + rdata_len];
         offset += rdata_len;
         let rdata = parse_rdata(&record_type, rdata_bytes)?;
-        sections.push(DNSRecord::Answer(DNSAnswer {
-            domain_name,
-            record_type,
-            class,
-            ttl,
-            rdata,
-        }))
+        sections.push(DNSRecord::Answer(DNSAnswer { domain_name, record_type, class, ttl, rdata }))
     }
 
     Ok(DNSMessage { headers, sections })
@@ -131,9 +121,7 @@ fn parse_rdata(record_type: &RecordType, bytes: &[u8]) -> Result<RecordData, Str
             if bytes.len() != 4 {
                 Err(format!("Expected 4 bytes but got {}", bytes.len()))
             } else {
-                Ok(RecordData::A(Ipv4Addr::new(
-                    bytes[0], bytes[1], bytes[2], bytes[3],
-                )))
+                Ok(RecordData::A(Ipv4Addr::new(bytes[0], bytes[1], bytes[2], bytes[3])))
             }
         }
         _ => Err(format!("Unsupported record type {:?}", record_type)),
@@ -182,9 +170,7 @@ pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> 
     let bytes = build_resolve_bytes(domain_name);
     let socket = find_local_udp_socket().map_err(|e| e.to_string())?;
     let mut response = [0u8; NETWORK_BUFFER_SIZE];
-    let bytes_sent = socket
-        .send_to(&bytes, "8.8.8.8:53")
-        .map_err(|e| e.to_string())?;
+    let bytes_sent = socket.send_to(&bytes, "8.8.8.8:53").map_err(|e| e.to_string())?;
     debug_assert_eq!(bytes_sent, bytes.len());
     socket.recv(&mut response).map_err(|e| e.to_string())?;
 
@@ -264,10 +250,8 @@ pub fn build_resolve_bytes(domain_name: &str) -> Vec<u8> {
     let answer_count_bytes = message.headers.num_of_answers.to_be_bytes();
     header_buf[6] = answer_count_bytes[0];
     header_buf[7] = answer_count_bytes[1];
-    let authority_resource_records_count_bytes = message
-        .headers
-        .num_of_authority_resource_records
-        .to_be_bytes();
+    let authority_resource_records_count_bytes =
+        message.headers.num_of_authority_resource_records.to_be_bytes();
     header_buf[8] = authority_resource_records_count_bytes[0];
     header_buf[9] = authority_resource_records_count_bytes[1];
     let additional_resource_records_count_bytes =

@@ -18,26 +18,17 @@ fn checkout_glfw(dir: &Path) {
 }
 
 fn build_glfw(dir: &Path) {
-    cmake::Config::new(dir)
-        .define("BUILD_SHARED_LIBS", "OFF")
-        .build();
+    cmake::Config::new(dir).define("BUILD_SHARED_LIBS", "OFF").build();
 }
 
 fn generate_c_bindings(out_dir: &Path) {
     let bindings = bindgen::Builder::default()
-        .header(
-            out_dir
-                .join("include/GLFW/glfw3.h")
-                .to_str()
-                .expect("Invalid header path"),
-        )
+        .header(out_dir.join("include/GLFW/glfw3.h").to_str().expect("Invalid header path"))
         .generate_comments(true)
         .generate()
         .expect("Unable to generate bindings");
 
-    bindings
-        .write_to_file(out_dir.join("bindings.rs"))
-        .expect("Unable to write bindings");
+    bindings.write_to_file(out_dir.join("bindings.rs")).expect("Unable to write bindings");
 }
 
 fn main() {
@@ -45,11 +36,7 @@ fn main() {
     let out_dir = Path::new(&out_dir);
 
     let glfw_dir = out_dir.join("glfw");
-    let built_lib = out_dir
-        .join("lib")
-        .to_str()
-        .expect("Invalid path")
-        .to_owned();
+    let built_lib = out_dir.join("lib").to_str().expect("Invalid path").to_owned();
 
     checkout_glfw(&glfw_dir);
     build_glfw(&glfw_dir);

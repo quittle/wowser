@@ -39,6 +39,7 @@ impl Token for HtmlToken {
         }
     }
 
+    #[rustfmt::skip]
     fn next_tokens(&self) -> Vec<Box<dyn Token>> {
         match self {
             HtmlToken::Document => vec![

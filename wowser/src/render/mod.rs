@@ -14,30 +14,10 @@ pub struct Color {
     pub a: u8,
 }
 
-static COLOR_RED: Color = Color {
-    r: 255,
-    g: 0,
-    b: 0,
-    a: 255,
-};
-static COLOR_BLUE: Color = Color {
-    r: 0,
-    g: 0,
-    b: 255,
-    a: 255,
-};
-static COLOR_BLACK: Color = Color {
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 255,
-};
-static COLOR_TRANSPARENT: Color = Color {
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 0,
-};
+static COLOR_RED: Color = Color { r: 255, g: 0, b: 0, a: 255 };
+static COLOR_BLUE: Color = Color { r: 0, g: 0, b: 255, a: 255 };
+static COLOR_BLACK: Color = Color { r: 0, g: 0, b: 0, a: 255 };
+static COLOR_TRANSPARENT: Color = Color { r: 0, g: 0, b: 0, a: 0 };
 
 pub struct StyleNode {
     // bounds: Rect,

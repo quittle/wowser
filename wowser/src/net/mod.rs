@@ -65,26 +65,10 @@ mod tests {
             }
         );
 
-        assert!(response
-            .headers
-            .iter()
-            .find(|header| header.name == "Date")
-            .is_some());
-        assert!(response
-            .headers
-            .iter()
-            .find(|header| header.name == "Expires")
-            .is_some());
-        assert!(response
-            .headers
-            .iter()
-            .find(|header| header.name == "Etag")
-            .is_some());
-        assert!(response
-            .headers
-            .iter()
-            .find(|header| header.name == "Cache-Control")
-            .is_some());
+        assert!(response.headers.iter().find(|header| header.name == "Date").is_some());
+        assert!(response.headers.iter().find(|header| header.name == "Expires").is_some());
+        assert!(response.headers.iter().find(|header| header.name == "Etag").is_some());
+        assert!(response.headers.iter().find(|header| header.name == "Cache-Control").is_some());
         let content_length = response
             .headers
             .iter()

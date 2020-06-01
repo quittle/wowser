@@ -22,9 +22,5 @@ fn main() {
         _ => panic!("Unsupported HTTP verb {}", domain),
     };
     let response = result.expect("HttpRequest failed");
-    println!(
-        "HTTP Response {:?}\nBody\n{}",
-        response,
-        String::from_utf8_lossy(&response.body)
-    );
+    println!("HTTP Response {:?}\nBody\n{}", response, String::from_utf8_lossy(&response.body));
 }

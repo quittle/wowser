@@ -14,9 +14,7 @@ mod tests {
     fn parse(document: &str) -> Option<String> {
         let lexer = Lexer::new(Box::new(HtmlToken::Document));
         let tokens = lexer.parse(document)?;
-        let ast = Parser {}
-            .parse(&tokens, &HtmlRule::Document)
-            .expect("parses");
+        let ast = Parser {}.parse(&tokens, &HtmlRule::Document).expect("parses");
         let result = HtmlInterpreter {}.interpret(&ast)?;
         Some(stringify_node(&result))
     }

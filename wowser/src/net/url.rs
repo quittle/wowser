@@ -108,14 +108,8 @@ mod tests {
 
     #[test]
     pub fn test_url_host() {
-        assert_eq!(
-            "example.com",
-            UrlHost::DomainName("example.com".to_string()).to_string()
-        );
-        assert_eq!(
-            "1.2.3.4",
-            UrlHost::IP(IpAddr::V4(Ipv4Addr::new(1, 2, 3, 4))).to_string()
-        );
+        assert_eq!("example.com", UrlHost::DomainName("example.com".to_string()).to_string());
+        assert_eq!("1.2.3.4", UrlHost::IP(IpAddr::V4(Ipv4Addr::new(1, 2, 3, 4))).to_string());
         assert_eq!(
             "1:2:3:4:5:6:7:8",
             UrlHost::IP(IpAddr::V6(Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8))).to_string()

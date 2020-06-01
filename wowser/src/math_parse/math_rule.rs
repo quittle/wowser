@@ -18,6 +18,7 @@ pub enum MathRule {
 impl MathRule {}
 
 impl Rule for MathRule {
+    #[rustfmt::skip]
     fn children(&self) -> Vec<RuleType<MathRule>> {
         match self {
             MathRule::Document => vec![RuleType::Sequence(vec![

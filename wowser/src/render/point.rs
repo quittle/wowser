@@ -8,9 +8,6 @@ pub struct Point {
 impl Point {
     /// Creates a new Point offset from the current one
     pub fn offset(&self, dx: f32, dy: f32) -> Point {
-        Point {
-            x: self.x + dx,
-            y: self.y + dy,
-        }
+        Point { x: self.x + dx, y: self.y + dy }
     }
 }

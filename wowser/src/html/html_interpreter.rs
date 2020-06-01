@@ -27,11 +27,8 @@ pub fn stringify_node(node: &HtmlNode) -> String {
     let mut ret = String::new();
     match node {
         HtmlNode::Doctype(contents) => {
-            let contents = contents
-                .iter()
-                .map(|s| format!(r#""{}""#, s))
-                .collect::<Vec<String>>()
-                .join(" ");
+            let contents =
+                contents.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<String>>().join(" ");
             ret.push_str(format!("<!DOCTYPE {}>", contents).as_str());
         }
         HtmlNode::Text(text) => {
@@ -39,24 +36,15 @@ pub fn stringify_node(node: &HtmlNode) -> String {
         }
         HtmlNode::Document { doctype, document } => {
             ret.push_str(stringify_node(doctype).as_str());
-            if let HtmlNode::Element {
-                remaining_children, ..
-            } = &**document
-            {
+            if let HtmlNode::Element { remaining_children, .. } = &**document {
                 for child in remaining_children {
                     ret.push_str(stringify_node(&*child).as_str());
                 }
             }
         }
-        HtmlNode::Element {
-            tag_name,
-            attributes,
-            remaining_children,
-        } => {
-            let mut attributes = attributes
-                .iter()
-                .map(|(k, v)| format!("{}=\"{}\"", k, v))
-                .collect::<Vec<String>>();
+        HtmlNode::Element { tag_name, attributes, remaining_children } => {
+            let mut attributes =
+                attributes.iter().map(|(k, v)| format!("{}=\"{}\"", k, v)).collect::<Vec<String>>();
             attributes.sort();
             let attributes = attributes.join(" ");
             let remaining_children = remaining_children
@@ -95,11 +83,7 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
     type Result = HtmlNode<'a>;
 
     fn on_node(&self, ast: &ASTNode<'a, HtmlRule>) -> Option<HtmlNode<'a>> {
-        let ASTNode {
-            rule,
-            token,
-            children,
-        } = ast;
+        let ASTNode { rule, token, children } = ast;
 
         match **rule {
             HtmlRule::Document => {
@@ -149,9 +133,8 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
                             child_nodes.push(Box::new(self.on_node(child)?));
                         }
                         HtmlRule::TagsAndText => {
-                            if let HtmlNode::Element {
-                                remaining_children, ..
-                            } = self.on_node(child)?
+                            if let HtmlNode::Element { remaining_children, .. } =
+                                self.on_node(child)?
                             {
                                 for child in remaining_children {
                                     child_nodes.push(child);
@@ -173,11 +156,7 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
             HtmlRule::TagsAndText => {
                 let mut child_nodes = vec![];
                 for child in children {
-                    if let HtmlNode::Element {
-                        mut remaining_children,
-                        ..
-                    } = self.on_node(child)?
-                    {
+                    if let HtmlNode::Element { mut remaining_children, .. } = self.on_node(child)? {
                         child_nodes.append(&mut remaining_children);
                     }
                 }
@@ -212,15 +191,11 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
             }
             HtmlRule::NonSelfClosingTag => {
                 assert_eq!(3, children.len());
-                if let HtmlNode::Element {
-                    tag_name,
-                    attributes,
-                    ..
-                } = self.on_node(children.get(0)?)?
+                if let HtmlNode::Element { tag_name, attributes, .. } =
+                    self.on_node(children.get(0)?)?
                 {
-                    if let HtmlNode::Element {
-                        remaining_children, ..
-                    } = self.on_node(children.get(1)?)?
+                    if let HtmlNode::Element { remaining_children, .. } =
+                        self.on_node(children.get(1)?)?
                     {
                         // Ignore the closing tag as a child since it contains nothing of interest
                         return Some(HtmlNode::Element {
@@ -241,11 +216,7 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
                 assert_eq!(2, children.len());
                 let tag_name = children.get(0)?.token?.1;
                 if let HtmlNode::Element { attributes, .. } = self.on_node(children.get(1)?)? {
-                    Some(HtmlNode::Element {
-                        tag_name,
-                        attributes,
-                        remaining_children: vec![],
-                    })
+                    Some(HtmlNode::Element { tag_name, attributes, remaining_children: vec![] })
                 } else {
                     panic!("Invalid child of OpeningTagPrelude");
                 }
@@ -270,19 +241,11 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
                 assert!(children.len() < 4);
 
                 let name = children.get(0)?.token?.1;
-                let value = if children.len() == 3 {
-                    children.get(2)?.token?.1
-                } else {
-                    ""
-                };
+                let value = if children.len() == 3 { children.get(2)?.token?.1 } else { "" };
 
                 let mut attributes = HashMap::new();
                 attributes.insert(name, value);
-                Some(HtmlNode::Element {
-                    tag_name: "",
-                    attributes,
-                    remaining_children: vec![],
-                })
+                Some(HtmlNode::Element { tag_name: "", attributes, remaining_children: vec![] })
             }
             HtmlRule::DoctypeStart => None,   // Constant value
             HtmlRule::OpeningTagName => None, // Handled by OpeningTagPrelude

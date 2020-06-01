@@ -34,6 +34,7 @@ pub enum HtmlRule {
 impl HtmlRule {}
 
 impl Rule for HtmlRule {
+    #[rustfmt::skip]
     fn children(&self) -> Vec<RuleType<HtmlRule>> {
         match self {
             HtmlRule::Document => vec![

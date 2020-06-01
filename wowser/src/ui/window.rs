@@ -14,28 +14,13 @@ pub struct Window {
 
 impl Window {
     pub fn new() -> Result<Window, String> {
-        let bounds = Rect {
-            x: 100,
-            y: 100,
-            width: 800,
-            height: 600,
-        };
+        let bounds = Rect { x: 100, y: 100, width: 800, height: 600 };
 
         let window = wowser_glfw::Window::new(1, 1, "Wowser - what a browser!", None)
             .map_err::<String, _>(Into::into)?;
-        window
-            .make_context_current()
-            .map_err::<String, _>(Into::into)?;
+        window.make_context_current().map_err::<String, _>(Into::into)?;
 
-        let mut window = Window {
-            window,
-            bounds: Rect {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
-            },
-        };
+        let mut window = Window { window, bounds: Rect { x: 0, y: 0, width: 0, height: 0 } };
 
         window.resize(&bounds).map_err::<String, _>(Into::into)?;
 
@@ -60,14 +45,7 @@ impl Window {
 
             unsafe {
                 glViewport(0, 0, self.bounds.width, self.bounds.height);
-                glOrtho(
-                    0.0,
-                    self.bounds.width.into(),
-                    self.bounds.height.into(),
-                    0.0,
-                    -1.0,
-                    1.0,
-                );
+                glOrtho(0.0, self.bounds.width.into(), self.bounds.height.into(), 0.0, -1.0, 1.0);
 
                 glClearColor(0_f32, 1_f32, 1_f32, 0.5_f32);
                 glClear(GL_COLOR_BUFFER_BIT);

@@ -65,10 +65,10 @@ mod tests {
             }
         );
 
-        assert!(response.headers.iter().find(|header| header.name == "Date").is_some());
-        assert!(response.headers.iter().find(|header| header.name == "Expires").is_some());
-        assert!(response.headers.iter().find(|header| header.name == "Etag").is_some());
-        assert!(response.headers.iter().find(|header| header.name == "Cache-Control").is_some());
+        assert!(response.headers.iter().any(|header| header.name == "Date"));
+        assert!(response.headers.iter().any(|header| header.name == "Expires"));
+        assert!(response.headers.iter().any(|header| header.name == "Etag"));
+        assert!(response.headers.iter().any(|header| header.name == "Cache-Control"));
         let content_length = response
             .headers
             .iter()
@@ -76,6 +76,6 @@ mod tests {
             .expect("Content-Length required");
 
         usize::from_str_radix(&content_length.value.trim(), 10)
-            .expect(format!("Invalid content length: {}", content_length.value).as_str())
+            .unwrap_or_else(|_| panic!("Invalid content length: {}", content_length.value))
     }
 }

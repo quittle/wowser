@@ -5,21 +5,21 @@ use std::str::FromStr;
 
 #[derive(Debug, Default)]
 pub struct BDFFont {
-    version: Option<f32>,
-    name: Option<String>,
-    size: Option<BDFPropertySize>,
-    properties: Option<BDFRealProperties>,
-    characters: Option<Vec<BDFCharacter>>,
+    pub version: Option<f32>,
+    pub name: Option<String>,
+    pub size: Option<BDFPropertySize>,
+    pub properties: Option<BDFRealProperties>,
+    pub characters: Option<Vec<BDFCharacter>>,
 }
 
 #[derive(Debug, Default)]
 pub struct BDFCharacter {
-    name: Option<String>,
-    encoding: Option<u32>,
-    s_width: Option<(u32, u32)>,
-    d_width: Option<(u32, u32)>,
-    bbx: Option<(i32, i32, i32, i32)>,
-    bitmap: Option<BDFBitmap>,
+    pub name: Option<String>,
+    pub encoding: Option<u32>,
+    pub s_width: Option<(u32, u32)>,
+    pub d_width: Option<(u32, u32)>,
+    pub bbx: Option<(i32, i32, i32, i32)>,
+    pub bitmap: Option<BDFBitmap>,
 }
 
 #[derive(Debug, Default)]
@@ -27,7 +27,7 @@ pub struct BDFBitmap {
     /// The outer vector represents the rows.
     /// The inner vector represents the columns. Columns are right padded to fill out the full byte.
     /// Each bit represents a single pixel.
-    bytes: Vec<Vec<u8>>,
+    pub bytes: Vec<Vec<u8>>,
 }
 
 #[derive(Debug, Default)]

@@ -2,8 +2,12 @@ extern crate libc;
 extern crate wowser_glfw_sys;
 extern crate wowser_macros;
 
+mod draw;
+mod error;
 mod glfw;
 
+pub use draw::*;
+pub use error::*;
 pub use glfw::*;
 
 /// Used to convert a callback for usage with this module's set_error_callback

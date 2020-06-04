@@ -1,5 +1,6 @@
 extern crate wowser_glfw;
 
+pub mod font;
 pub mod html;
 pub mod math_parse;
 pub mod net;

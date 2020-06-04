@@ -146,7 +146,7 @@ fn text_style_to_scene(node: &TextStyleNode, offset: &Point) -> SceneNode {
     })
 }
 
-fn calculate_text_width(text: &String, font_size: f32) -> f32 {
+fn calculate_text_width(_text: &str, _font_size: f32) -> f32 {
     0_f32
 }
 

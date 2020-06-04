@@ -40,6 +40,6 @@ mod tests {
     /// This test fails if no X server is running.
     #[test]
     fn test_init() {
-        init().unwrap();
+        init().expect("Failure may be due to no X server running");
     }
 }

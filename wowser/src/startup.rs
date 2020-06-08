@@ -1,4 +1,4 @@
-use wowser_glfw_sys::*;
+use wowser_gl_sys::*;
 
 wowser_glfw::ErrorCallback!(
     fn callback(err: wowser_glfw::GlfwError, m: str) {

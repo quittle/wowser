@@ -687,9 +687,26 @@ dependencies = [
  "futures",
  "futures-util",
  "regex",
+ "wowser-gl",
+ "wowser-gl-sys",
  "wowser-glfw",
  "wowser-glfw-sys",
  "wowser-macros",
+]
+
+[[package]]
+name = "wowser-gl"
+version = "0.0.1"
+dependencies = [
+ "wowser-gl-sys",
+ "wowser-macros",
+]
+
+[[package]]
+name = "wowser-gl-sys"
+version = "0.0.1"
+dependencies = [
+ "bindgen",
 ]
 
 [[package]]
@@ -708,6 +725,7 @@ dependencies = [
  "bindgen",
  "cmake",
  "git2",
+ "wowser-gl-sys",
 ]
 
 [[package]]

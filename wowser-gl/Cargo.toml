@@ -1,14 +1,9 @@
 [package]
-name = "wowser-glfw-sys"
+name = "wowser-gl"
 version = "0.0.1"
 authors = ["Dustin Toff <me@dustintoff.com>"]
 edition = "2018"
-links = "glfw3"
 
 [dependencies]
 wowser-gl-sys = { path = "../wowser-gl-sys" }
-
-[build-dependencies]
-cmake = "0"
-git2 = "0"
-bindgen = "0"
+wowser-macros = { path = "../wowser-macros" }

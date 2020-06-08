@@ -1,4 +1,4 @@
-use wowser_glfw_sys::*;
+use wowser_gl_sys::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rect {
@@ -98,7 +98,7 @@ impl Window {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             glPixelStorei(GL_PACK_ALIGNMENT, 1);
         }
-        wowser_glfw::bitmap(
+        wowser_gl::bitmap(
             width as i32 * 8,
             height as i32,
             width as f32 / 2.0,

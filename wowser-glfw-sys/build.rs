@@ -25,6 +25,9 @@ fn generate_c_bindings(out_dir: &Path) {
     let bindings = bindgen::Builder::default()
         .header(out_dir.join("include/GLFW/glfw3.h").to_str().expect("Invalid header path"))
         .generate_comments(true)
+        .whitelist_function("(glfw|GLFW).*")
+        .whitelist_type("(glfw|GLFW).*")
+        .whitelist_var("(glfw|GLFW).*")
         .generate()
         .expect("Unable to generate bindings");
 
@@ -49,5 +52,4 @@ fn main() {
     // Link against the system X11 library. This needs to come after glfw3
     // for some, unknown reason.
     println!("cargo:rustc-link-lib=dylib=X11");
-    println!("cargo:rustc-link-lib=dylib=GL");
 }

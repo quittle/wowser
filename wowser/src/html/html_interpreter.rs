@@ -17,7 +17,7 @@ pub enum HtmlNode<'a> {
         attributes: HashMap<&'a str, &'a str>,
 
         /// The children of a node, be it more Elements or Text
-        remaining_children: Vec<Box<HtmlNode<'a>>>,
+        remaining_children: Vec<HtmlNode<'a>>,
     },
     // Represents a text node
     Text(&'a str),
@@ -130,7 +130,7 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
                 for child in children {
                     match &*child.rule {
                         HtmlRule::Text => {
-                            child_nodes.push(Box::new(self.on_node(child)?));
+                            child_nodes.push(self.on_node(child)?);
                         }
                         HtmlRule::TagsAndText => {
                             if let HtmlNode::Element { remaining_children, .. } =
@@ -170,7 +170,7 @@ impl<'a> Interpreter<'a> for HtmlInterpreter {
                 assert!(children.len() == 1 || children.len() == 2);
                 let mut child_nodes = vec![];
                 for child in children {
-                    child_nodes.push(Box::new(self.on_node(child)?));
+                    child_nodes.push(self.on_node(child)?);
                 }
                 Some(HtmlNode::Element {
                     tag_name: "",

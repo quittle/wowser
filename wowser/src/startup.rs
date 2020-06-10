@@ -1,22 +1,26 @@
-use wowser_gl_sys::*;
+use wowser_gl as gl;
+use wowser_glfw as glfw;
 
-wowser_glfw::ErrorCallback!(
+glfw::ErrorCallback!(
     fn callback(err: wowser_glfw::GlfwError, m: str) {
         println!("Err {}: {}", err, m);
     }
 );
 
-pub fn initialize_gl() {
-    wowser_glfw::set_error_callback(Some(callback));
-    wowser_glfw::init().expect("Unable to initialize GLFW");
+pub fn initialize_glfw() -> glfw::GlfwResult {
+    glfw::set_error_callback(Some(callback));
+    glfw::init()?;
+    Ok(())
+}
 
-    unsafe {
-        glDisable(GL_DEPTH_TEST);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-    }
+pub fn initialize_gl() -> gl::GlResult {
+    gl::disable(gl::Capability::DepthTest)?;
+    gl::matrix_mode(gl::MatrixMode::Projection)?;
+    gl::load_identity()?;
+    Ok(())
 }
 
 pub fn start() {
-    initialize_gl();
+    initialize_glfw().expect("Unable to initialize GLFW");
+    initialize_gl().expect("Unable to initialize GL");
 }

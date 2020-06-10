@@ -1,4 +1,6 @@
-use wowser_gl_sys::*;
+use super::UiResult;
+use wowser_gl as gl;
+use wowser_glfw as glfw;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rect {
@@ -8,7 +10,7 @@ pub struct Rect {
     pub height: i32,
 }
 pub struct Window {
-    window: wowser_glfw::Window,
+    window: glfw::Window,
     bounds: Rect,
 }
 
@@ -16,7 +18,7 @@ impl Window {
     pub fn new() -> Result<Window, String> {
         let bounds = Rect { x: 100, y: 100, width: 800, height: 600 };
 
-        let window = wowser_glfw::Window::new(1, 1, "Wowser - what a browser!", None)
+        let window = glfw::Window::new(1, 1, "Wowser - what a browser!", None)
             .map_err::<String, _>(Into::into)?;
         window.make_context_current().map_err::<String, _>(Into::into)?;
 
@@ -27,59 +29,52 @@ impl Window {
         Ok(window)
     }
 
-    pub fn resize(&mut self, new_bounds: &Rect) -> Result<(), String> {
+    pub fn resize(&mut self, new_bounds: &Rect) -> UiResult {
         if new_bounds.width != self.bounds.width || new_bounds.height != self.bounds.height {
-            self.window
-                .set_window_size(new_bounds.width, new_bounds.height)
-                .map_err::<String, _>(Into::into)?;
+            self.window.set_window_size(new_bounds.width, new_bounds.height)?;
         }
 
         if new_bounds.x != self.bounds.x || new_bounds.y != self.bounds.y {
-            self.window
-                .set_window_pos(new_bounds.x, new_bounds.y)
-                .map_err::<String, _>(Into::into)?;
+            self.window.set_window_pos(new_bounds.x, new_bounds.y)?;
         }
 
         if new_bounds != &self.bounds {
             self.bounds.clone_from(&new_bounds);
 
-            unsafe {
-                glViewport(0, 0, self.bounds.width, self.bounds.height);
-                glOrtho(0.0, self.bounds.width.into(), self.bounds.height.into(), 0.0, -1.0, 1.0);
-                glClear(GL_COLOR_BUFFER_BIT);
+            gl::viewport(0, 0, self.bounds.width, self.bounds.height)?;
+            gl::ortho(0.0, self.bounds.width.into(), self.bounds.height.into(), 0.0, -1.0, 1.0)?;
+            gl::clear(&[gl::BufferBit::Color])?;
 
-                self.window.swap_buffers();
-            }
+            self.window.swap_buffers();
         }
 
         Ok(())
     }
 
-    pub fn draw_rect(&mut self, rect: &Rect) -> Option<String> {
-        unsafe {
-            glPointSize(10.0);
-            glLineWidth(2.5);
-            glColor3f(1.0, 0.0, 0.0);
+    pub fn draw_rect(&mut self, rect: &Rect) -> UiResult {
+        gl::point_size(10.0)?;
+        gl::line_width(2.5)?;
+        gl::color_3f(1.0, 0.0, 0.0);
 
-            glBegin(GL_LINE_LOOP);
-            glVertex2i(rect.x, rect.y);
-            glVertex2i(rect.x + rect.width, rect.y);
-            glVertex2i(rect.x + rect.width, rect.y + rect.height);
-            glVertex2i(rect.x, rect.y + rect.height);
-            glEnd();
+        gl::begin(gl::DrawMode::LineLoop);
+        gl::vertex_2i(rect.x, rect.y);
+        gl::vertex_2i(rect.x + rect.width, rect.y);
+        gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
+        gl::vertex_2i(rect.x, rect.y + rect.height);
+        gl::end()?;
 
-            glFlush();
-        }
+        gl::flush()?;
 
         self.window.swap_buffers();
-        None
+
+        Ok(())
     }
 
-    pub fn draw_bitmap(&mut self, bitmap: &[Vec<u8>]) -> Result<(), String> {
+    pub fn draw_bitmap(&mut self, bitmap: &[Vec<u8>]) -> UiResult {
         let height = bitmap.len();
         let width = bitmap.first().expect("").len();
         let total_bytes = width * height;
-        let mut gp_bitmap_vec: Vec<GLubyte> = Vec::with_capacity(total_bytes);
+        let mut gp_bitmap_vec: Vec<u8> = Vec::with_capacity(total_bytes);
 
         let mut bits = 0;
         // Open GL renders bitmaps and textures upside down so this must be reversed
@@ -89,16 +84,14 @@ impl Window {
             bits += row.len();
         }
         assert_eq!(bits, total_bytes);
-        unsafe {
-            glPointSize(10.0);
-            glLineWidth(2.5);
-            glPixelZoom(1.0, -1.0);
-            glColor3f(1.0, 0.0, 0.0);
-            glRasterPos2i(100, 100);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        }
-        wowser_gl::bitmap(
+        gl::point_size(10.0)?;
+        gl::line_width(2.5)?;
+        gl::pixel_zoom(1.0, -1.0)?;
+        gl::color_3f(1.0, 0.0, 0.0);
+        gl::raster_pos_2i(100, 100)?;
+        gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
+        gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
+        gl::bitmap(
             width as i32 * 8,
             height as i32,
             width as f32 / 2.0,
@@ -106,12 +99,9 @@ impl Window {
             10.0,
             0.0,
             &gp_bitmap_vec,
-        )
-        .map_err(|e| e.to_string())?;
-        unsafe {
-            glPixelZoom(1.0, 1.0);
-            glFlush();
-        }
+        )?;
+        gl::pixel_zoom(1.0, 1.0)?;
+        gl::flush()?;
 
         self.window.swap_buffers();
 

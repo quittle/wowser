@@ -17,11 +17,9 @@ pub struct Color {
 static COLOR_RED: Color = Color { r: 255, g: 0, b: 0, a: 255 };
 static COLOR_BLUE: Color = Color { r: 0, g: 0, b: 255, a: 255 };
 static COLOR_BLACK: Color = Color { r: 0, g: 0, b: 0, a: 255 };
-static COLOR_TRANSPARENT: Color = Color { r: 0, g: 0, b: 0, a: 0 };
 
 pub struct StyleNode {
     // bounds: Rect,
-    z_index: i32,
     border_width: f32,
     border_color: Color,
     background_color: Color,
@@ -44,7 +42,6 @@ pub enum StyleNodeChild {
 
 pub fn example_style_nodes() -> StyleNode {
     StyleNode {
-        z_index: 0,
         border_width: 2.0,
         border_color: COLOR_RED,
         background_color: COLOR_BLUE,
@@ -52,7 +49,6 @@ pub fn example_style_nodes() -> StyleNode {
         margin: 5.0,
         child: StyleNodeChild::Nodes(vec![
             StyleNode {
-                z_index: 0,
                 border_width: 2.0,
                 border_color: COLOR_RED,
                 background_color: COLOR_BLUE,
@@ -65,7 +61,6 @@ pub fn example_style_nodes() -> StyleNode {
                 }),
             },
             StyleNode {
-                z_index: 0,
                 border_width: 2.0,
                 border_color: COLOR_RED,
                 background_color: COLOR_BLUE,

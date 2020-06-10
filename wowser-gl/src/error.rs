@@ -2,6 +2,8 @@ use std::error::Error;
 use wowser_gl_sys::*;
 use wowser_macros::DisplayFromDebug;
 
+pub type GlResult = Result<(), GlError>;
+
 /// Represents [GL errors](https://www.khronos.org/opengl/wiki/OpenGL_Error).
 #[derive(Debug, DisplayFromDebug)]
 pub enum GlError {
@@ -64,7 +66,7 @@ pub fn get_error() -> GlError {
 
 /// Like `get_error`, except returns an Ok if `GlError::NoError` or
 /// returns Err(GlError) if not.
-pub fn get_error_result() -> Result<(), GlError> {
+pub fn get_error_result() -> GlResult {
     match get_error() {
         GlError::NoError => Ok(()),
         err => Err(err),

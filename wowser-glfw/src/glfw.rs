@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use std::ptr;
 
-use super::{get_error, GlfwError};
+use super::{get_error, GlfwError, GlfwResult};
 use wowser_glfw_sys::*;
 
 pub type ErrorCallback = unsafe extern "C" fn(i32, *const i8);
@@ -12,7 +12,7 @@ pub fn set_error_callback(callback: Option<ErrorCallback>) {
     }
 }
 
-pub fn init() -> Result<(), GlfwError> {
+pub fn init() -> GlfwResult {
     let init_result = unsafe { glfwInit() };
     let successful = init_result == GLFW_TRUE as i32;
     if successful {
@@ -42,15 +42,15 @@ impl Window {
         create_window(width, height, title, share)
     }
 
-    pub fn set_window_size(&self, width: i32, height: i32) -> Result<(), GlfwError> {
+    pub fn set_window_size(&self, width: i32, height: i32) -> GlfwResult {
         set_window_size(self, width, height)
     }
 
-    pub fn set_window_pos(&self, xpos: i32, ypos: i32) -> Result<(), GlfwError> {
+    pub fn set_window_pos(&self, xpos: i32, ypos: i32) -> GlfwResult {
         set_window_pos(self, xpos, ypos)
     }
 
-    pub fn make_context_current(&self) -> Result<(), GlfwError> {
+    pub fn make_context_current(&self) -> GlfwResult {
         match make_context_current(&self) {
             GlfwError::NoError => Ok(()),
             err => Err(err),
@@ -91,7 +91,7 @@ pub fn create_window(
     }
 }
 
-pub fn set_window_size(window: &Window, width: i32, height: i32) -> Result<(), GlfwError> {
+pub fn set_window_size(window: &Window, width: i32, height: i32) -> GlfwResult {
     unsafe {
         glfwSetWindowSize(window.window, width, height);
     }
@@ -102,7 +102,7 @@ pub fn set_window_size(window: &Window, width: i32, height: i32) -> Result<(), G
     }
 }
 
-pub fn set_window_pos(window: &Window, xpos: i32, ypos: i32) -> Result<(), GlfwError> {
+pub fn set_window_pos(window: &Window, xpos: i32, ypos: i32) -> GlfwResult {
     unsafe {
         glfwSetWindowPos(window.window, xpos, ypos);
     }

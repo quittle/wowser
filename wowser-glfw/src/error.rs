@@ -2,6 +2,8 @@ use std::{error::Error, ffi::CStr, ptr};
 use wowser_glfw_sys::*;
 use wowser_macros::DisplayFromDebug;
 
+pub type GlfwResult = Result<(), GlfwError>;
+
 #[derive(Debug, DisplayFromDebug)]
 pub enum GlfwError {
     NoError,
@@ -57,7 +59,7 @@ pub fn get_error() -> GlfwError {
 
 /// Like `get_error`, except returns an Ok if `GlfwError::NoError` or
 /// returns Err(GlfwError) if not.
-pub fn get_error_result() -> Result<(), GlfwError> {
+pub fn get_error_result() -> GlfwResult {
     match get_error() {
         GlfwError::NoError => Ok(()),
         err => Err(err),

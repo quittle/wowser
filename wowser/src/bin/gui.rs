@@ -1,6 +1,7 @@
 use wowser::render;
 use wowser::startup;
-use wowser::ui::{Rect, Window};
+use wowser::ui::Window;
+use wowser::util::Rect;
 
 use std::thread;
 

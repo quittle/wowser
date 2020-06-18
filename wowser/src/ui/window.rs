@@ -1,17 +1,11 @@
 use super::UiResult;
+use crate::util::{Point, Rect};
 use wowser_gl as gl;
 use wowser_glfw as glfw;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Rect {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
-}
 pub struct Window {
     window: glfw::Window,
-    bounds: Rect,
+    bounds: Rect<i32>,
 }
 
 impl Window {
@@ -29,7 +23,7 @@ impl Window {
         Ok(window)
     }
 
-    pub fn resize(&mut self, new_bounds: &Rect) -> UiResult {
+    pub fn resize(&mut self, new_bounds: &Rect<i32>) -> UiResult {
         if new_bounds.width != self.bounds.width || new_bounds.height != self.bounds.height {
             self.window.set_window_size(new_bounds.width, new_bounds.height)?;
         }
@@ -51,7 +45,7 @@ impl Window {
         Ok(())
     }
 
-    pub fn draw_rect(&mut self, rect: &Rect) -> UiResult {
+    pub fn draw_rect(&mut self, rect: &Rect<i32>) -> UiResult {
         gl::point_size(10.0)?;
         gl::line_width(2.5)?;
         gl::color_3f(1.0, 0.0, 0.0);
@@ -70,25 +64,15 @@ impl Window {
         Ok(())
     }
 
-    pub fn draw_bitmap(&mut self, bitmap: &[Vec<u8>]) -> UiResult {
-        let height = bitmap.len();
-        let width = bitmap.first().expect("").len();
-        let total_bytes = width * height;
-        let mut gp_bitmap_vec: Vec<u8> = Vec::with_capacity(total_bytes);
+    pub fn draw_bitmap(&mut self, point: &Point<i32>, bitmap: &[u8], width: u32) -> UiResult {
+        let width_u = width as usize;
+        let height: usize = bitmap.len() / width_u;
 
-        let mut bits = 0;
-        // Open GL renders bitmaps and textures upside down so this must be reversed
-        // before being used.
-        for row in bitmap.iter().rev() {
-            gp_bitmap_vec.extend(row);
-            bits += row.len();
-        }
-        assert_eq!(bits, total_bytes);
         gl::point_size(10.0)?;
         gl::line_width(2.5)?;
         gl::pixel_zoom(1.0, -1.0)?;
         gl::color_3f(1.0, 0.0, 0.0);
-        gl::raster_pos_2i(100, 100)?;
+        gl::raster_pos_2i(point.x, point.y)?;
         gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
         gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
         gl::bitmap(
@@ -98,7 +82,7 @@ impl Window {
             height as f32 / 2.0,
             10.0,
             0.0,
-            &gp_bitmap_vec,
+            &bitmap,
         )?;
         gl::pixel_zoom(1.0, 1.0)?;
         gl::flush()?;

@@ -1,7 +1,7 @@
-use super::FontError;
+use super::{Font, FontError, RenderedCharacter};
 use crate::util::string_to_bytes;
 use std::io::{BufRead, BufReader, Lines};
-use std::str::FromStr;
+use std::{borrow::Cow, cmp, iter, str::FromStr};
 
 #[derive(Debug, Default)]
 pub struct BDFFont {
@@ -15,19 +15,18 @@ pub struct BDFFont {
 #[derive(Debug, Default)]
 pub struct BDFCharacter {
     pub name: Option<String>,
+    /// The character code point represented
     pub encoding: Option<u32>,
     pub s_width: Option<(u32, u32)>,
     pub d_width: Option<(u32, u32)>,
     pub bbx: Option<(i32, i32, i32, i32)>,
-    pub bitmap: Option<BDFBitmap>,
-}
-
-#[derive(Debug, Default)]
-pub struct BDFBitmap {
     /// The outer vector represents the rows.
     /// The inner vector represents the columns. Columns are right padded to fill out the full byte.
     /// Each bit represents a single pixel.
-    pub bytes: Vec<Vec<u8>>,
+    nested_bitmap: Option<Vec<Vec<u8>>>,
+    /// The final represedntation of the bitmap as a flattend vector of bytes
+    /// wrapped at `d_width` columns.
+    pub bitmap: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Default)]
@@ -42,35 +41,33 @@ pub struct BDFPropertySize {
     y_resolution: u32,
 }
 
-// pub struct BDFFont {
-//     version: f32,
-//     name: String,
-// }
-
 impl BDFFont {
     pub fn load(bytes: &[u8]) -> Result<BDFFont, FontError> {
         let reader = BufReader::new(bytes);
 
         let mut lines = reader.lines();
 
-        // let version = parse_first_line(&next_line(&mut lines)?)?;
-        // let name = parse_second_line(&next_line(&mut lines)?)?;
-
         parse_bdf_font(&mut lines)
+    }
+}
 
-        // println!("Props: {:?}", properties);
-
-        // Err("a")?
-        // Ok(BDFFont {
-        //     version,
-        //     name
-        // })
+impl Font for BDFFont {
+    fn render_character(&self, character: char) -> Option<RenderedCharacter<'_>> {
+        for c in self.characters.as_deref()? {
+            if c.encoding == Some(character as u32) {
+                return Some(RenderedCharacter {
+                    bitmap: Cow::from(c.bitmap.as_deref()?),
+                    width: c.d_width?.0,
+                    next_char_offset: c.d_width?.0,
+                });
+            }
+        }
+        None
     }
 }
 
 fn next_line(lines: &mut Lines<BufReader<&[u8]>>) -> Result<Option<String>, FontError> {
     Ok(lines.next().transpose()?)
-    // Ok(.ok_or_else(|| "Unexpected end of line")??)
 }
 
 fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontError> {
@@ -117,7 +114,7 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
     Ok(font)
 }
 
-fn parse_bitmap(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFBitmap, FontError> {
+fn parse_bitmap(lines: &mut Lines<BufReader<&[u8]>>) -> Result<Vec<Vec<u8>>, FontError> {
     let mut bytes: Vec<Vec<u8>> = vec![];
     while let Some(line) = next_line(lines)? {
         if line == "ENDCHAR" {
@@ -126,7 +123,7 @@ fn parse_bitmap(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFBitmap, FontEr
 
         bytes.push(string_to_bytes(&line)?);
     }
-    Ok(BDFBitmap { bytes })
+    Ok(bytes)
 }
 
 fn parse_char(
@@ -143,21 +140,87 @@ fn parse_char(
 
         let mut parts = line.splitn(2, ' ');
         let property_name = parts.next().ok_or_else(|| "Missing name of property line")?;
-        let property_value_literal = parts.next().ok_or_else(|| "Missing value")?;
+        let property_value_literal = parts.next();
 
         match property_name {
-            "ENCODING" => {
-                character.encoding = Some(u32::from_str_radix(property_value_literal, 10)?)
-            }
             "BITMAP" => {
-                character.bitmap = Some(parse_bitmap(lines)?);
+                character.nested_bitmap = Some(parse_bitmap(lines)?);
                 break;
             }
-            "SWIDTH" | "DWIDTH" | "BBX" => {}
-            _ => println!("Unexpected character property {}", line),
+            _ => {
+                let property_value_literal =
+                    property_value_literal.ok_or_else(|| "Missing encoding value")?;
+                match property_name {
+                    "ENCODING" => {
+                        character.encoding = Some(u32::from_str_radix(property_value_literal, 10)?)
+                    }
+                    "DWIDTH" => {
+                        let mut entries = property_value_literal.splitn(2, ' ');
+                        let d_width_x = entries
+                            .next()
+                            .ok_or_else(|| "Missing DWIDTH x")
+                            .map(|v| u32::from_str_radix(v, 10))??;
+                        let d_width_y = entries
+                            .next()
+                            .ok_or_else(|| "Missing DWIDTH y")
+                            .map(|v| u32::from_str_radix(v, 10))??;
+
+                        character.d_width = Some((d_width_x, d_width_y))
+                    }
+                    "BBX" => {
+                        let mut entries = property_value_literal.splitn(4, ' ');
+                        let width = entries
+                            .next()
+                            .ok_or_else(|| "Missing BBX width")
+                            .map(|v| i32::from_str_radix(v, 10))??;
+                        let height = entries
+                            .next()
+                            .ok_or_else(|| "Missing BBX height")
+                            .map(|v| i32::from_str_radix(v, 10))??;
+                        let x = entries
+                            .next()
+                            .ok_or_else(|| "Missing BBX x")
+                            .map(|v| i32::from_str_radix(v, 10))??;
+                        let y = entries
+                            .next()
+                            .ok_or_else(|| "Missing BBX y")
+                            .map(|v| i32::from_str_radix(v, 10))??;
+                        character.bbx = Some((width, height, x, y))
+                    }
+                    "SWIDTH" => {}
+                    _ => println!("Unexpected character property {}", line),
+                }
+            }
         }
     }
+    let nested_bitmap = character.nested_bitmap.ok_or("BITMAP not provided for character")?;
+    let d_width_x = character.d_width.ok_or("DWIDTH not provided for character")?.0;
+
+    let mut bitmap = Vec::with_capacity(d_width_x as usize * cmp::max(1, nested_bitmap.len()));
+
+    for row in nested_bitmap.iter().rev() {
+        bitmap.extend(row);
+        if row.len() < d_width_x as usize {
+            bitmap.extend(iter::repeat(0_u8).take(d_width_x as usize - row.len()));
+        }
+    }
+    character.bitmap = Some(bitmap);
+    character.nested_bitmap = None;
     Ok(character)
+}
+
+#[allow(dead_code)]
+fn split_str_into_2<'a, T>(
+    s: &'a str,
+    pattern: &str,
+    transform: &dyn Fn(&str) -> T,
+    missing_message: &str,
+) -> Result<(T, T), FontError> {
+    let mut split = s.splitn(2, pattern);
+    Ok((
+        transform(split.next().ok_or_else(|| missing_message)?),
+        transform(split.next().ok_or_else(|| missing_message)?),
+    ))
 }
 
 fn parse_chars(lines: &mut Lines<BufReader<&[u8]>>) -> Result<Vec<BDFCharacter>, FontError> {
@@ -188,7 +251,7 @@ fn parse_real_properties(
 
         let mut parts = line.splitn(2, ' ');
         let property_name = parts.next().ok_or_else(|| "Missing name of property line")?;
-        let property_value_literal = parts.next().ok_or_else(|| "Missing value")?;
+        let property_value_literal = parts.next().ok_or_else(|| "Missing property value")?;
 
         match property_name {
             "COPYRIGHT" => ret.copyright = Some(property_value_literal.to_string()),

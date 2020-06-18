@@ -2,4 +2,4 @@ mod error;
 mod window;
 
 pub use error::{UiError, UiResult};
-pub use window::{Rect, Window};
+pub use window::Window;

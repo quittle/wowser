@@ -65,25 +65,13 @@ impl Window {
     }
 
     pub fn draw_bitmap(&mut self, point: &Point<i32>, bitmap: &[u8], width: u32) -> UiResult {
-        let width_u = width as usize;
-        let height: usize = bitmap.len() / width_u;
+        let height: usize = bitmap.len() / width as usize;
 
-        gl::point_size(10.0)?;
-        gl::line_width(2.5)?;
         gl::pixel_zoom(1.0, -1.0)?;
-        gl::color_3f(1.0, 0.0, 0.0);
         gl::raster_pos_2i(point.x, point.y)?;
         gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
         gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
-        gl::bitmap(
-            width as i32 * 8,
-            height as i32,
-            width as f32 / 2.0,
-            height as f32 / 2.0,
-            10.0,
-            0.0,
-            &bitmap,
-        )?;
+        gl::bitmap(width as i32 * 8, height as i32, 0.0, 0.0, width as f32, 0.0, &bitmap)?;
         gl::pixel_zoom(1.0, 1.0)?;
         gl::flush()?;
 

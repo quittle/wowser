@@ -88,14 +88,126 @@ pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
 }
 
 pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
-    str::from_utf8(&bytes).or_else(|e| {
-        Err(format!("{} - Original String<{}>", e.to_string(), String::from_utf8_lossy(&bytes)))
+    str::from_utf8(&bytes).map_err(|e| {
+        format!("{} - Original String<{}>", e.to_string(), String::from_utf8_lossy(&bytes))
     })
 }
+
+pub fn split_str_into_2<'a, T, Transform, EM, EF, E>(
+    s: &'a str,
+    pattern: &str,
+    transform: Transform,
+    missing_message: EM,
+) -> Result<(T, T), E>
+where
+    Transform: Fn(&str) -> Result<T, EF>,
+    EM: Copy,
+    E: From<EM> + From<EF>,
+{
+    let mut split = s.splitn(2, pattern);
+    Ok((
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+    ))
+}
+
+pub fn split_str_into_3<'a, T, Transform, EM, EF, E>(
+    s: &'a str,
+    pattern: &str,
+    transform: Transform,
+    missing_message: EM,
+) -> Result<(T, T, T), E>
+where
+    Transform: Fn(&str) -> Result<T, EF>,
+    EM: Copy,
+    E: From<EM> + From<EF>,
+{
+    let mut split = s.splitn(3, pattern);
+    Ok((
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+    ))
+}
+
+pub fn split_str_into_4<'a, T, Transform, EM, EF, E>(
+    s: &'a str,
+    pattern: &str,
+    transform: Transform,
+    missing_message: EM,
+) -> Result<(T, T, T, T), E>
+where
+    Transform: Fn(&str) -> Result<T, EF>,
+    EM: Copy,
+    E: From<EM> + From<EF>,
+{
+    let mut split = s.splitn(4, pattern);
+    Ok((
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or_else(|| missing_message)?)?,
+    ))
+}
+
+// macro_rules! splitsky {
+//     ($string:expr, $pattern:expr, $transform:expr, $($message:expr),+) => {{
+//         (
+//             let messages: ::std::vec::Vec<&::std::str> = vec!($($message),+);
+//             let string: &::std::str = $string;
+//             let mut split = string.splitn(message.len(), $pattern);
+
+//             ($transform(split.next().ok_or_else(|| $message))?,+)
+//             // transform(split.next().ok_or_else(|| missing_message)?),
+//             // transform(split.next().ok_or_else(|| missing_message)?),
+//         )
+//     }};
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::num::ParseIntError;
+
+    #[derive(Clone, Copy, Debug)]
+    struct TestError {}
+
+    impl From<ParseIntError> for TestError {
+        fn from(_: ParseIntError) -> Self {
+            TestError {}
+        }
+    }
+
+    impl From<i32> for TestError {
+        fn from(_: i32) -> Self {
+            TestError {}
+        }
+    }
+
+    impl From<&str> for TestError {
+        fn from(_: &str) -> Self {
+            TestError {}
+        }
+    }
+
+    #[test]
+    fn test_splitsky() {
+        let result: Result<(i32, i32), TestError> =
+            split_str_into_2("1 2 3", " ", |s| i32::from_str_radix(s, 10), "missing");
+        result.expect_err("Invalid result");
+
+        let result: Result<(i32, i32), TestError> =
+            split_str_into_2("1 2", " ", |v| i32::from_str_radix(v, 10), "missing");
+        assert_eq!(result.unwrap(), (1, 2));
+
+        let result: Result<(i32, i32, i32), TestError> =
+            split_str_into_3("1 2 3", " ", |v| i32::from_str_radix(v, 10), "missing");
+        assert_eq!(result.unwrap(), (1, 2, 3));
+
+        let result: Result<(i32, i32, i32, i32), TestError> =
+            split_str_into_4("1 2 3 4", " ", |v| i32::from_str_radix(v, 10), "missing");
+        assert_eq!(result.unwrap(), (1, 2, 3, 4));
+    }
 
     #[test]
     fn hex_decode() -> Result<(), String> {

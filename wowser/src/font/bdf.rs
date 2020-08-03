@@ -1,5 +1,5 @@
 use super::{Font, FontError, RenderedCharacter};
-use crate::util::string_to_bytes;
+use crate::util::{split_str_into_2, split_str_into_3, split_str_into_4, string_to_bytes, Point};
 use std::io::{BufRead, BufReader, Lines};
 use std::{borrow::Cow, cmp, iter, str::FromStr};
 
@@ -8,8 +8,22 @@ pub struct BDFFont {
     pub version: Option<f32>,
     pub name: Option<String>,
     pub size: Option<BDFPropertySize>,
+    pub bounding_box: Option<BBX>,
     pub properties: Option<BDFRealProperties>,
     pub characters: Option<Vec<BDFCharacter>>,
+}
+
+/// Bounding box
+#[derive(Debug, Default)]
+pub struct BBX {
+    pub width: i32,
+    pub height: i32,
+    pub offset_x: i32,
+    pub offset_y: i32,
+}
+
+impl BBX {
+    const DEFAULT: BBX = BBX { width: 0, height: 0, offset_x: 0, offset_y: 0 };
 }
 
 #[derive(Debug, Default)]
@@ -19,7 +33,7 @@ pub struct BDFCharacter {
     pub encoding: Option<u32>,
     pub s_width: Option<(u32, u32)>,
     pub d_width: Option<(u32, u32)>,
-    pub bbx: Option<(i32, i32, i32, i32)>,
+    pub bounding_box: Option<BBX>,
     /// The outer vector represents the rows.
     /// The inner vector represents the columns. Columns are right padded to fill out the full byte.
     /// Each bit represents a single pixel.
@@ -55,9 +69,15 @@ impl Font for BDFFont {
     fn render_character(&self, character: char) -> Option<RenderedCharacter<'_>> {
         for c in self.characters.as_deref()? {
             if c.encoding == Some(character as u32) {
+                let bounding_box = c
+                    .bounding_box
+                    .as_ref()
+                    .or_else(|| self.bounding_box.as_ref())
+                    .unwrap_or(&BBX::DEFAULT);
                 return Some(RenderedCharacter {
                     bitmap: Cow::from(c.bitmap.as_deref()?),
                     width: c.d_width?.0,
+                    offset: Point { x: bounding_box.offset_x, y: bounding_box.offset_y },
                     next_char_offset: c.d_width?.0,
                 });
             }
@@ -80,16 +100,24 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
             "STARTFONT" => font.version = Some(f32::from_str(property_value_literal)?),
             "FONT" => font.name = Some(property_value_literal.to_string()),
             "SIZE" => {
-                let mut parts = property_value_literal.splitn(3, ' ');
-                let point_size = parts.next().ok_or_else(|| "Missing point size")?;
-                let x_resolution = parts.next().ok_or_else(|| "Missing x resolution")?;
-                let y_resolution = parts.next().ok_or_else(|| "Missing y resolution")?;
+                let (point_size, x_resolution, y_resolution) =
+                    split_str_into_3::<_, _, _, _, FontError>(
+                        &property_value_literal,
+                        " ",
+                        |v| u32::from_str_radix(v, 10),
+                        "Missing SIZE value",
+                    )?;
 
-                font.size = Some(BDFPropertySize {
-                    point_size: u32::from_str_radix(point_size, 10)?,
-                    x_resolution: u32::from_str_radix(x_resolution, 10)?,
-                    y_resolution: u32::from_str_radix(y_resolution, 10)?,
-                })
+                font.size = Some(BDFPropertySize { point_size, x_resolution, y_resolution })
+            }
+            "FONTBOUNDINGBOX" => {
+                let (width, height, offset_x, offset_y) = split_str_into_4::<_, _, _, _, FontError>(
+                    property_value_literal,
+                    " ",
+                    |v| i32::from_str_radix(v, 10),
+                    "Missing BBX value",
+                )?;
+                font.bounding_box = Some(BBX { width, height, offset_x, offset_y })
             }
             "COMMENT" => { /* Skip */ }
             "STARTPROPERTIES" => {
@@ -155,39 +183,33 @@ fn parse_char(
                         character.encoding = Some(u32::from_str_radix(property_value_literal, 10)?)
                     }
                     "DWIDTH" => {
-                        let mut entries = property_value_literal.splitn(2, ' ');
-                        let d_width_x = entries
-                            .next()
-                            .ok_or_else(|| "Missing DWIDTH x")
-                            .map(|v| u32::from_str_radix(v, 10))??;
-                        let d_width_y = entries
-                            .next()
-                            .ok_or_else(|| "Missing DWIDTH y")
-                            .map(|v| u32::from_str_radix(v, 10))??;
-
+                        let (d_width_x, d_width_y) = split_str_into_2::<_, _, _, _, FontError>(
+                            &property_value_literal,
+                            " ",
+                            |v| u32::from_str_radix(v, 10),
+                            "Missing DWIDTH value",
+                        )?;
                         character.d_width = Some((d_width_x, d_width_y))
                     }
                     "BBX" => {
-                        let mut entries = property_value_literal.splitn(4, ' ');
-                        let width = entries
-                            .next()
-                            .ok_or_else(|| "Missing BBX width")
-                            .map(|v| i32::from_str_radix(v, 10))??;
-                        let height = entries
-                            .next()
-                            .ok_or_else(|| "Missing BBX height")
-                            .map(|v| i32::from_str_radix(v, 10))??;
-                        let x = entries
-                            .next()
-                            .ok_or_else(|| "Missing BBX x")
-                            .map(|v| i32::from_str_radix(v, 10))??;
-                        let y = entries
-                            .next()
-                            .ok_or_else(|| "Missing BBX y")
-                            .map(|v| i32::from_str_radix(v, 10))??;
-                        character.bbx = Some((width, height, x, y))
+                        let (width, height, offset_x, offset_y) =
+                            split_str_into_4::<_, _, _, _, FontError>(
+                                &property_value_literal,
+                                " ",
+                                |v| i32::from_str_radix(v, 10),
+                                "Missing BBX value",
+                            )?;
+                        character.bounding_box = Some(BBX { width, height, offset_x, offset_y })
                     }
-                    "SWIDTH" => {}
+                    "SWIDTH" => {
+                        let (s_width_x, s_width_y) = split_str_into_2::<_, _, _, _, FontError>(
+                            &property_value_literal,
+                            " ",
+                            |v| u32::from_str_radix(v, 10),
+                            "Missing SWIDTH value",
+                        )?;
+                        character.s_width = Some((s_width_x, s_width_y))
+                    }
                     _ => println!("Unexpected character property {}", line),
                 }
             }
@@ -207,20 +229,6 @@ fn parse_char(
     character.bitmap = Some(bitmap);
     character.nested_bitmap = None;
     Ok(character)
-}
-
-#[allow(dead_code)]
-fn split_str_into_2<'a, T>(
-    s: &'a str,
-    pattern: &str,
-    transform: &dyn Fn(&str) -> T,
-    missing_message: &str,
-) -> Result<(T, T), FontError> {
-    let mut split = s.splitn(2, pattern);
-    Ok((
-        transform(split.next().ok_or_else(|| missing_message)?),
-        transform(split.next().ok_or_else(|| missing_message)?),
-    ))
 }
 
 fn parse_chars(lines: &mut Lines<BufReader<&[u8]>>) -> Result<Vec<BDFCharacter>, FontError> {

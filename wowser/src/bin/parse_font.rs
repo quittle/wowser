@@ -27,7 +27,7 @@ fn main() -> Result<(), FontError> {
         for char in characters {
             if let Some(char) = char {
                 window
-                    .draw_bitmap(&offset, &char.bitmap, char.width)
+                    .draw_bitmap(&(&offset + &char.offset), &char.bitmap, char.width)
                     .expect("Unable to draw bitmap");
                 offset.x += char.next_char_offset as i32;
             }

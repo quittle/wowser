@@ -407,9 +407,9 @@ checksum = "0b631f7e854af39a1739f401cf34a8a013dfe09eac4fa4dba91e9768bd28168d"
 
 [[package]]
 name = "openssl-probe"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
+checksum = "153ce3cbb4eb8b9c2c110c9e4e91601660400ba56cd4246403ec581c831eba14"
 
 [[package]]
 name = "openssl-sys"

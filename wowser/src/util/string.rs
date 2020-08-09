@@ -150,20 +150,6 @@ where
     ))
 }
 
-// macro_rules! splitsky {
-//     ($string:expr, $pattern:expr, $transform:expr, $($message:expr),+) => {{
-//         (
-//             let messages: ::std::vec::Vec<&::std::str> = vec!($($message),+);
-//             let string: &::std::str = $string;
-//             let mut split = string.splitn(message.len(), $pattern);
-
-//             ($transform(split.next().ok_or_else(|| $message))?,+)
-//             // transform(split.next().ok_or_else(|| missing_message)?),
-//             // transform(split.next().ok_or_else(|| missing_message)?),
-//         )
-//     }};
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    fn test_splitsky() {
+    fn test_split_str() {
         let result: Result<(i32, i32), TestError> =
             split_str_into_2("1 2 3", " ", |s| i32::from_str_radix(s, 10), "missing");
         result.expect_err("Invalid result");

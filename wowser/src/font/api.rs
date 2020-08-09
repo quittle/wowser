@@ -1,14 +1,13 @@
 use crate::util::Point;
-use std::borrow::Cow;
 
 pub trait Font {
-    fn render_character(&self, character: char) -> Option<RenderedCharacter<'_>>;
+    fn render_character(&self, character: char) -> Option<RenderedCharacter>;
 }
 
-#[derive(Debug)]
-pub struct RenderedCharacter<'a> {
-    pub bitmap: Cow<'a, [u8]>,
-    pub width: u32,
-    pub offset: Point<i32>,
-    pub next_char_offset: u32,
+#[derive(Debug, Clone)]
+pub struct RenderedCharacter {
+    pub bitmap: Vec<u8>,
+    pub width: f32,
+    pub offset: Point<f32>,
+    pub next_char_offset: f32,
 }

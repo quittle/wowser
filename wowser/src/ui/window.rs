@@ -79,4 +79,8 @@ impl Window {
 
         Ok(())
     }
+
+    pub fn get_bounds(&self) -> &Rect<i32> {
+        &self.bounds
+    }
 }

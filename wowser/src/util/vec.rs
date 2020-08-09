@@ -39,7 +39,7 @@ pub fn vec_window_split<'a, T: PartialEq>(vec: &'a [T], separator: &[T]) -> Vec<
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

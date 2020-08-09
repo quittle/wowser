@@ -5,7 +5,7 @@ use wowser::util::{get_bit, Bit, Point};
 
 use std::env;
 use std::fs;
-use std::thread;
+use std::{borrow::Borrow, thread};
 
 fn main() -> Result<(), FontError> {
     let args: Vec<String> = env::args().collect();
@@ -23,13 +23,17 @@ fn main() -> Result<(), FontError> {
     {
         let mut window = Window::new().expect("Unable to make ui.");
         thread::sleep(std::time::Duration::from_millis(1000));
-        let mut offset: Point<i32> = Point { x: 10, y: 10 };
+        let mut offset: Point<f32> = Point { x: 10_f32, y: 10_f32 };
         for char in characters {
             if let Some(char) = char {
                 window
-                    .draw_bitmap(&(&offset + &char.offset), &char.bitmap, char.width)
+                    .draw_bitmap(
+                        &(offset.borrow() + &char.offset).into(),
+                        &char.bitmap,
+                        char.width as u32,
+                    )
                     .expect("Unable to draw bitmap");
-                offset.x += char.next_char_offset as i32;
+                offset.x += char.next_char_offset;
             }
         }
         thread::sleep(std::time::Duration::from_millis(200000));

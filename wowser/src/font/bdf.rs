@@ -1,7 +1,7 @@
 use super::{Font, FontError, RenderedCharacter};
 use crate::util::{split_str_into_2, split_str_into_3, split_str_into_4, string_to_bytes, Point};
 use std::io::{BufRead, BufReader, Lines};
-use std::{borrow::Cow, cmp, iter, str::FromStr};
+use std::{cmp, iter, str::FromStr};
 
 #[derive(Debug, Default)]
 pub struct BDFFont {
@@ -66,7 +66,7 @@ impl BDFFont {
 }
 
 impl Font for BDFFont {
-    fn render_character(&self, character: char) -> Option<RenderedCharacter<'_>> {
+    fn render_character(&self, character: char) -> Option<RenderedCharacter> {
         for c in self.characters.as_deref()? {
             if c.encoding == Some(character as u32) {
                 let bounding_box = c
@@ -75,10 +75,13 @@ impl Font for BDFFont {
                     .or_else(|| self.bounding_box.as_ref())
                     .unwrap_or(&BBX::DEFAULT);
                 return Some(RenderedCharacter {
-                    bitmap: Cow::from(c.bitmap.as_deref()?),
-                    width: c.d_width?.0,
-                    offset: Point { x: bounding_box.offset_x, y: bounding_box.offset_y },
-                    next_char_offset: c.d_width?.0,
+                    bitmap: c.bitmap.clone()?,
+                    width: c.d_width?.0 as f32,
+                    offset: Point {
+                        x: bounding_box.offset_x as f32,
+                        y: bounding_box.offset_y as f32,
+                    },
+                    next_char_offset: c.d_width?.0 as f32,
                 });
             }
         }

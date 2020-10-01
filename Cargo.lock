@@ -91,9 +91,9 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "clang-sys"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9da1484c6a890e374ca5086062d4847e0a2c1e5eba9afa5d48c09e8eb39b2519"
+checksum = "fa785e9017cb8e8c8045e3f096b7d1ebc4d7337cceccdca8d678a27f788ac133"
 dependencies = [
  "glob",
  "libc",

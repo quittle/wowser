@@ -18,8 +18,10 @@ env:
     - RUST_BACKTRACE=1 DISPLAY=:99
 before_install:
     - rustup component add rustfmt
+    - rustup component add clippy
 script:
     - cargo build --all
     - cargo test --all
     - cargo fmt --all -- --check
+    - cargo clippy --all-targets --all-features -- -D warnings
     - cargo doc --all

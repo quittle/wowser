@@ -52,9 +52,6 @@ impl Token for MathToken {
     }
 
     fn is_terminator(&self) -> bool {
-        match self {
-            MathToken::Terminator => true,
-            _ => false,
-        }
+        matches!(self, MathToken::Terminator)
     }
 }

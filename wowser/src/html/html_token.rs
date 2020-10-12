@@ -122,9 +122,6 @@ impl Token for HtmlToken {
     }
 
     fn is_terminator(&self) -> bool {
-        match self {
-            HtmlToken::Terminator => true,
-            _ => false,
-        }
+        matches!(self, HtmlToken::Terminator)
     }
 }

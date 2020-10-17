@@ -8,8 +8,52 @@ use std::{borrow::Borrow, thread};
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
 
+fn example_style_nodes() -> render::StyleNode {
+    render::StyleNode {
+        display: render::StyleNodeDisplay::Block,
+        border_width: 2.0,
+        border_color: render::Color::RED,
+        background_color: render::Color::BLUE,
+        padding: 10.0,
+        margin: 5.0,
+        child: render::StyleNodeChild::Nodes(vec![
+            render::StyleNode {
+                display: render::StyleNodeDisplay::Inline,
+                border_width: 2.0,
+                border_color: render::Color::RED,
+                background_color: render::Color::BLUE,
+                padding: 10.0,
+                margin: 5.0,
+                child: render::StyleNodeChild::Text(render::TextStyleNode {
+                    text: String::from("test text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text"),
+                    font_size: 12.0,
+                    text_color: render::Color::BLACK,
+                }),
+            },
+            render::StyleNode {
+                display: render::StyleNodeDisplay::Inline,
+                border_width: 2.0,
+                border_color: render::Color::RED,
+                background_color: render::Color::BLUE,
+                padding: 30.0,
+                margin: 5.0,
+                child: render::StyleNodeChild::Nodes(vec![]),
+            },
+            render::StyleNode {
+                display: render::StyleNodeDisplay::Block,
+                border_width: 1.0,
+                border_color: render::Color::RED,
+                background_color: render::Color::BLUE,
+                padding: 5.0,
+                margin: 5.0,
+                child: render::StyleNodeChild::Nodes(vec![]),
+            },
+        ]),
+    }
+}
+
 fn render(window: &mut Window) {
-    let mut example_root = render::example_style_nodes();
+    let mut example_root = example_style_nodes();
     normalize_style_nodes(&mut example_root);
     let style_root = render::style_to_scene(&example_root);
 

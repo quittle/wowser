@@ -10,6 +10,7 @@ pub struct StyleNode {
     pub background_color: Color,
     pub padding: f32,
     pub margin: f32,
+    pub width: StyleNodeDimen,
     pub child: StyleNodeChild,
 }
 
@@ -22,6 +23,7 @@ impl StyleNode {
             background_color: Color::TRANSPARENT,
             padding: 0_f32,
             margin: 0_f32,
+            width: StyleNodeDimen::Auto,
             child: StyleNodeChild::Nodes(vec![]),
         }
     }
@@ -31,6 +33,22 @@ impl StyleNode {
 pub enum StyleNodeDisplay {
     Inline,
     Block,
+}
+
+impl StyleNodeDisplay {
+    pub fn is_block(&self) -> bool {
+        matches!(self, StyleNodeDisplay::Block)
+    }
+
+    pub fn is_inline(&self) -> bool {
+        matches!(self, StyleNodeDisplay::Inline)
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum StyleNodeDimen {
+    Auto,
+    Pixels(f32),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -53,14 +71,14 @@ pub fn normalize_style_nodes(style_node: &mut StyleNode) -> &mut StyleNode {
     let background_color = style_node.background_color;
     match &mut style_node.child {
         StyleNodeChild::Text(text_style_node) => {
-            // Split text on spaces to enable word wrapping
-            if text_style_node.text.contains(' ') {
-                let split_text = text_style_node.text.split(' ');
+            // Split text on whitespace to enable word wrapping
+            if text_style_node.text.split_whitespace().count() > 1 {
+                let split_text = text_style_node.text.split_whitespace();
                 style_node.child = StyleNodeChild::Nodes(
                     split_text
                         .map(|chunk| {
                             let mut node: TextStyleNode = text_style_node.clone();
-                            node.text = chunk.to_string();
+                            node.text = chunk.to_string() + " ";
                             StyleNode {
                                 display: StyleNodeDisplay::Inline,
                                 border_width: 0_f32,
@@ -68,6 +86,7 @@ pub fn normalize_style_nodes(style_node: &mut StyleNode) -> &mut StyleNode {
                                 background_color,
                                 padding: 0_f32,
                                 margin: 0_f32,
+                                width: StyleNodeDimen::Auto,
                                 child: StyleNodeChild::Text(node),
                             }
                         })
@@ -135,6 +154,7 @@ mod tests {
                 background_color: Color::BLUE,
                 padding: 2_f32,
                 margin: 3_f32,
+                width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Nodes(vec![
                     StyleNode::new_default(StyleNodeDisplay::Inline),
                     StyleNode::new_default(StyleNodeDisplay::Inline),
@@ -151,6 +171,7 @@ mod tests {
                     background_color: Color::BLUE,
                     padding: 2_f32,
                     margin: 3_f32,
+                    width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode::new_default(StyleNodeDisplay::Inline),
                         StyleNode::new_default(StyleNodeDisplay::Inline)
@@ -169,6 +190,7 @@ mod tests {
                 background_color: Color::BLUE,
                 padding: 2_f32,
                 margin: 3_f32,
+                width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Nodes(vec![
                     StyleNode::new_default(StyleNodeDisplay::Block),
                     StyleNode::new_default(StyleNodeDisplay::Block),
@@ -185,6 +207,7 @@ mod tests {
                     background_color: Color::BLUE,
                     padding: 2_f32,
                     margin: 3_f32,
+                    width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode::new_default(StyleNodeDisplay::Block),
                         StyleNode::new_default(StyleNodeDisplay::Block)
@@ -203,6 +226,7 @@ mod tests {
                 background_color: Color::BLUE,
                 padding: 2_f32,
                 margin: 3_f32,
+                width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Nodes(vec![
                     StyleNode::new_default(StyleNodeDisplay::Inline),
                     StyleNode::new_default(StyleNodeDisplay::Block),
@@ -220,6 +244,7 @@ mod tests {
                     background_color: Color::BLUE,
                     padding: 2_f32,
                     margin: 3_f32,
+                    width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode {
                             display: StyleNodeDisplay::Block,
@@ -228,6 +253,7 @@ mod tests {
                             background_color: Color::TRANSPARENT,
                             padding: 0_f32,
                             margin: 0_f32,
+                            width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Nodes(vec!(StyleNode::new_default(
                                 StyleNodeDisplay::Inline
                             )))
@@ -240,6 +266,7 @@ mod tests {
                             background_color: Color::TRANSPARENT,
                             padding: 0_f32,
                             margin: 0_f32,
+                            width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Nodes(vec!(StyleNode::new_default(
                                 StyleNodeDisplay::Inline
                             )))
@@ -259,6 +286,7 @@ mod tests {
                 background_color: Color::BLUE,
                 padding: 2_f32,
                 margin: 3_f32,
+                width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Text(TextStyleNode {
                     text: "text with spaces".to_string(),
                     font_size: 4_f32,
@@ -277,6 +305,7 @@ mod tests {
                     background_color: Color::BLUE,
                     padding: 2_f32,
                     margin: 3_f32,
+                    width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode {
                             display: StyleNodeDisplay::Inline,
@@ -285,6 +314,7 @@ mod tests {
                             background_color: Color::BLUE,
                             padding: 0_f32,
                             margin: 0_f32,
+                            width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
                                 text: "text".to_string(),
                                 font_size: 4_f32,
@@ -298,6 +328,7 @@ mod tests {
                             background_color: Color::BLUE,
                             padding: 0_f32,
                             margin: 0_f32,
+                            width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
                                 text: "with".to_string(),
                                 font_size: 4_f32,
@@ -311,6 +342,7 @@ mod tests {
                             background_color: Color::BLUE,
                             padding: 0_f32,
                             margin: 0_f32,
+                            width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
                                 text: "spaces".to_string(),
                                 font_size: 4_f32,

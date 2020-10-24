@@ -1,22 +1,63 @@
 use crate::{font::BDFFont, font::CachingFont, util::Point};
 
 use super::{
-    Rect, RectangleSceneNode, SceneNode, StyleNode, StyleNodeChild, TextSceneNode, TextStyleNode,
+    Rect, RectangleSceneNode, SceneNode, StyleNode, StyleNodeChild, StyleNodeDimen,
+    StyleNodeDisplay, TextSceneNode, TextStyleNode,
 };
 
-pub fn style_to_scene(style_node: &StyleNode) -> Vec<SceneNode> {
-    let mut nodes = style_to_scene_r(style_node, &Point { x: 0_f32, y: 0_f32 });
+/// This is the default font used for rendering
+const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
+
+pub fn style_to_scene(
+    style_node: &StyleNode,
+    parent_left: f32,
+    parent_width: f32,
+) -> Vec<SceneNode> {
+    let mut font: CachingFont = CachingFont::wrap(Box::new(
+        BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
+    ));
+    let mut nodes = style_to_scene_r(
+        style_node,
+        &Point { x: 0_f32, y: 0_f32 },
+        parent_left,
+        parent_width,
+        &mut font,
+    );
     nodes.reverse();
     nodes
 }
 
-fn style_to_scene_r(style_node: &StyleNode, offset: &Point<f32>) -> Vec<SceneNode> {
+// Notes:
+// You can be smaller than your parent
+// If block && width && wider than parent && children wider than self -> Use width
+// If block && width && wider than parent && children small than self -> Use width
+// If block && width && smaller than parent && children wider than self -> Use width
+// If block && !width -> Match first parent block
+// If inline && (width || !width) && contains inline -> min(first parent block, children-width)
+// If inline && contains block -> min(first parent block, children-width)
+fn style_to_scene_r(
+    style_node: &StyleNode,
+    offset: &Point<f32>,
+    parent_left: f32,
+    parent_width: f32,
+    font: &mut CachingFont,
+) -> Vec<SceneNode> {
     let root_offset = offset + &Point { x: style_node.margin, y: style_node.margin };
+    let default_content_width = match style_node.width {
+        StyleNodeDimen::Auto => match style_node.display {
+            StyleNodeDisplay::Inline => 0_f32,
+            StyleNodeDisplay::Block => parent_width,
+        },
+        StyleNodeDimen::Pixels(width) => match style_node.display {
+            StyleNodeDisplay::Inline => 0_f32,
+            StyleNodeDisplay::Block => width,
+        },
+    };
     let mut root = SceneNode::RectangleSceneNode(RectangleSceneNode {
         bounds: Rect {
             x: root_offset.x,
             y: root_offset.y,
-            width: style_node.padding * 2_f32,
+            width: default_content_width + style_node.padding * 2_f32,
             height: style_node.padding * 2_f32,
         },
         fill: style_node.background_color,
@@ -24,14 +65,31 @@ fn style_to_scene_r(style_node: &StyleNode, offset: &Point<f32>) -> Vec<SceneNod
         border_width: style_node.border_width,
     });
 
-    let base_child_offset = root_offset + Point { x: style_node.padding, y: style_node.padding };
+    let base_child_offset = &root_offset + &Point { x: style_node.padding, y: style_node.padding };
     let mut child_offset = base_child_offset.clone();
 
     match &style_node.child {
         StyleNodeChild::Text(text) => {
-            let child_text = text_style_to_scene(text, &child_offset);
-            root.mut_bounds().width += child_text.bounds().width;
-            root.mut_bounds().height += child_text.bounds().height;
+            let mut child_text: SceneNode = text_style_to_scene(text, &child_offset, font);
+            if let SceneNode::TextSceneNode(text_node) = &mut child_text {
+                if text_node.bounds.right() > parent_left + parent_width
+                    && text_node.bounds.x != 0_f32
+                {
+                    text_node.bounds.x = parent_left;
+                    text_node.bounds.y += text_node.font_size;
+
+                    root.mut_bounds().x = parent_left;
+                    root.mut_bounds().y += text_node.font_size;
+
+                    child_offset.x = root.bounds().right();
+                    child_offset.y = root.bounds().y;
+                }
+
+                root.mut_bounds().width += text_node.bounds.width;
+                root.mut_bounds().height += text_node.font_size;
+            } else {
+                debug_assert!(false, "Expected TextSceneNode");
+            }
             vec![root, child_text]
         }
         StyleNodeChild::Nodes(nodes) => {
@@ -39,8 +97,26 @@ fn style_to_scene_r(style_node: &StyleNode, offset: &Point<f32>) -> Vec<SceneNod
 
             let mut ret = vec![root];
 
+            // Parent width to pass to children. Use parent width unless a block has explicitly set width
+            let (parent_left_for_children, parent_width_for_children): (f32, f32) =
+                if let StyleNodeDimen::Pixels(my_width) = style_node.width {
+                    if style_node.display.is_block() {
+                        (child_offset.x, my_width)
+                    } else {
+                        (parent_left, parent_width)
+                    }
+                } else {
+                    (parent_left, parent_width)
+                };
+
             for node in nodes {
-                let new_children = style_to_scene_r(node, &child_offset);
+                let new_children = style_to_scene_r(
+                    node,
+                    &child_offset,
+                    parent_left_for_children,
+                    parent_width_for_children,
+                    font,
+                );
                 if let Some(child) = new_children.first() {
                     child_offset +=
                         Point { x: child.bounds().width + node.margin * 2_f32, y: 0_f32 };
@@ -48,6 +124,9 @@ fn style_to_scene_r(style_node: &StyleNode, offset: &Point<f32>) -> Vec<SceneNod
                         max_child_height.max(child.bounds().height + node.margin * 2_f32);
                 }
                 ret.extend(new_children);
+                let last_child = ret.last().expect("").bounds();
+                child_offset.x = last_child.right();
+                child_offset.y = last_child.y;
             }
 
             let mut root_bounds = ret.first_mut().expect("").mut_bounds();
@@ -59,17 +138,16 @@ fn style_to_scene_r(style_node: &StyleNode, offset: &Point<f32>) -> Vec<SceneNod
     }
 }
 
-const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
-
-fn text_style_to_scene(node: &TextStyleNode, offset: &Point<f32>) -> SceneNode {
-    let mut font: CachingFont = CachingFont::wrap(Box::new(
-        BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
-    ));
+fn text_style_to_scene(
+    node: &TextStyleNode,
+    offset: &Point<f32>,
+    font: &mut CachingFont,
+) -> SceneNode {
     SceneNode::TextSceneNode(TextSceneNode {
         bounds: Rect {
             x: offset.x,
             y: offset.y,
-            width: calculate_text_width(&node.text, node.font_size, &mut font),
+            width: calculate_text_width(&node.text, node.font_size, font),
             height: node.font_size,
         },
         text: node.text.clone(),

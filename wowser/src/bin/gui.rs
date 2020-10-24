@@ -16,6 +16,7 @@ fn example_style_nodes() -> render::StyleNode {
         background_color: render::Color::BLUE,
         padding: 10.0,
         margin: 5.0,
+        width: render::StyleNodeDimen::Pixels(300_f32),
         child: render::StyleNodeChild::Nodes(vec![
             render::StyleNode {
                 display: render::StyleNodeDisplay::Inline,
@@ -24,6 +25,7 @@ fn example_style_nodes() -> render::StyleNode {
                 background_color: render::Color::BLUE,
                 padding: 10.0,
                 margin: 5.0,
+                width: render::StyleNodeDimen::Auto,
                 child: render::StyleNodeChild::Text(render::TextStyleNode {
                     text: String::from("test text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text"),
                     font_size: 12.0,
@@ -37,6 +39,7 @@ fn example_style_nodes() -> render::StyleNode {
                 background_color: render::Color::BLUE,
                 padding: 30.0,
                 margin: 5.0,
+                width: render::StyleNodeDimen::Auto,
                 child: render::StyleNodeChild::Nodes(vec![]),
             },
             render::StyleNode {
@@ -46,6 +49,7 @@ fn example_style_nodes() -> render::StyleNode {
                 background_color: render::Color::BLUE,
                 padding: 5.0,
                 margin: 5.0,
+                width: render::StyleNodeDimen::Auto,
                 child: render::StyleNodeChild::Nodes(vec![]),
             },
         ]),
@@ -55,7 +59,7 @@ fn example_style_nodes() -> render::StyleNode {
 fn render(window: &mut Window) {
     let mut example_root = example_style_nodes();
     normalize_style_nodes(&mut example_root);
-    let style_root = render::style_to_scene(&example_root);
+    let style_root = render::style_to_scene(&example_root, 0_f32, window.get_bounds().width as f32);
 
     let mut font: CachingFont = CachingFont::wrap(Box::new(
         BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
@@ -89,7 +93,6 @@ fn render(window: &mut Window) {
                 border_color: _border_color,
                 border_width: _border_width,
             }) => {
-                println!("Rect: {:?}", bounds);
                 window
                     .draw_rect(&Rect {
                         x: bounds.x as i32,

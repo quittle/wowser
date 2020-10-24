@@ -1,4 +1,4 @@
-# Wowser [![Build Status](https://travis-ci.com/quittle/wowser.svg?branch=master)](https://travis-ci.com/quittle/wowser)
+# Wowser [![Build Status](https://travis-ci.com/quittle/wowser.svg?branch=main)](https://travis-ci.com/quittle/wowser)
 
 This is a side-project writen to learn Rust and therefore likely contains numerous issues, lacks in performance, and may have security or availability risks.
 

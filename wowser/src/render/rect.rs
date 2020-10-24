@@ -25,10 +25,11 @@ impl Rect {
 }
 
 #[cfg(test)]
+#[allow(clippy::float_cmp)]
 mod tests {
     use super::*;
 
-    const RECT: Rect =  Rect { x: 1_f32, y: 2_f32, width: 3_f32, height: 4_f32 };
+    const RECT: Rect = Rect { x: 1_f32, y: 2_f32, width: 3_f32, height: 4_f32 };
 
     #[test]
     fn rect_top() {

@@ -316,7 +316,7 @@ mod tests {
                             margin: 0_f32,
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
-                                text: "text".to_string(),
+                                text: "text ".to_string(),
                                 font_size: 4_f32,
                                 text_color: Color::GREEN
                             })
@@ -330,7 +330,7 @@ mod tests {
                             margin: 0_f32,
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
-                                text: "with".to_string(),
+                                text: "with ".to_string(),
                                 font_size: 4_f32,
                                 text_color: Color::GREEN
                             })
@@ -344,7 +344,7 @@ mod tests {
                             margin: 0_f32,
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
-                                text: "spaces".to_string(),
+                                text: "spaces ".to_string(),
                                 font_size: 4_f32,
                                 text_color: Color::GREEN
                             })

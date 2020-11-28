@@ -28,13 +28,14 @@ jobs:
           mesa-common-dev \
           pkg-config \
           libssl-dev \
-          libgl1-mesa-dev
+          libgl1-mesa-dev \
+          xvfb
     - name: Clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Build
       run: cargo build --all
     - name: Test
-      run: cargo test --all
+      run: xvfb-run cargo test --all
     - name: Check format
       run: cargo fmt --all -- --check
     - name: Generate Docs

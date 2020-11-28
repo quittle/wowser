@@ -1,0 +1,26 @@
+name: Rust
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  DISPLAY: :99
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    - name: Build
+      run: cargo build --all
+    - name: Test
+      run: cargo test --all
+    - name: Check format
+      run: cargo fmt --all -- --check
+    - name: Generate Docs
+      run: cargo doc --all

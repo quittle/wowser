@@ -1,0 +1,39 @@
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: monthly
+    time: "18:00"
+    timezone: Europe/London
+  open-pull-requests-limit: 99
+  reviewers:
+  - quittle
+  assignees:
+  - quittle
+  allow:
+  - dependency-type: direct
+  - dependency-type: indirect
+  ignore:
+  - dependency-name: futures-channel
+    versions:
+    - 0.3.13
+  - dependency-name: futures-task
+    versions:
+    - 0.3.12
+    - 0.3.13
+  - dependency-name: futures-core
+    versions:
+    - 0.3.13
+  - dependency-name: unicode-normalization
+    versions:
+    - 0.1.17
+  - dependency-name: futures-sink
+    versions:
+    - 0.3.13
+  - dependency-name: futures-io
+    versions:
+    - 0.3.13
+  - dependency-name: futures-util
+    versions:
+    - 0.3.13

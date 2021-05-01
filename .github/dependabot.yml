@@ -5,7 +5,7 @@ updates:
   schedule:
     interval: monthly
     time: "18:00"
-    timezone: America/New York
+    timezone: America/New_York
   open-pull-requests-limit: 99
   reviewers:
   - quittle

@@ -53,22 +53,22 @@ pub fn stringify_node(node: &HtmlNode) -> String {
                 .collect::<Vec<String>>()
                 .join("");
 
-            ret.push_str("<");
+            ret.push('<');
             ret.push_str(tag_name);
 
             if !attributes.is_empty() {
-                ret.push_str(" ");
+                ret.push(' ');
                 ret.push_str(attributes.as_str());
             }
 
             if remaining_children.is_empty() {
                 ret.push_str(" />");
             } else {
-                ret.push_str(">");
+                ret.push('>');
                 ret.push_str(remaining_children.as_str());
                 ret.push_str("</");
                 ret.push_str(tag_name);
-                ret.push_str(">");
+                ret.push('>');
             }
         }
     }

@@ -22,9 +22,9 @@ pub enum GlfwError {
 
 impl Error for GlfwError {}
 
-impl Into<String> for GlfwError {
-    fn into(self) -> String {
-        self.to_string()
+impl From<GlfwError> for String {
+    fn from(error: GlfwError) -> String {
+        error.to_string()
     }
 }
 

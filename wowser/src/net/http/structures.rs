@@ -20,6 +20,6 @@ pub struct HttpHeader {
 
 #[derive(PartialEq)]
 pub enum HttpVerb {
-    GET,
-    HEAD,
+    Get,
+    Head,
 }

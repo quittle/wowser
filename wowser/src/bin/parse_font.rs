@@ -24,17 +24,15 @@ fn main() -> Result<(), FontError> {
         let mut window = Window::new().expect("Unable to make ui.");
         thread::sleep(std::time::Duration::from_millis(1000));
         let mut offset: Point<f32> = Point { x: 10_f32, y: 10_f32 };
-        for char in characters {
-            if let Some(char) = char {
-                window
-                    .draw_bitmap(
-                        &(offset.borrow() + &char.offset).into(),
-                        &char.bitmap,
-                        char.width as u32,
-                    )
-                    .expect("Unable to draw bitmap");
-                offset.x += char.next_char_offset;
-            }
+        for char in characters.into_iter().flatten() {
+            window
+                .draw_bitmap(
+                    &(offset.borrow() + &char.offset).into(),
+                    &char.bitmap,
+                    char.width as u32,
+                )
+                .expect("Unable to draw bitmap");
+            offset.x += char.next_char_offset;
         }
         thread::sleep(std::time::Duration::from_millis(200000));
     }

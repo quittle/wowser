@@ -7,9 +7,9 @@ pub enum MatrixMode {
     Color,
 }
 
-impl Into<GLenum> for MatrixMode {
-    fn into(self) -> GLenum {
-        match self {
+impl From<MatrixMode> for GLenum {
+    fn from(matrix_mode: MatrixMode) -> GLenum {
+        match matrix_mode {
             MatrixMode::ModelView => GL_MODELVIEW,
             MatrixMode::Projection => GL_PROJECTION,
             MatrixMode::Texture => GL_TEXTURE,

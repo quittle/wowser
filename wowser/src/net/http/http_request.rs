@@ -23,7 +23,7 @@ fn parse_headers(vec: &[u8]) -> Option<(HttpStatus, Vec<HttpHeader>, &[u8])> {
     let first_line = std::str::from_utf8(first_line_bytes).ok()?;
     let mut parts = first_line.splitn(3, ' ');
     let http_version = parts.next()?.to_owned();
-    let status_code = u16::from_str_radix(parts.next()?, 10).ok()?;
+    let status_code = parts.next()?.parse::<u16>().ok()?;
     let reason_phrase = parts.next()?.to_owned();
 
     let status = HttpStatus { http_version, status_code, reason_phrase };
@@ -58,7 +58,7 @@ fn determine_content_length(
     status: &HttpStatus,
     headers: &[HttpHeader],
 ) -> Result<u32> {
-    if *verb == HttpVerb::HEAD {
+    if *verb == HttpVerb::Head {
         return Ok(0);
     }
 
@@ -69,7 +69,10 @@ fn determine_content_length(
 
     for header in headers {
         if header.name == "Content-Length" {
-            return u32::from_str_radix(header.value.trim(), 10)
+            return header
+                .value
+                .trim()
+                .parse::<u32>()
                 .map_err(|e| HttpRequestError::from(Box::new(e)));
         }
     }
@@ -90,11 +93,11 @@ impl HttpRequest {
 
     /// Performs a GET request
     pub async fn get(&mut self) -> Result<HttpResponse> {
-        self.make_request(&self.url, &HttpVerb::GET).await
+        self.make_request(&self.url, &HttpVerb::Get).await
     }
 
     pub async fn head(&mut self) -> Result<HttpResponse> {
-        self.make_request(&self.url, &HttpVerb::HEAD).await
+        self.make_request(&self.url, &HttpVerb::Head).await
     }
 
     async fn make_request(&self, url: &Url, verb: &HttpVerb) -> Result<HttpResponse> {
@@ -126,8 +129,8 @@ impl HttpRequest {
         verb: &HttpVerb,
     ) -> result::Result<AsyncTcpStream, std::io::Error> {
         let verb_str = match verb {
-            HttpVerb::GET => "GET",
-            HttpVerb::HEAD => "HEAD",
+            HttpVerb::Get => "GET",
+            HttpVerb::Head => "HEAD",
         };
 
         let mut stream = TcpStream::connect(SocketAddr::new(*ip, self.url.port))?;

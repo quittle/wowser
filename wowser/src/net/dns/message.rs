@@ -56,12 +56,12 @@ impl TryFrom<u8> for OpCode {
     }
 }
 
-impl Into<u8> for OpCode {
-    fn into(self) -> u8 {
-        match self {
-            Self::Query => 0,
-            Self::InverseQuery => 1,
-            Self::Status => 2,
+impl From<OpCode> for u8 {
+    fn from(op_code: OpCode) -> u8 {
+        match op_code {
+            OpCode::Query => 0,
+            OpCode::InverseQuery => 1,
+            OpCode::Status => 2,
         }
     }
 }
@@ -76,15 +76,15 @@ pub enum ResponseCode {
     Refused,
 }
 
-impl Into<u8> for ResponseCode {
-    fn into(self) -> u8 {
-        match self {
-            Self::NoError => 0,
-            Self::FormatError => 1,
-            Self::ServerError => 2,
-            Self::NameError => 3,
-            Self::NotImplemented => 4,
-            Self::Refused => 5,
+impl From<ResponseCode> for u8 {
+    fn from(response_code: ResponseCode) -> u8 {
+        match response_code {
+            ResponseCode::NoError => 0,
+            ResponseCode::FormatError => 1,
+            ResponseCode::ServerError => 2,
+            ResponseCode::NameError => 3,
+            ResponseCode::NotImplemented => 4,
+            ResponseCode::Refused => 5,
         }
     }
 }
@@ -108,7 +108,7 @@ impl TryFrom<u8> for ResponseCode {
 #[derive(Debug)]
 pub enum RecordClass {
     Internet,
-    CSNET,
+    CsNet,
     Chaos,
     Hesiod,
 }
@@ -117,16 +117,16 @@ impl AsRef<u16> for RecordClass {
     fn as_ref(&self) -> &u16 {
         match self {
             Self::Internet => &1,
-            Self::CSNET => &2,
+            Self::CsNet => &2,
             Self::Chaos => &3,
             Self::Hesiod => &4,
         }
     }
 }
 
-impl Into<u16> for RecordClass {
-    fn into(self) -> u16 {
-        *(&self).as_ref()
+impl From<RecordClass> for u16 {
+    fn from(record_class: RecordClass) -> u16 {
+        *(&record_class).as_ref()
     }
 }
 
@@ -136,7 +136,7 @@ impl TryFrom<u16> for RecordClass {
     fn try_from(literal: u16) -> Result<RecordClass, &'static str> {
         match literal {
             1 => Ok(Self::Internet),
-            2 => Ok(Self::CSNET),
+            2 => Ok(Self::CsNet),
             3 => Ok(Self::Chaos),
             4 => Ok(Self::Hesiod),
             _ => Err("Unsupported record class"),
@@ -187,9 +187,9 @@ impl AsRef<u16> for RecordType {
     }
 }
 
-impl Into<u16> for RecordType {
-    fn into(self) -> u16 {
-        *(&self).as_ref()
+impl From<RecordType> for u16 {
+    fn from(record_type: RecordType) -> u16 {
+        *(&record_type).as_ref()
     }
 }
 
@@ -239,9 +239,9 @@ pub struct DNSAnswer {
 #[derive(Debug)]
 pub enum Protocol {
     Unsuported,
-    TCP,
-    UDP,
-    SMTP,
+    Tcp,
+    Udp,
+    Smtp,
 }
 
 impl Protocol {
@@ -250,9 +250,9 @@ impl Protocol {
     fn value(&self) -> u8 {
         match self {
             Self::Unsuported => 0,
-            Self::TCP => 6,
-            Self::UDP => 17,
-            Self::SMTP => 25,
+            Self::Tcp => 6,
+            Self::Udp => 17,
+            Self::Smtp => 25,
         }
     }
 }

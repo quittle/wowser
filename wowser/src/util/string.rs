@@ -93,8 +93,8 @@ pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
     })
 }
 
-pub fn split_str_into_2<'a, T, Transform, EM, EF, E>(
-    s: &'a str,
+pub fn split_str_into_2<T, Transform, EM, EF, E>(
+    s: &str,
     pattern: &str,
     transform: Transform,
     missing_message: EM,
@@ -106,13 +106,13 @@ where
 {
     let mut split = s.splitn(2, pattern);
     Ok((
-        transform(split.next().ok_or_else(|| missing_message)?)?,
-        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
     ))
 }
 
-pub fn split_str_into_3<'a, T, Transform, EM, EF, E>(
-    s: &'a str,
+pub fn split_str_into_3<T, Transform, EM, EF, E>(
+    s: &str,
     pattern: &str,
     transform: Transform,
     missing_message: EM,
@@ -124,14 +124,14 @@ where
 {
     let mut split = s.splitn(3, pattern);
     Ok((
-        transform(split.next().ok_or_else(|| missing_message)?)?,
-        transform(split.next().ok_or_else(|| missing_message)?)?,
-        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
     ))
 }
 
-pub fn split_str_into_4<'a, T, Transform, EM, EF, E>(
-    s: &'a str,
+pub fn split_str_into_4<T, Transform, EM, EF, E>(
+    s: &str,
     pattern: &str,
     transform: Transform,
     missing_message: EM,
@@ -143,10 +143,10 @@ where
 {
     let mut split = s.splitn(4, pattern);
     Ok((
-        transform(split.next().ok_or_else(|| missing_message)?)?,
-        transform(split.next().ok_or_else(|| missing_message)?)?,
-        transform(split.next().ok_or_else(|| missing_message)?)?,
-        transform(split.next().ok_or_else(|| missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
+        transform(split.next().ok_or(missing_message)?)?,
     ))
 }
 
@@ -179,19 +179,19 @@ mod tests {
     #[test]
     fn test_split_str() {
         let result: Result<(i32, i32), TestError> =
-            split_str_into_2("1 2 3", " ", |s| i32::from_str_radix(s, 10), "missing");
+            split_str_into_2("1 2 3", " ", |s| s.parse::<i32>(), "missing");
         result.expect_err("Invalid result");
 
         let result: Result<(i32, i32), TestError> =
-            split_str_into_2("1 2", " ", |v| i32::from_str_radix(v, 10), "missing");
+            split_str_into_2("1 2", " ", |v| v.parse::<i32>(), "missing");
         assert_eq!(result.unwrap(), (1, 2));
 
         let result: Result<(i32, i32, i32), TestError> =
-            split_str_into_3("1 2 3", " ", |v| i32::from_str_radix(v, 10), "missing");
+            split_str_into_3("1 2 3", " ", |v| v.parse::<i32>(), "missing");
         assert_eq!(result.unwrap(), (1, 2, 3));
 
         let result: Result<(i32, i32, i32, i32), TestError> =
-            split_str_into_4("1 2 3 4", " ", |v| i32::from_str_radix(v, 10), "missing");
+            split_str_into_4("1 2 3 4", " ", |v| v.parse::<i32>(), "missing");
         assert_eq!(result.unwrap(), (1, 2, 3, 4));
     }
 

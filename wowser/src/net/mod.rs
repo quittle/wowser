@@ -17,7 +17,7 @@ mod tests {
     #[test]
     pub fn head_example_com() {
         let mut request = HttpRequest::new(Url::new(
-            UrlProtocol::HTTP,
+            UrlProtocol::Http,
             UrlHost::DomainName("example.com".to_string()),
             80,
             "",
@@ -33,7 +33,7 @@ mod tests {
     #[test]
     pub fn get_example_com() {
         let mut request = HttpRequest::new(Url::new(
-            UrlProtocol::HTTP,
+            UrlProtocol::Http,
             UrlHost::DomainName("example.com".to_string()),
             80,
             "",
@@ -75,7 +75,10 @@ mod tests {
             .find(|header| header.name == "Content-Length")
             .expect("Content-Length required");
 
-        usize::from_str_radix(&content_length.value.trim(), 10)
+        content_length
+            .value
+            .trim()
+            .parse::<usize>()
             .unwrap_or_else(|_| panic!("Invalid content length: {}", content_length.value))
     }
 }

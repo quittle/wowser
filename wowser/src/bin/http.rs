@@ -8,7 +8,7 @@ fn main() {
     let domain = args.get(2).expect("domain not passed in");
 
     let mut request = net::HttpRequest::new(net::Url::new(
-        net::UrlProtocol::HTTP,
+        net::UrlProtocol::Http,
         net::UrlHost::DomainName(domain.to_string()),
         80,
         "",

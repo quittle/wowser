@@ -82,9 +82,9 @@ pub enum Capability {
     VertexProgramTwoSide,
 }
 
-impl Into<GLenum> for Capability {
-    fn into(self) -> GLenum {
-        match self {
+impl From<Capability> for GLenum {
+    fn from(capability: Capability) -> GLenum {
+        match capability {
             Capability::AlphaTest => GL_ALPHA_TEST,
             Capability::AutoNormal => GL_AUTO_NORMAL,
             Capability::Blend => GL_BLEND,

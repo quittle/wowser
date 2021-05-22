@@ -3,13 +3,13 @@ use std::net::IpAddr;
 
 /// Represents protocols supported by wowser. Future additions to include HTTPS, FTP, FILE, etc.
 pub enum UrlProtocol {
-    HTTP,
+    Http,
 }
 
 impl fmt::Display for UrlProtocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let protocol = match self {
-            UrlProtocol::HTTP => "http",
+            UrlProtocol::Http => "http",
         };
 
         write!(f, "{}", protocol)
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     pub fn test_url_protocol() {
-        assert_eq!("http", UrlProtocol::HTTP.to_string());
+        assert_eq!("http", UrlProtocol::Http.to_string());
     }
 
     #[test]
@@ -121,7 +121,7 @@ mod tests {
         assert_eq!(
             "http://example.com:80/path?query#fragment",
             Url::new(
-                UrlProtocol::HTTP,
+                UrlProtocol::Http,
                 UrlHost::DomainName("example.com".to_string()),
                 80,
                 "/path",
@@ -137,7 +137,7 @@ mod tests {
         assert_eq!(
             "http://example.com:80",
             Url::new(
-                UrlProtocol::HTTP,
+                UrlProtocol::Http,
                 UrlHost::DomainName("example.com".to_string()),
                 80,
                 "",
@@ -151,7 +151,7 @@ mod tests {
     #[test]
     pub fn test_http_request_path() {
         let mut url = Url::new(
-            UrlProtocol::HTTP,
+            UrlProtocol::Http,
             UrlHost::DomainName("example.com".to_string()),
             80,
             "",

@@ -81,7 +81,7 @@ mod tests {
 
     // These are helper functions for building vectors.
 
-    fn v1<'a>(a: &'a [i32]) -> Vec<&'a [i32]> {
+    fn v1(a: &[i32]) -> Vec<&[i32]> {
         vec![a]
     }
 

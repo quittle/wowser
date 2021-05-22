@@ -5,9 +5,9 @@ pub enum Alignment {
     UnpackAlignment,
 }
 
-impl Into<GLenum> for Alignment {
-    fn into(self) -> GLenum {
-        match self {
+impl From<Alignment> for GLenum {
+    fn from(alignment: Alignment) -> GLenum {
+        match alignment {
             Alignment::PackAlignment => GL_PACK_ALIGNMENT,
             Alignment::UnpackAlignment => GL_UNPACK_ALIGNMENT,
         }
@@ -21,9 +21,9 @@ pub enum AlignmentValue {
     Eight,
 }
 
-impl Into<i32> for AlignmentValue {
-    fn into(self) -> i32 {
-        match self {
+impl From<AlignmentValue> for i32 {
+    fn from(alignment_value: AlignmentValue) -> i32 {
+        match alignment_value {
             AlignmentValue::One => 1,
             AlignmentValue::Two => 2,
             AlignmentValue::Four => 4,

@@ -13,9 +13,9 @@ pub enum UiError {
 
 impl Error for UiError {}
 
-impl Into<String> for UiError {
-    fn into(self) -> String {
-        self.to_string()
+impl From<UiError> for String {
+    fn from(error: UiError) -> String {
+        error.to_string()
     }
 }
 

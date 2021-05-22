@@ -13,9 +13,9 @@ pub enum DrawMode {
     Polygon,
 }
 
-impl Into<GLenum> for DrawMode {
-    fn into(self) -> GLenum {
-        match self {
+impl From<DrawMode> for GLenum {
+    fn from(draw_mode: DrawMode) -> GLenum {
+        match draw_mode {
             DrawMode::Points => GL_POINTS,
             DrawMode::Lines => GL_LINES,
             DrawMode::LineStrip => GL_LINE_STRIP,

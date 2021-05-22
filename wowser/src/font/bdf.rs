@@ -8,22 +8,22 @@ pub struct BDFFont {
     pub version: Option<f32>,
     pub name: Option<String>,
     pub size: Option<BDFPropertySize>,
-    pub bounding_box: Option<BBX>,
+    pub bounding_box: Option<Bbx>,
     pub properties: Option<BDFRealProperties>,
     pub characters: Option<Vec<BDFCharacter>>,
 }
 
 /// Bounding box
 #[derive(Debug, Default)]
-pub struct BBX {
+pub struct Bbx {
     pub width: i32,
     pub height: i32,
     pub offset_x: i32,
     pub offset_y: i32,
 }
 
-impl BBX {
-    const DEFAULT: BBX = BBX { width: 0, height: 0, offset_x: 0, offset_y: 0 };
+impl Bbx {
+    const DEFAULT: Bbx = Bbx { width: 0, height: 0, offset_x: 0, offset_y: 0 };
 }
 
 #[derive(Debug, Default)]
@@ -33,7 +33,7 @@ pub struct BDFCharacter {
     pub encoding: Option<u32>,
     pub s_width: Option<(u32, u32)>,
     pub d_width: Option<(u32, u32)>,
-    pub bounding_box: Option<BBX>,
+    pub bounding_box: Option<Bbx>,
     /// The outer vector represents the rows.
     /// The inner vector represents the columns. Columns are right padded to fill out the full byte.
     /// Each bit represents a single pixel.
@@ -73,7 +73,7 @@ impl Font for BDFFont {
                     .bounding_box
                     .as_ref()
                     .or_else(|| self.bounding_box.as_ref())
-                    .unwrap_or(&BBX::DEFAULT);
+                    .unwrap_or(&Bbx::DEFAULT);
                 return Some(RenderedCharacter {
                     bitmap: c.bitmap.clone()?,
                     width: c.d_width?.0 as f32,
@@ -97,8 +97,8 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
     let mut font = BDFFont::default();
     while let Some(line) = next_line(lines)? {
         let mut parts = line.splitn(2, ' ');
-        let property_name = parts.next().ok_or_else(|| "Missing name of property line")?;
-        let property_value_literal = parts.next().ok_or_else(|| "Missing value")?;
+        let property_name = parts.next().ok_or("Missing name of property line")?;
+        let property_value_literal = parts.next().ok_or("Missing value")?;
         match property_name {
             "STARTFONT" => font.version = Some(f32::from_str(property_value_literal)?),
             "FONT" => font.name = Some(property_value_literal.to_string()),
@@ -107,7 +107,7 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
                     split_str_into_3::<_, _, _, _, FontError>(
                         &property_value_literal,
                         " ",
-                        |v| u32::from_str_radix(v, 10),
+                        |v| v.parse::<u32>(),
                         "Missing SIZE value",
                     )?;
 
@@ -117,20 +117,20 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
                 let (width, height, offset_x, offset_y) = split_str_into_4::<_, _, _, _, FontError>(
                     property_value_literal,
                     " ",
-                    |v| i32::from_str_radix(v, 10),
+                    |v| v.parse::<i32>(),
                     "Missing BBX value",
                 )?;
-                font.bounding_box = Some(BBX { width, height, offset_x, offset_y })
+                font.bounding_box = Some(Bbx { width, height, offset_x, offset_y })
             }
             "COMMENT" => { /* Skip */ }
             "STARTPROPERTIES" => {
-                let _property_count = u32::from_str_radix(property_value_literal, 10)?;
+                let _property_count = property_value_literal.parse::<u32>()?;
                 let real_properties = parse_real_properties(lines)?;
                 // TODO: Verify the right number of properties were found.
                 font.properties = Some(real_properties)
             }
             "CHARS" => {
-                let char_count = u32::from_str_radix(property_value_literal, 10)?;
+                let char_count = property_value_literal.parse::<u32>()?;
                 let chars = parse_chars(lines)?;
                 if chars.len() != char_count as usize {
                     return Err("Unexpected number of characters found".into());
@@ -170,7 +170,7 @@ fn parse_char(
         }
 
         let mut parts = line.splitn(2, ' ');
-        let property_name = parts.next().ok_or_else(|| "Missing name of property line")?;
+        let property_name = parts.next().ok_or("Missing name of property line")?;
         let property_value_literal = parts.next();
 
         match property_name {
@@ -180,16 +180,14 @@ fn parse_char(
             }
             _ => {
                 let property_value_literal =
-                    property_value_literal.ok_or_else(|| "Missing encoding value")?;
+                    property_value_literal.ok_or("Missing encoding value")?;
                 match property_name {
-                    "ENCODING" => {
-                        character.encoding = Some(u32::from_str_radix(property_value_literal, 10)?)
-                    }
+                    "ENCODING" => character.encoding = Some(property_value_literal.parse::<u32>()?),
                     "DWIDTH" => {
                         let (d_width_x, d_width_y) = split_str_into_2::<_, _, _, _, FontError>(
                             &property_value_literal,
                             " ",
-                            |v| u32::from_str_radix(v, 10),
+                            |v| v.parse::<u32>(),
                             "Missing DWIDTH value",
                         )?;
                         character.d_width = Some((d_width_x, d_width_y))
@@ -199,16 +197,16 @@ fn parse_char(
                             split_str_into_4::<_, _, _, _, FontError>(
                                 &property_value_literal,
                                 " ",
-                                |v| i32::from_str_radix(v, 10),
+                                |v| v.parse::<i32>(),
                                 "Missing BBX value",
                             )?;
-                        character.bounding_box = Some(BBX { width, height, offset_x, offset_y })
+                        character.bounding_box = Some(Bbx { width, height, offset_x, offset_y })
                     }
                     "SWIDTH" => {
                         let (s_width_x, s_width_y) = split_str_into_2::<_, _, _, _, FontError>(
                             &property_value_literal,
                             " ",
-                            |v| u32::from_str_radix(v, 10),
+                            |v| v.parse::<u32>(),
                             "Missing SWIDTH value",
                         )?;
                         character.s_width = Some((s_width_x, s_width_y))
@@ -261,8 +259,8 @@ fn parse_real_properties(
         }
 
         let mut parts = line.splitn(2, ' ');
-        let property_name = parts.next().ok_or_else(|| "Missing name of property line")?;
-        let property_value_literal = parts.next().ok_or_else(|| "Missing property value")?;
+        let property_name = parts.next().ok_or("Missing name of property line")?;
+        let property_value_literal = parts.next().ok_or("Missing property value")?;
 
         match property_name {
             "COPYRIGHT" => ret.copyright = Some(property_value_literal.to_string()),

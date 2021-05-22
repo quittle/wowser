@@ -13,9 +13,9 @@ pub enum GlError {
 
 impl Error for GlError {}
 
-impl Into<String> for GlError {
-    fn into(self) -> String {
-        self.to_string()
+impl From<GlError> for String {
+    fn from(error: GlError) -> String {
+        error.to_string()
     }
 }
 

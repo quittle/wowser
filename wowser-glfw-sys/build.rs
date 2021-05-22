@@ -3,7 +3,7 @@ use std::env;
 use std::path::Path;
 
 const URL: &str = "https://github.com/glfw/glfw.git";
-const TAG: &str = "3.3.2";
+const TAG: &str = "3.3.4";
 
 fn checkout_glfw(dir: &Path) {
     let repo = if !dir.exists() {

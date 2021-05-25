@@ -27,9 +27,14 @@ fn example_style_nodes() -> render::StyleNode {
                 margin: 5.0,
                 width: render::StyleNodeDimen::Auto,
                 child: render::StyleNodeChild::Text(render::TextStyleNode {
-                    text: String::from("test text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text"),
+                    text: String::from(concat!(
+                        "testa textb textc textd texte textf textg texth texti ",
+                        "text text text text text text text text text text text ",
+                        "text text text text text text text text text text text ",
+                        "text text text text text text text text text"
+                    )),
                     font_size: 12.0,
-                    text_color: render::Color::BLACK,
+                    text_color: render::Color::WHITE,
                 }),
             },
             render::StyleNode {
@@ -71,7 +76,7 @@ fn render(window: &mut Window) {
                 bounds,
                 text,
                 font_size: _font_size,
-                text_color: _text_color,
+                text_color,
             }) => {
                 let mut offset = Point { x: bounds.x, y: bounds.y };
                 for text_char in text.chars() {
@@ -81,6 +86,7 @@ fn render(window: &mut Window) {
                                 &(offset.borrow() + &c.offset).into(),
                                 &c.bitmap,
                                 c.width as u32,
+                                &text_color,
                             )
                             .expect("Unable to draw bitmap");
                         offset.x += c.next_char_offset;
@@ -90,16 +96,20 @@ fn render(window: &mut Window) {
             render::SceneNode::RectangleSceneNode(render::RectangleSceneNode {
                 bounds,
                 fill: _fill,
-                border_color: _border_color,
-                border_width: _border_width,
+                border_color,
+                border_width,
             }) => {
                 window
-                    .draw_rect(&Rect {
-                        x: bounds.x as i32,
-                        y: bounds.y as i32,
-                        width: bounds.width as i32,
-                        height: bounds.height as i32,
-                    })
+                    .draw_rect(
+                        &Rect {
+                            x: bounds.x as i32,
+                            y: bounds.y as i32,
+                            width: bounds.width as i32,
+                            height: bounds.height as i32,
+                        },
+                        &border_color,
+                        border_width,
+                    )
                     .expect("");
             }
         }

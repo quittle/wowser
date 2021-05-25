@@ -1,7 +1,10 @@
-use wowser::font::{BDFFont, Font, FontError, RenderedCharacter};
 use wowser::startup;
 use wowser::ui::Window;
 use wowser::util::{get_bit, Bit, Point};
+use wowser::{
+    font::{BDFFont, Font, FontError, RenderedCharacter},
+    render::Color,
+};
 
 use std::env;
 use std::fs;
@@ -30,6 +33,7 @@ fn main() -> Result<(), FontError> {
                     &(offset.borrow() + &char.offset).into(),
                     &char.bitmap,
                     char.width as u32,
+                    &Color::RED,
                 )
                 .expect("Unable to draw bitmap");
             offset.x += char.next_char_offset;

@@ -14,6 +14,12 @@ pub fn color_3f(red: f32, green: f32, blue: f32) {
     }
 }
 
+pub fn color_4f(red: f32, green: f32, blue: f32, alpha: f32) {
+    unsafe {
+        glColor4f(red, green, blue, alpha);
+    }
+}
+
 pub fn line_width(width: f32) -> GlResult {
     unsafe {
         glLineWidth(width);

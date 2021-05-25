@@ -1,5 +1,8 @@
 use super::UiResult;
-use crate::util::{Point, Rect};
+use crate::{
+    render::{Color, ColorPercent},
+    util::{Point, Rect},
+};
 use wowser_gl as gl;
 use wowser_glfw as glfw;
 
@@ -45,10 +48,25 @@ impl Window {
         Ok(())
     }
 
-    pub fn draw_rect(&mut self, rect: &Rect<i32>) -> UiResult {
+    pub fn draw_rect(
+        &mut self,
+        rect: &Rect<i32>,
+        border_color: &Color,
+        border_width: f32,
+    ) -> UiResult {
+        if border_width <= 0_f32 || border_color.a == 0 {
+            return Ok(());
+        }
+
+        let border_color_percent: ColorPercent = border_color.into();
         gl::point_size(10.0)?;
-        gl::line_width(2.5)?;
-        gl::color_3f(1.0, 0.0, 0.0);
+        gl::line_width(border_width)?;
+        gl::color_4f(
+            border_color_percent.r,
+            border_color_percent.g,
+            border_color_percent.b,
+            border_color_percent.a,
+        );
 
         gl::begin(gl::DrawMode::LineLoop);
         gl::vertex_2i(rect.x, rect.y);
@@ -64,8 +82,17 @@ impl Window {
         Ok(())
     }
 
-    pub fn draw_bitmap(&mut self, point: &Point<i32>, bitmap: &[u8], width: u32) -> UiResult {
+    pub fn draw_bitmap(
+        &mut self,
+        point: &Point<i32>,
+        bitmap: &[u8],
+        width: u32,
+        color: &Color,
+    ) -> UiResult {
         let height: usize = bitmap.len() / width as usize;
+
+        let color_percent: ColorPercent = color.into();
+        gl::color_4f(color_percent.r, color_percent.g, color_percent.b, color_percent.a);
 
         gl::pixel_zoom(1.0, -1.0)?;
         gl::raster_pos_2i(point.x, point.y)?;

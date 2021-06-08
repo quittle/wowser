@@ -13,34 +13,33 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Dependencies
-      run: |
-        rustup component add rustfmt
-        rustup component add clippy
-        sudo apt-get install \
-          cmake \
-          libx11-dev \
-          libxrandr-dev \
-          libxinerama-dev \
-          libxcursor-dev \
-          libxi-dev \
-          mesa-common-dev \
-          pkg-config \
-          libssl-dev \
-          libgl1-mesa-dev \
-          xvfb
-    - name: Clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
-    - name: Build
-      run: cargo build --all
-    - name: Test
-      run: xvfb-run cargo test --all
-    - name: Check format
-      run: cargo fmt --all -- --check
-    - name: Generate Docs
-      run: cargo doc --all
+      - uses: actions/checkout@v2
+      - name: Install Dependencies
+        run: |
+          rustup component add rustfmt
+          rustup component add clippy
+          sudo apt-get install \
+            cmake \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            mesa-common-dev \
+            pkg-config \
+            libssl-dev \
+            libgl1-mesa-dev \
+            xvfb
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Build
+        run: cargo build --all
+      - name: Test
+        run: xvfb-run cargo test --all
+      - name: Check format
+        run: cargo fmt --all -- --check
+      - name: Generate Docs
+        run: RUSTDOCFLAGS="-Dwarnings" cargo doc --all

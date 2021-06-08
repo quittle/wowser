@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn empty_config() {
-        assert_eq!(Some(String::from("<!DOCTYPE >")), parse(""));
+        assert_eq!(Some(String::from("<!DOCTYPE>")), parse(""));
     }
 
     #[test]

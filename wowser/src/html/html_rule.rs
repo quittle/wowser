@@ -2,7 +2,7 @@ use super::super::parse::*;
 use super::html_token::HtmlToken;
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug)]
+#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
 pub enum HtmlRule {
     Document,
     Doctype,

@@ -20,7 +20,7 @@ fn main() {
             let interpreter = html::HtmlInterpreter {};
             if let Some(result) = interpreter.interpret(&ast) {
                 println!("Evaulated result {:?}", result);
-                println!("Rendered doc {}", html::stringify_node(&result));
+                println!("Rendered doc {}", result.to_string());
             }
         }
     }

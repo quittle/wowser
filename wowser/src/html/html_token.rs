@@ -24,7 +24,7 @@ impl Token for HtmlToken {
         match self {
             HtmlToken::Document => "",
             HtmlToken::DoctypeOpen => r"\s*<!(?i)doctype(?-i)",
-            HtmlToken::DoctypeUnquotedString => r#"\s*([^"\s]+)"#,
+            HtmlToken::DoctypeUnquotedString => r#"\s*([^"\s>]+)"#,
             HtmlToken::DoctypeQuotedString => r#"\s*"([^"]*)""#,
             HtmlToken::TagStart => r"\s*<(\w+)",
             HtmlToken::AttributeName => r"\s*(\w[\w\d\-_]*)",

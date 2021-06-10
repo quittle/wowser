@@ -17,13 +17,27 @@ pub struct CssDocument {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct CssBlock {
-    pub selectors: Vec<CssSelector>,
+    pub selectors: Vec<CssSelectorChain>,
     pub properties: Vec<CssProperty>,
 }
 
+// #[derive(PartialEq, Debug, Clone)]
+// pub struct CssSelector {
+//     pub selectors: Vec<String>,
+// }
+
 #[derive(PartialEq, Debug, Clone)]
-pub struct CssSelector {
-    pub selectors: Vec<String>,
+pub struct CssSelectorChain {
+    pub item: CssSelectorChainItem,
+    pub next: Option<Box<CssSelectorChain>>,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum CssSelectorChainItem {
+    Tag(String),
+    Class(String),
+    Id(String),
+    // CssSelectorChild(Box<CssSelectorChain>),
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -61,7 +75,7 @@ impl CssInterpreter {
         }
     }
 
-    fn on_selector_list<'a>(&self, selector_list: &ASTNode<'a, CssRule>) -> Vec<CssSelector> {
+    fn on_selector_list<'a>(&self, selector_list: &ASTNode<'a, CssRule>) -> Vec<CssSelectorChain> {
         let ASTNode { rule, children, .. } = selector_list;
         assert_eq!(**rule, CssRule::SelectorList, "Unexpected child type: {:?}", rule);
         let children_len = children.len();
@@ -76,25 +90,37 @@ impl CssInterpreter {
         }
     }
 
-    fn on_selector<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelector {
+    fn on_selector<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelectorChain {
         let ASTNode { rule, children, .. } = selector;
         assert_eq!(**rule, CssRule::Selector, "Unexpected child type: {:?}", rule);
+        assert!(!children.is_empty(), "Expected at least one child");
 
-        CssSelector {
-            selectors: children
-                .iter()
-                .map(|selector_item| self.on_selector_item(&selector_item))
-                .collect(),
+        let mut ret = CssSelectorChain { item: self.on_selector_item(&children[0]), next: None };
+
+        let mut cur_node = &mut ret;
+        for child in children.iter().skip(1) {
+            let next_node = CssSelectorChain { item: self.on_selector_item(&child), next: None };
+            cur_node.next = Some(Box::new(next_node));
+            let boxed_node = cur_node.next.as_mut().expect("Unexpected empty next node");
+            cur_node = boxed_node.as_mut();
         }
+        ret
     }
 
-    fn on_selector_item<'a>(&self, selector: &ASTNode<'a, CssRule>) -> String {
+    fn on_selector_item<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelectorChainItem {
         let ASTNode { rule, token, children } = selector;
         assert_eq!(**rule, CssRule::SelectorItem, "Unexpected child type: {:?}", rule);
         assert_eq!(0, children.len(), "Unexpected children length");
 
-        let parsed_token = token.expect("Missing selector item contents");
-        (*parsed_token).1.to_string()
+        let parsed_token = token.expect("Missing selector item contents").1;
+
+        if let Some(class) = parsed_token.strip_prefix('.') {
+            CssSelectorChainItem::Class(class.to_string())
+        } else if let Some(id) = parsed_token.strip_prefix('#') {
+            CssSelectorChainItem::Id(id.to_string())
+        } else {
+            CssSelectorChainItem::Tag(parsed_token.to_string())
+        }
     }
 
     fn on_block_body<'a>(&self, block_body: &ASTNode<'a, CssRule>) -> Vec<CssProperty> {

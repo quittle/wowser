@@ -30,7 +30,10 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelector { selectors: vec!["foo".to_string()] }],
+                    selectors: vec![CssSelectorChain {
+                        item: CssSelectorChainItem::Tag("foo".into()),
+                        next: None
+                    }],
                     properties: vec![]
                 }]
             },
@@ -40,7 +43,10 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelector { selectors: vec!["foo".to_string()] }],
+                    selectors: vec![CssSelectorChain {
+                        item: CssSelectorChainItem::Tag("foo".into()),
+                        next: None
+                    }],
                     properties: vec![CssProperty {
                         key: "key".to_string(),
                         value: "value".to_string(),
@@ -53,9 +59,13 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelector {
-                        selectors: vec!["foo".to_string(), "bar".to_string()]
-                    }],
+                    selectors: vec![CssSelectorChain {
+                        item: CssSelectorChainItem::Tag("foo".into()),
+                        next: Some(Box::new(CssSelectorChain {
+                            item: CssSelectorChainItem::Tag("bar".into()),
+                            next: None
+                        }))
+                    },],
                     properties: vec![]
                 }]
             },
@@ -66,8 +76,14 @@ mod tests {
             CssDocument {
                 blocks: vec![CssBlock {
                     selectors: vec![
-                        CssSelector { selectors: vec!["foo".to_string()] },
-                        CssSelector { selectors: vec!["bar".to_string()] }
+                        CssSelectorChain {
+                            item: CssSelectorChainItem::Tag("foo".into()),
+                            next: None
+                        },
+                        CssSelectorChain {
+                            item: CssSelectorChainItem::Tag("bar".into()),
+                            next: None
+                        },
                     ],
                     properties: vec![]
                 }]
@@ -83,8 +99,17 @@ mod tests {
             CssDocument {
                 blocks: vec![CssBlock {
                     selectors: vec![
-                        CssSelector { selectors: vec!["foo".to_string(), "#bar".to_string()] },
-                        CssSelector { selectors: vec![".class".to_string()] }
+                        CssSelectorChain {
+                            item: CssSelectorChainItem::Tag("foo".into()),
+                            next: Some(Box::new(CssSelectorChain {
+                                item: CssSelectorChainItem::Id("bar".into()),
+                                next: None
+                            }))
+                        },
+                        CssSelectorChain {
+                            item: CssSelectorChainItem::Class("class".into()),
+                            next: None
+                        }
                     ],
                     properties: vec![
                         CssProperty { key: "hi".to_string(), value: "'there'".to_string() },
@@ -99,7 +124,10 @@ mod tests {
             CssDocument {
                 blocks: vec![
                     CssBlock {
-                        selectors: vec![CssSelector { selectors: vec!["foo".to_string()] }],
+                        selectors: vec![CssSelectorChain {
+                            item: CssSelectorChainItem::Tag("foo".into()),
+                            next: None
+                        }],
                         properties: vec![CssProperty {
                             key: "key".to_string(),
                             value: "'value-with_symbols'".to_string()
@@ -107,8 +135,14 @@ mod tests {
                     },
                     CssBlock {
                         selectors: vec![
-                            CssSelector { selectors: vec!["bar".to_string()] },
-                            CssSelector { selectors: vec!["baz".to_string()] }
+                            CssSelectorChain {
+                                item: CssSelectorChainItem::Tag("bar".into()),
+                                next: None
+                            },
+                            CssSelectorChain {
+                                item: CssSelectorChainItem::Tag("baz".into()),
+                                next: None
+                            },
                         ],
                         properties: vec![
                             CssProperty { key: "k".to_string(), value: "v".to_string() },

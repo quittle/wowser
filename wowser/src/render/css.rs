@@ -8,7 +8,7 @@ use crate::html::ElementContents;
 pub fn style_html<'html, 'css>(
     html_document: &'html DocumentHtmlNode,
     css_document: &'css CssDocument,
-) -> Vec<(&'html ElementContents<'html>, Vec<&'css CssProperty>)> {
+) -> Vec<(&'html ElementContents, Vec<&'css CssProperty>)> {
     html_document
         .contents
         .iter()
@@ -20,7 +20,7 @@ fn recurse_style_html<'element, 'css>(
     element: &'element ElementContents,
     css_document: &'css CssDocument,
     parents: &[&ElementContents],
-) -> Vec<(&'element ElementContents<'element>, Vec<&'css CssProperty>)> {
+) -> Vec<(&'element ElementContents, Vec<&'css CssProperty>)> {
     let cur_styles = get_applicable_styles(element, &css_document, parents);
     let mut child_styles = if let ElementContents::Element(element_node) = element {
         let mut new_parents = parents.to_vec();
@@ -81,19 +81,20 @@ fn do_elements_match(
 fn does_element_match(element_contents: &ElementContents, selector: &CssSelectorChain) -> bool {
     let result = if let ElementContents::Element(element) = element_contents {
         match &selector.item {
-            CssSelectorChainItem::Tag(tag_name) => element.tag_name == tag_name,
+            CssSelectorChainItem::Tag(tag_name) => element.tag_name == *tag_name,
             CssSelectorChainItem::Class(class) => element.attributes.iter().any(|attribute| {
                 attribute.name == "class"
                     && attribute
                         .value
-                        .unwrap_or("")
+                        .as_ref()
+                        .unwrap_or(&"".into())
                         .split(' ')
                         .any(|class_name| class_name == class)
             }),
             CssSelectorChainItem::Id(id) => element
                 .attributes
                 .iter()
-                .any(|attribute| attribute.name == "id" && attribute.value == Some(&id)),
+                .any(|attribute| attribute.name == "id" && attribute.value == Some(id.into())),
         }
     } else {
         false

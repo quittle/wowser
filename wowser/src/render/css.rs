@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::ptr::addr_of;
+
 use crate::css::CssDocument;
 use crate::css::CssProperty;
 use crate::css::CssSelectorChain;
@@ -8,7 +11,7 @@ use crate::html::ElementContents;
 pub fn style_html<'html, 'css>(
     html_document: &'html DocumentHtmlNode,
     css_document: &'css CssDocument,
-) -> Vec<(&'html ElementContents, Vec<&'css CssProperty>)> {
+) -> HashMap<*const ElementContents, Vec<&'css CssProperty>> {
     html_document
         .contents
         .iter()
@@ -20,7 +23,7 @@ fn recurse_style_html<'element, 'css>(
     element: &'element ElementContents,
     css_document: &'css CssDocument,
     parents: &[&ElementContents],
-) -> Vec<(&'element ElementContents, Vec<&'css CssProperty>)> {
+) -> HashMap<*const ElementContents, Vec<&'css CssProperty>> {
     let cur_styles = get_applicable_styles(element, &css_document, parents);
     let mut child_styles = if let ElementContents::Element(element_node) = element {
         let mut new_parents = parents.to_vec();
@@ -31,9 +34,9 @@ fn recurse_style_html<'element, 'css>(
             .flat_map(|child| recurse_style_html(child, css_document, &new_parents))
             .collect()
     } else {
-        vec![]
+        HashMap::new()
     };
-    child_styles.push((element, cur_styles));
+    child_styles.insert(addr_of!(*element), cur_styles);
     child_styles
 }
 
@@ -119,21 +122,11 @@ mod tests {
         }
     }
 
-    fn styles_to_map<'html, 'css>(
-        styling: &'css [(&'html ElementContents, Vec<&'css CssProperty>)],
-    ) -> HashMap<*const ElementContents, &'css Vec<&'css CssProperty>> {
-        let mut hm = HashMap::new();
-        for (element, styles) in styling {
-            hm.insert(addr_of!(**element), styles);
-        }
-        hm
-    }
-
     fn get_style<'css>(
-        styles: &'css HashMap<*const ElementContents, &Vec<&CssProperty>>,
+        styles: &'css HashMap<*const ElementContents, Vec<&CssProperty>>,
         element: &ElementContents,
     ) -> &'css Vec<&'css CssProperty> {
-        *styles.get(&addr_of!(*element)).unwrap()
+        styles.get(&addr_of!(*element)).unwrap()
     }
 
     fn get_element(html_document: &DocumentHtmlNode, children: Vec<usize>) -> &ElementContents {
@@ -149,10 +142,9 @@ mod tests {
         let css_document = parse_css("").unwrap();
         let html_document = parse_html("").unwrap();
         let styling = style_html(&html_document, &css_document);
-        let hm = styles_to_map(&styling);
 
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0])),
+            get_style(&styling, get_element(&html_document, vec![0])),
             &Vec::<&CssProperty>::new()
         );
     }
@@ -162,10 +154,9 @@ mod tests {
         let css_document = parse_css("foo { color: red; }").unwrap();
         let html_document = parse_html(r#"<bar id="foo" class="foo"></bar>"#).unwrap();
         let styling = style_html(&html_document, &css_document);
-        let hm = styles_to_map(&styling);
 
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0])),
+            get_style(&styling, get_element(&html_document, vec![0])),
             &Vec::<&CssProperty>::new()
         );
     }
@@ -175,10 +166,9 @@ mod tests {
         let css_document = parse_css("foo { color: red; }").unwrap();
         let html_document = parse_html(r#"<foo />"#).unwrap();
         let styling = style_html(&html_document, &css_document);
-        let hm = styles_to_map(&styling);
 
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0])),
+            get_style(&styling, get_element(&html_document, vec![0])),
             &vec![&CssProperty { key: "color".into(), value: "red".into() }]
         );
     }
@@ -188,10 +178,9 @@ mod tests {
         let css_document = parse_css(".foo { color: red; }").unwrap();
         let html_document = parse_html(r#"<bar class="some foo bar" />"#).unwrap();
         let styling = style_html(&html_document, &css_document);
-        let hm = styles_to_map(&styling);
 
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0])),
+            get_style(&styling, get_element(&html_document, vec![0])),
             &vec![&CssProperty { key: "color".into(), value: "red".into() }]
         );
     }
@@ -201,10 +190,25 @@ mod tests {
         let css_document = parse_css("#foo { color: red; }").unwrap();
         let html_document = parse_html(r#"<bar id="foo" />"#).unwrap();
         let styling = style_html(&html_document, &css_document);
-        let hm = styles_to_map(&styling);
 
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0])),
+            get_style(&styling, get_element(&html_document, vec![0])),
+            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+    }
+
+    #[test]
+    fn test_multiple_selectors() {
+        let css_document = parse_css("foo, bar { color: red; }").unwrap();
+        let html_document = parse_html(r#"<bar /><foo />"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+
+        assert_eq!(
+            get_style(&styling, get_element(&html_document, vec![0])),
+            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+        assert_eq!(
+            get_style(&styling, get_element(&html_document, vec![1])),
             &vec![&CssProperty { key: "color".into(), value: "red".into() }]
         );
     }
@@ -214,22 +218,21 @@ mod tests {
         let css_document = parse_css("foo { color: red; } foo .baz { height: 1; }").unwrap();
         let html_document = parse_html(r#"<foo><bar class="baz">text</bar></foo>"#).unwrap();
         let styling = style_html(&html_document, &css_document);
-        let hm = styles_to_map(&styling);
 
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0])),
+            get_style(&styling, get_element(&html_document, vec![0])),
             &vec![&CssProperty { key: "color".into(), value: "red".into() }]
         );
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![1])),
+            get_style(&styling, get_element(&html_document, vec![1])),
             &Vec::<&CssProperty>::new()
         );
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0, 0])),
+            get_style(&styling, get_element(&html_document, vec![0, 0])),
             &vec![&CssProperty { key: "height".into(), value: "1".into() }]
         );
         assert_eq!(
-            get_style(&hm, get_element(&html_document, vec![0, 0, 0])),
+            get_style(&styling, get_element(&html_document, vec![0, 0, 0])),
             &Vec::<&CssProperty>::new()
         );
     }

@@ -104,38 +104,133 @@ fn does_element_match(element_contents: &ElementContents, selector: &CssSelector
 
 #[cfg(test)]
 mod tests {
+    use std::{collections::HashMap, ptr::addr_of};
+
     use super::*;
     use crate::{
-        css::{CssDocument, CssInterpreter, CssRule, CssToken},
-        html::{HtmlInterpreter, HtmlRule, HtmlToken},
-        parse::{Interpreter, Lexer, Parser},
+        css::parse_css,
+        html::{parse_html, ElementHtmlNode},
     };
 
-    fn parse_css(document: &str) -> CssDocument {
-        let lexer = Lexer::new(Box::new(CssToken::Document));
-        let tokens = Box::new(lexer.parse(document).expect("Failed to lex"));
-        let ast = Parser {}.parse(&tokens, &CssRule::Document).expect("Failed to parse");
-        let css_document = CssInterpreter {}.interpret(&ast).expect("Failed to interpret");
-        css_document
+    fn as_element(element: &ElementContents) -> &ElementHtmlNode {
+        match element {
+            ElementContents::Element(element_node) => element_node,
+            _ => panic!("Unexpected element type"),
+        }
     }
 
-    fn test_css_html(css_file: &str, html_file: &str) {
-        let lexer = Lexer::new(Box::new(HtmlToken::Document));
-        let tokens = lexer.parse(html_file).expect("Failed to lex");
-        let ast = Parser {}.parse(&tokens, &HtmlRule::Document).expect("Failed to parse");
-        let html_document = HtmlInterpreter {}.interpret(&ast).expect("Failed to interpret");
+    fn styles_to_map<'html, 'css>(
+        styling: &'css [(&'html ElementContents, Vec<&'css CssProperty>)],
+    ) -> HashMap<*const ElementContents, &'css Vec<&'css CssProperty>> {
+        let mut hm = HashMap::new();
+        for (element, styles) in styling {
+            hm.insert(addr_of!(**element), styles);
+        }
+        hm
+    }
 
-        let css_document = parse_css(css_file);
+    fn get_style<'css>(
+        styles: &'css HashMap<*const ElementContents, &Vec<&CssProperty>>,
+        element: &ElementContents,
+    ) -> &'css Vec<&'css CssProperty> {
+        *styles.get(&addr_of!(*element)).unwrap()
+    }
 
-        let styling = style_html(&html_document, &css_document);
-        println!("Styling {:?}", styling);
+    fn get_element(html_document: &DocumentHtmlNode, children: Vec<usize>) -> &ElementContents {
+        let mut node = &html_document.contents[children[0]];
+        for index in children[1..].iter() {
+            node = &as_element(node).children[*index];
+        }
+        node
     }
 
     #[test]
-    fn minimal() {
-        test_css_html(
-            "foo { color: red; } foo .baz { height: 1; }",
-            "<foo><bar class=\"baz\">text</bar></foo>",
+    fn test_empty_config() {
+        let css_document = parse_css("").unwrap();
+        let html_document = parse_html("").unwrap();
+        let styling = style_html(&html_document, &css_document);
+        let hm = styles_to_map(&styling);
+
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0])),
+            &Vec::<&CssProperty>::new()
+        );
+    }
+
+    #[test]
+    fn test_non_matching() {
+        let css_document = parse_css("foo { color: red; }").unwrap();
+        let html_document = parse_html(r#"<bar id="foo" class="foo"></bar>"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+        let hm = styles_to_map(&styling);
+
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0])),
+            &Vec::<&CssProperty>::new()
+        );
+    }
+
+    #[test]
+    fn test_tag_match() {
+        let css_document = parse_css("foo { color: red; }").unwrap();
+        let html_document = parse_html(r#"<foo />"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+        let hm = styles_to_map(&styling);
+
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0])),
+            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+    }
+
+    #[test]
+    fn test_class_match() {
+        let css_document = parse_css(".foo { color: red; }").unwrap();
+        let html_document = parse_html(r#"<bar class="some foo bar" />"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+        let hm = styles_to_map(&styling);
+
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0])),
+            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+    }
+
+    #[test]
+    fn test_id_match() {
+        let css_document = parse_css("#foo { color: red; }").unwrap();
+        let html_document = parse_html(r#"<bar id="foo" />"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+        let hm = styles_to_map(&styling);
+
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0])),
+            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+    }
+
+    #[test]
+    fn test_simple_config() {
+        let css_document = parse_css("foo { color: red; } foo .baz { height: 1; }").unwrap();
+        let html_document = parse_html(r#"<foo><bar class="baz">text</bar></foo>"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+        let hm = styles_to_map(&styling);
+
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0])),
+            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![1])),
+            &Vec::<&CssProperty>::new()
+        );
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0, 0])),
+            &vec![&CssProperty { key: "height".into(), value: "1".into() }]
+        );
+        assert_eq!(
+            get_style(&hm, get_element(&html_document, vec![0, 0, 0])),
+            &Vec::<&CssProperty>::new()
         );
     }
 }

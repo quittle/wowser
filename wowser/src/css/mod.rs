@@ -6,17 +6,22 @@ pub use css_interpreter::*;
 pub use css_rule::*;
 pub use css_token::*;
 
+use crate::parse::*;
+
+pub fn parse_css(document: &str) -> Result<CssDocument, String> {
+    let lexer = Lexer::new(Box::new(CssToken::Document));
+    let tokens = lexer.parse(document).ok_or("Failed to lex CSS")?;
+    let ast = Parser {}.parse(&tokens, &CssRule::Document)?;
+    let document = CssInterpreter {}.interpret(&ast).ok_or("Failed to interpret Css")?;
+    Ok(document)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parse::*;
 
     fn parse(document: &str) -> CssDocument {
-        let lexer = Lexer::new(Box::new(CssToken::Document));
-        let tokens = Box::new(lexer.parse(document).expect("Failed to lex"));
-        let ast = Parser {}.parse(&tokens, &CssRule::Document).expect("Failed to parse");
-        let css_document = CssInterpreter {}.interpret(&ast).expect("Failed to interpret");
-        css_document
+        parse_css(document).expect("Failed to parse CSS")
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, ptr::addr_of};
 
 use crate::{
-    css::{CssBackgroundColor, CssDisplay, CssProperty},
+    css::{CssColor, CssDimension, CssDisplay, CssProperty},
     html::{DocumentHtmlNode, ElementContents},
     render::{Color, StyleNode, StyleNodeChild, StyleNodeDisplay, TextStyleNode},
 };
@@ -37,10 +37,28 @@ fn render(
         style_node.background_color = match get_style_prop(
             props,
             "background-color",
-            CssBackgroundColor::from_raw_value,
-            CssBackgroundColor::Rgba(0, 0, 0, 0),
+            CssColor::from_raw_value,
+            CssColor::Rgba(0, 0, 0, 0),
         ) {
-            CssBackgroundColor::Rgba(r, g, b, a) => Color { r, g, b, a },
+            CssColor::Rgba(r, g, b, a) => Color { r, g, b, a },
+        };
+
+        style_node.border_width = match get_style_prop(
+            props,
+            "border-width",
+            CssDimension::from_raw_value,
+            CssDimension::Px(0_f32),
+        ) {
+            CssDimension::Px(px) => px,
+        };
+
+        style_node.border_color = match get_style_prop(
+            props,
+            "border-color",
+            CssColor::from_raw_value,
+            CssColor::Rgba(0, 0, 0, 0),
+        ) {
+            CssColor::Rgba(r, g, b, a) => Color { r, g, b, a },
         };
         style_node
     } else {

@@ -63,7 +63,6 @@ pub fn bytes_to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| byte_to_hex(*b)).collect::<String>()
 }
 
-#[allow(dead_code)]
 pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
     let normalized_string = s.replace(|c: char| c.is_whitespace(), "").to_ascii_lowercase();
     if normalized_string.len() % 2 != 0 {

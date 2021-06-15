@@ -25,7 +25,7 @@ impl Token for CssToken {
             Self::CloseBrace => r"\s*(\})\s*",
             Self::PropertyKey => r"[\-\w\.\d]+",
             Self::PropertySeparator => r"\s*(:)\s*",
-            Self::PropertyValue => r#"\s*(['"\w\d\-\(\),]+)\s*"#,
+            Self::PropertyValue => r#"\s*([#'"\w\d\-\(\),]+)\s*"#,
             Self::PropertyTerminator => r"\s*(;)\s*",
             Self::Terminator => r"\s*$",
         }

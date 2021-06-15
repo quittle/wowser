@@ -1,6 +1,7 @@
 use super::{color::Color, rect::Rect};
 
 /// An abstract representation of a scene to draw. This should be renderable onto a 2D canvas.
+#[derive(Debug)]
 pub enum SceneNode {
     TextSceneNode(TextSceneNode),
     RectangleSceneNode(RectangleSceneNode),
@@ -22,6 +23,7 @@ impl SceneNode {
     }
 }
 
+#[derive(Debug)]
 pub struct TextSceneNode {
     pub bounds: Rect,
     pub text: String,
@@ -29,6 +31,7 @@ pub struct TextSceneNode {
     pub text_color: Color,
 }
 
+#[derive(Debug)]
 pub struct RectangleSceneNode {
     pub bounds: Rect,
     pub fill: Color,

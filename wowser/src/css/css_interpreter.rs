@@ -21,11 +21,6 @@ pub struct CssBlock {
     pub properties: Vec<CssProperty>,
 }
 
-// #[derive(PartialEq, Debug, Clone)]
-// pub struct CssSelector {
-//     pub selectors: Vec<String>,
-// }
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct CssSelectorChain {
     pub item: CssSelectorChainItem,
@@ -37,7 +32,6 @@ pub enum CssSelectorChainItem {
     Tag(String),
     Class(String),
     Id(String),
-    // CssSelectorChild(Box<CssSelectorChain>),
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -153,7 +147,7 @@ impl CssInterpreter {
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing property key contents");
-        (*parsed_token).1.to_string()
+        (*parsed_token).1.trim().to_string()
     }
 
     fn on_property_value<'a>(&self, selector: &ASTNode<'a, CssRule>) -> String {
@@ -162,7 +156,7 @@ impl CssInterpreter {
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing property value contents");
-        (*parsed_token).1.to_string()
+        (*parsed_token).1.trim().to_string()
     }
 }
 

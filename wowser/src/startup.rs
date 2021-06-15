@@ -7,13 +7,13 @@ glfw::ErrorCallback!(
     }
 );
 
-pub fn initialize_glfw() -> glfw::GlfwResult {
+fn initialize_glfw() -> glfw::GlfwResult {
     glfw::set_error_callback(Some(callback));
     glfw::init()?;
     Ok(())
 }
 
-pub fn initialize_gl() -> gl::GlResult {
+fn initialize_gl() -> gl::GlResult {
     gl::disable(gl::Capability::DepthTest)?;
     gl::matrix_mode(gl::MatrixMode::Projection)?;
     gl::load_identity()?;

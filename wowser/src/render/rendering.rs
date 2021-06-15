@@ -16,15 +16,13 @@ pub fn style_to_scene(
     let mut font: CachingFont = CachingFont::wrap(Box::new(
         BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
     ));
-    let mut nodes = style_to_scene_r(
+    style_to_scene_r(
         style_node,
         &Point { x: 0_f32, y: 0_f32 },
         parent_left,
         parent_width,
         &mut font,
-    );
-    nodes.reverse();
-    nodes
+    )
 }
 
 // Notes:

@@ -1,10 +1,12 @@
 mod css_interpreter;
 mod css_rule;
 mod css_token;
+mod properties;
 
 pub use css_interpreter::*;
 pub use css_rule::*;
 pub use css_token::*;
+pub use properties::*;
 
 use crate::parse::*;
 

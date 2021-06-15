@@ -1,4 +1,8 @@
 use render::normalize_style_nodes;
+use wowser::css::parse_css;
+use wowser::html::parse_html;
+use wowser::render::html_css_to_styles;
+use wowser::render::style_html;
 use wowser::startup;
 use wowser::ui::Window;
 use wowser::util::Rect;
@@ -8,64 +12,13 @@ use std::{borrow::Borrow, thread};
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
 
-fn example_style_nodes() -> render::StyleNode {
-    render::StyleNode {
-        display: render::StyleNodeDisplay::Block,
-        border_width: 2.0,
-        border_color: render::Color::RED,
-        background_color: render::Color::BLUE,
-        padding: 10.0,
-        margin: 5.0,
-        width: render::StyleNodeDimen::Pixels(300_f32),
-        child: render::StyleNodeChild::Nodes(vec![
-            render::StyleNode {
-                display: render::StyleNodeDisplay::Inline,
-                border_width: 2.0,
-                border_color: render::Color::RED,
-                background_color: render::Color::BLUE,
-                padding: 10.0,
-                margin: 5.0,
-                width: render::StyleNodeDimen::Auto,
-                child: render::StyleNodeChild::Text(render::TextStyleNode {
-                    text: String::from(concat!(
-                        "testa textb textc textd texte textf textg texth texti ",
-                        "text text text text text text text text text text text ",
-                        "text text text text text text text text text text text ",
-                        "text text text text text text text text text"
-                    )),
-                    font_size: 12.0,
-                    text_color: render::Color::WHITE,
-                }),
-            },
-            render::StyleNode {
-                display: render::StyleNodeDisplay::Inline,
-                border_width: 2.0,
-                border_color: render::Color::RED,
-                background_color: render::Color::BLUE,
-                padding: 30.0,
-                margin: 5.0,
-                width: render::StyleNodeDimen::Auto,
-                child: render::StyleNodeChild::Nodes(vec![]),
-            },
-            render::StyleNode {
-                display: render::StyleNodeDisplay::Block,
-                border_width: 1.0,
-                border_color: render::Color::RED,
-                background_color: render::Color::BLUE,
-                padding: 5.0,
-                margin: 5.0,
-                width: render::StyleNodeDimen::Auto,
-                child: render::StyleNodeChild::Nodes(vec![]),
-            },
-        ]),
-    }
-}
-
 fn render(window: &mut Window) {
-    let mut example_root = example_style_nodes();
+    let html = parse_html(r#"<div>hello <span>world</span></div>"#).unwrap();
+    let css = parse_css(r#"div, span { background-color: #f00; }"#).unwrap();
+    let css_styling = style_html(&html, &css);
+    let mut example_root = html_css_to_styles(&html, &css_styling);
     normalize_style_nodes(&mut example_root);
     let style_root = render::style_to_scene(&example_root, 0_f32, window.get_bounds().width as f32);
-
     let mut font: CachingFont = CachingFont::wrap(Box::new(
         BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
     ));
@@ -88,14 +41,14 @@ fn render(window: &mut Window) {
                                 c.width as u32,
                                 &text_color,
                             )
-                            .expect("Unable to draw bitmap");
+                            .unwrap();
                         offset.x += c.next_char_offset;
                     }
                 }
             }
             render::SceneNode::RectangleSceneNode(render::RectangleSceneNode {
                 bounds,
-                fill: _fill,
+                fill,
                 border_color,
                 border_width,
             }) => {
@@ -107,10 +60,11 @@ fn render(window: &mut Window) {
                             width: bounds.width as i32,
                             height: bounds.height as i32,
                         },
+                        &fill,
                         &border_color,
                         border_width,
                     )
-                    .expect("");
+                    .unwrap();
             }
         }
     }

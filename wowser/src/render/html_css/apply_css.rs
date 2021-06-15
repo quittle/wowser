@@ -8,6 +8,10 @@ use crate::css::CssSelectorChainItem;
 use crate::html::DocumentHtmlNode;
 use crate::html::ElementContents;
 
+/// Applies a CSS document to an HTML document, returning a mapping of the entries in
+/// `html_document` to their rendered CSS properties. All nodes in html_document are
+/// guaranteed to have an entry, even if it's just an empty vector. Property keys
+/// in each vec may be repeated but appear in order that they appear in the document.
 pub fn style_html<'html, 'css>(
     html_document: &'html DocumentHtmlNode,
     css_document: &'css CssDocument,
@@ -82,7 +86,7 @@ fn do_elements_match(
 }
 
 fn does_element_match(element_contents: &ElementContents, selector: &CssSelectorChain) -> bool {
-    let result = if let ElementContents::Element(element) = element_contents {
+    if let ElementContents::Element(element) = element_contents {
         match &selector.item {
             CssSelectorChainItem::Tag(tag_name) => element.tag_name == *tag_name,
             CssSelectorChainItem::Class(class) => element.attributes.iter().any(|attribute| {
@@ -101,8 +105,7 @@ fn does_element_match(element_contents: &ElementContents, selector: &CssSelector
         }
     } else {
         false
-    };
-    result
+    }
 }
 
 #[cfg(test)]
@@ -210,6 +213,33 @@ mod tests {
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![1])),
             &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+        );
+    }
+
+    #[test]
+    fn test_override_properties() {
+        let css_document = parse_css("foo { color: red; color: blue; }").unwrap();
+        let html_document = parse_html(r#"<foo>value</foo>"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+
+        assert_eq!(
+            get_style(&styling, get_element(&html_document, vec![0])),
+            &vec![
+                &CssProperty { key: "color".into(), value: "red".into() },
+                &CssProperty { key: "color".into(), value: "blue".into() }
+            ]
+        );
+
+        let css_document = parse_css("foo { color: red; } foo { color: blue; }").unwrap();
+        let html_document = parse_html(r#"<foo>value</foo>"#).unwrap();
+        let styling = style_html(&html_document, &css_document);
+
+        assert_eq!(
+            get_style(&styling, get_element(&html_document, vec![0])),
+            &vec![
+                &CssProperty { key: "color".into(), value: "red".into() },
+                &CssProperty { key: "color".into(), value: "blue".into() }
+            ]
         );
     }
 

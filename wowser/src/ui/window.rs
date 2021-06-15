@@ -1,6 +1,6 @@
 use super::UiResult;
 use crate::{
-    render::{Color, ColorPercent},
+    render::Color,
     util::{Point, Rect},
 };
 use wowser_gl as gl;
@@ -51,33 +51,44 @@ impl Window {
     pub fn draw_rect(
         &mut self,
         rect: &Rect<i32>,
+        fill_color: &Color,
         border_color: &Color,
         border_width: f32,
     ) -> UiResult {
-        if border_width <= 0_f32 || border_color.a == 0 {
-            return Ok(());
+        let mut action_taken = false;
+
+        if border_width > 0_f32 && border_color.a != 0 {
+            gl::point_size(10.0)?;
+            gl::line_width(border_width)?;
+            gl::color_4ub(border_color.r, border_color.g, border_color.b, border_color.a);
+
+            gl::begin(gl::DrawMode::LineLoop);
+            gl::vertex_2i(rect.x, rect.y);
+            gl::vertex_2i(rect.x + rect.width, rect.y);
+            gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
+            gl::vertex_2i(rect.x, rect.y + rect.height);
+            gl::end()?;
+            action_taken = true;
         }
 
-        let border_color_percent: ColorPercent = border_color.into();
-        gl::point_size(10.0)?;
-        gl::line_width(border_width)?;
-        gl::color_4f(
-            border_color_percent.r,
-            border_color_percent.g,
-            border_color_percent.b,
-            border_color_percent.a,
-        );
+        if fill_color.a != 0 {
+            gl::point_size(1_f32)?;
+            gl::line_width(1_f32)?;
+            gl::color_4ub(fill_color.r, fill_color.g, fill_color.b, fill_color.a);
+            gl::begin(gl::DrawMode::Polygon);
+            gl::vertex_2i(rect.x, rect.y);
+            gl::vertex_2i(rect.x + rect.width, rect.y);
+            gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
+            gl::vertex_2i(rect.x, rect.y + rect.height);
+            gl::end()?;
+            action_taken = true;
+        }
 
-        gl::begin(gl::DrawMode::LineLoop);
-        gl::vertex_2i(rect.x, rect.y);
-        gl::vertex_2i(rect.x + rect.width, rect.y);
-        gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
-        gl::vertex_2i(rect.x, rect.y + rect.height);
-        gl::end()?;
+        if action_taken {
+            gl::flush()?;
 
-        gl::flush()?;
-
-        self.window.swap_buffers();
+            self.window.swap_buffers();
+        }
 
         Ok(())
     }
@@ -89,20 +100,20 @@ impl Window {
         width: u32,
         color: &Color,
     ) -> UiResult {
-        let height: usize = bitmap.len() / width as usize;
+        let height = (bitmap.len() as u32 / width) as i32;
 
-        let color_percent: ColorPercent = color.into();
-        gl::color_4f(color_percent.r, color_percent.g, color_percent.b, color_percent.a);
+        if color.a != 0 {
+            gl::color_4ub(color.r, color.g, color.b, color.a);
+            gl::pixel_zoom(1.0, -1.0)?;
+            gl::raster_pos_2i(point.x, point.y + height)?;
+            gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
+            gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
+            gl::bitmap(width as i32 * 8, height, 0.0, 0.0, width as f32, 0.0, &bitmap)?;
+            gl::pixel_zoom(1.0, 1.0)?;
+            gl::flush()?;
 
-        gl::pixel_zoom(1.0, -1.0)?;
-        gl::raster_pos_2i(point.x, point.y)?;
-        gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
-        gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
-        gl::bitmap(width as i32 * 8, height as i32, 0.0, 0.0, width as f32, 0.0, &bitmap)?;
-        gl::pixel_zoom(1.0, 1.0)?;
-        gl::flush()?;
-
-        self.window.swap_buffers();
+            self.window.swap_buffers();
+        }
 
         Ok(())
     }

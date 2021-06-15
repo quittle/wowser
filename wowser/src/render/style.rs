@@ -53,7 +53,6 @@ pub enum StyleNodeDimen {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextStyleNode {
-    // pub bounds: Rect,
     pub text: String,
     pub font_size: f32,
     pub text_color: Color,

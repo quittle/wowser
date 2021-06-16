@@ -60,6 +60,16 @@ fn render(
         ) {
             CssColor::Rgba(r, g, b, a) => Color { r, g, b, a },
         };
+
+        style_node.margin = match get_style_prop(
+            props,
+            "margin",
+            CssDimension::from_raw_value,
+            CssDimension::Px(0.0),
+        ) {
+            CssDimension::Px(px) => px,
+        };
+
         style_node
     } else {
         StyleNode::new_default(StyleNodeDisplay::Inline)

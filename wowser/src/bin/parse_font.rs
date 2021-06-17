@@ -26,7 +26,10 @@ fn main() -> Result<(), FontError> {
     {
         let mut window = Window::new().expect("Unable to make ui.");
         thread::sleep(std::time::Duration::from_millis(1000));
-        let mut offset: Point<f32> = Point { x: 10_f32, y: 10_f32 };
+        let mut offset: Point<f32> = Point {
+            x: 10_f32,
+            y: 10_f32,
+        };
         for char in characters.into_iter().flatten() {
             window
                 .draw_bitmap(

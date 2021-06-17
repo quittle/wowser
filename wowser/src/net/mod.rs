@@ -66,9 +66,15 @@ mod tests {
         );
 
         assert!(response.headers.iter().any(|header| header.name == "Date"));
-        assert!(response.headers.iter().any(|header| header.name == "Expires"));
+        assert!(response
+            .headers
+            .iter()
+            .any(|header| header.name == "Expires"));
         assert!(response.headers.iter().any(|header| header.name == "Etag"));
-        assert!(response.headers.iter().any(|header| header.name == "Cache-Control"));
+        assert!(response
+            .headers
+            .iter()
+            .any(|header| header.name == "Cache-Control"));
         let content_length = response
             .headers
             .iter()

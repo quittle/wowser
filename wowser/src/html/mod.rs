@@ -14,7 +14,9 @@ pub fn parse_html(document: &str) -> Result<DocumentHtmlNode, String> {
     let lexer = Lexer::new(Box::new(HtmlToken::Document));
     let tokens = lexer.parse(document).ok_or("Failed to lex HTML")?;
     let ast = Parser {}.parse(&tokens, &HtmlRule::Document)?;
-    let document = HtmlInterpreter {}.interpret(&ast).ok_or("Failed to interpret HTML")?;
+    let document = HtmlInterpreter {}
+        .interpret(&ast)
+        .ok_or("Failed to interpret HTML")?;
     Ok(document)
 }
 
@@ -23,7 +25,9 @@ mod tests {
     use super::*;
 
     fn parse(document: &str) -> String {
-        parse_html(document).expect("Failed to parse HTML").to_string()
+        parse_html(document)
+            .expect("Failed to parse HTML")
+            .to_string()
     }
 
     #[test]

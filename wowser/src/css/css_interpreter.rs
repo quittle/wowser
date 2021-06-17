@@ -4,10 +4,16 @@ use crate::parse::*;
 #[derive(Debug)]
 pub enum CssNode<'a> {
     Document(Vec<CssNode<'a>>),
-    Block { selectors: Vec<CssNode<'a>>, properties: Vec<CssNode<'a>> },
+    Block {
+        selectors: Vec<CssNode<'a>>,
+        properties: Vec<CssNode<'a>>,
+    },
     Selector(Vec<CssNode<'a>>),
     SelectorItem(&'a str),
-    Property { key: &'a str, value: &'a str },
+    Property {
+        key: &'a str,
+        value: &'a str,
+    },
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -71,7 +77,12 @@ impl CssInterpreter {
 
     fn on_selector_list<'a>(&self, selector_list: &ASTNode<'a, CssRule>) -> Vec<CssSelectorChain> {
         let ASTNode { rule, children, .. } = selector_list;
-        assert_eq!(**rule, CssRule::SelectorList, "Unexpected child type: {:?}", rule);
+        assert_eq!(
+            **rule,
+            CssRule::SelectorList,
+            "Unexpected child type: {:?}",
+            rule
+        );
         let children_len = children.len();
         match children_len {
             1 => vec![self.on_selector(&children[0])],
@@ -80,20 +91,34 @@ impl CssInterpreter {
                 list.append(&mut self.on_selector_list(&children[2]));
                 list
             }
-            _ => panic!("Unsupported number of children for SelectorList {}", children_len),
+            _ => panic!(
+                "Unsupported number of children for SelectorList {}",
+                children_len
+            ),
         }
     }
 
     fn on_selector<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelectorChain {
         let ASTNode { rule, children, .. } = selector;
-        assert_eq!(**rule, CssRule::Selector, "Unexpected child type: {:?}", rule);
+        assert_eq!(
+            **rule,
+            CssRule::Selector,
+            "Unexpected child type: {:?}",
+            rule
+        );
         assert!(!children.is_empty(), "Expected at least one child");
 
-        let mut ret = CssSelectorChain { item: self.on_selector_item(&children[0]), next: None };
+        let mut ret = CssSelectorChain {
+            item: self.on_selector_item(&children[0]),
+            next: None,
+        };
 
         let mut cur_node = &mut ret;
         for child in children.iter().skip(1) {
-            let next_node = CssSelectorChain { item: self.on_selector_item(&child), next: None };
+            let next_node = CssSelectorChain {
+                item: self.on_selector_item(&child),
+                next: None,
+            };
             cur_node.next = Some(Box::new(next_node));
             let boxed_node = cur_node.next.as_mut().expect("Unexpected empty next node");
             cur_node = boxed_node.as_mut();
@@ -102,8 +127,17 @@ impl CssInterpreter {
     }
 
     fn on_selector_item<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelectorChainItem {
-        let ASTNode { rule, token, children } = selector;
-        assert_eq!(**rule, CssRule::SelectorItem, "Unexpected child type: {:?}", rule);
+        let ASTNode {
+            rule,
+            token,
+            children,
+        } = selector;
+        assert_eq!(
+            **rule,
+            CssRule::SelectorItem,
+            "Unexpected child type: {:?}",
+            rule
+        );
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing selector item contents").1;
@@ -119,20 +153,38 @@ impl CssInterpreter {
 
     fn on_block_body<'a>(&self, block_body: &ASTNode<'a, CssRule>) -> Vec<CssProperty> {
         let ASTNode { rule, children, .. } = block_body;
-        assert_eq!(**rule, CssRule::BlockBody, "Unexpected child type: {:?}", rule);
+        assert_eq!(
+            **rule,
+            CssRule::BlockBody,
+            "Unexpected child type: {:?}",
+            rule
+        );
         assert_eq!(3, children.len());
         self.on_property_list(&children[1])
     }
 
     fn on_property_list<'a>(&self, property_list: &ASTNode<'a, CssRule>) -> Vec<CssProperty> {
         let ASTNode { rule, children, .. } = property_list;
-        assert_eq!(**rule, CssRule::PropertyList, "Unexpected child type: {:?}", rule);
-        children.iter().map(|child| self.on_property(child)).collect()
+        assert_eq!(
+            **rule,
+            CssRule::PropertyList,
+            "Unexpected child type: {:?}",
+            rule
+        );
+        children
+            .iter()
+            .map(|child| self.on_property(child))
+            .collect()
     }
 
     fn on_property<'a>(&self, property: &ASTNode<'a, CssRule>) -> CssProperty {
         let ASTNode { rule, children, .. } = property;
-        assert_eq!(**rule, CssRule::Property, "Unexpected child type: {:?}", rule);
+        assert_eq!(
+            **rule,
+            CssRule::Property,
+            "Unexpected child type: {:?}",
+            rule
+        );
         assert_eq!(4, children.len(), "Unexpected children length");
 
         CssProperty {
@@ -142,8 +194,17 @@ impl CssInterpreter {
     }
 
     fn on_property_key<'a>(&self, selector: &ASTNode<'a, CssRule>) -> String {
-        let ASTNode { rule, token, children } = selector;
-        assert_eq!(**rule, CssRule::PropertyKey, "Unexpected child type: {:?}", rule);
+        let ASTNode {
+            rule,
+            token,
+            children,
+        } = selector;
+        assert_eq!(
+            **rule,
+            CssRule::PropertyKey,
+            "Unexpected child type: {:?}",
+            rule
+        );
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing property key contents");
@@ -151,8 +212,17 @@ impl CssInterpreter {
     }
 
     fn on_property_value<'a>(&self, selector: &ASTNode<'a, CssRule>) -> String {
-        let ASTNode { rule, token, children } = selector;
-        assert_eq!(**rule, CssRule::PropertyValue, "Unexpected child type: {:?}", rule);
+        let ASTNode {
+            rule,
+            token,
+            children,
+        } = selector;
+        assert_eq!(
+            **rule,
+            CssRule::PropertyValue,
+            "Unexpected child type: {:?}",
+            rule
+        );
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing property value contents");
@@ -166,12 +236,19 @@ impl<'a> Interpreter<'a> for CssInterpreter {
 
     fn on_node(&self, document: &ASTNode<'a, CssRule>) -> Option<CssDocument> {
         let ASTNode { rule, children, .. } = document;
-        assert_eq!(**rule, CssRule::Document, "Unexpected child type: {:?}", rule);
+        assert_eq!(
+            **rule,
+            CssRule::Document,
+            "Unexpected child type: {:?}",
+            rule
+        );
 
         if children.len() == 1 && *children[0].rule == CssRule::Terminator {
             Some(CssDocument { blocks: vec![] })
         } else {
-            Some(CssDocument { blocks: self.on_blocks(&children[0]) })
+            Some(CssDocument {
+                blocks: self.on_blocks(&children[0]),
+            })
         }
     }
 }

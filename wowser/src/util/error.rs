@@ -23,7 +23,9 @@ impl From<String> for StringError {
 
 impl From<&str> for StringError {
     fn from(error: &str) -> Self {
-        StringError { error: error.to_string() }
+        StringError {
+            error: error.to_string(),
+        }
     }
 }
 

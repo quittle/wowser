@@ -36,7 +36,9 @@ pub fn get_error() -> GlfwError {
     let err_code = unsafe { glfwGetError(&mut value) } as u32;
 
     let err_message = if err_code == GLFW_NO_ERROR && !value.is_null() {
-        unsafe { CStr::from_ptr(value) }.to_string_lossy().to_string()
+        unsafe { CStr::from_ptr(value) }
+            .to_string_lossy()
+            .to_string()
     } else {
         String::default()
     };

@@ -60,7 +60,9 @@ pub enum CssDimension {
 
 impl CssDimension {
     pub fn from_raw_value(value: &str) -> Option<Self> {
-        Self::px().captures(value).map(|captures| Self::Px(captures[1].parse().unwrap()))
+        Self::px()
+            .captures(value)
+            .map(|captures| Self::Px(captures[1].parse().unwrap()))
     }
 
     fn px() -> Regex {
@@ -76,7 +78,10 @@ mod tests {
     fn test_display() {
         assert_eq!(None, CssDisplay::from_raw_value("foo"));
         assert_eq!(Some(CssDisplay::Block), CssDisplay::from_raw_value("block"));
-        assert_eq!(Some(CssDisplay::Inline), CssDisplay::from_raw_value("inline"));
+        assert_eq!(
+            Some(CssDisplay::Inline),
+            CssDisplay::from_raw_value("inline")
+        );
     }
 
     #[test]
@@ -85,8 +90,14 @@ mod tests {
         assert_eq!(None, CssColor::from_raw_value("#fo0"));
         assert_eq!(None, CssColor::from_raw_value("#12"));
         assert_eq!(None, CssColor::from_raw_value("#12345"));
-        assert_eq!(Some(CssColor::Rgba(170, 187, 204, 255)), CssColor::from_raw_value("#abc"));
-        assert_eq!(Some(CssColor::Rgba(18, 171, 240, 255)), CssColor::from_raw_value("#12abf0"));
+        assert_eq!(
+            Some(CssColor::Rgba(170, 187, 204, 255)),
+            CssColor::from_raw_value("#abc")
+        );
+        assert_eq!(
+            Some(CssColor::Rgba(18, 171, 240, 255)),
+            CssColor::from_raw_value("#12abf0")
+        );
     }
 
     #[test]
@@ -95,8 +106,17 @@ mod tests {
         assert_eq!(None, CssDimension::from_raw_value("13"));
         assert_eq!(None, CssDimension::from_raw_value("13pxx"));
         assert_eq!(None, CssDimension::from_raw_value("13 px"));
-        assert_eq!(Some(CssDimension::Px(0.0)), CssDimension::from_raw_value("0px"));
-        assert_eq!(Some(CssDimension::Px(10.3)), CssDimension::from_raw_value("10.3px"));
-        assert_eq!(Some(CssDimension::Px(-10.3)), CssDimension::from_raw_value("-10.3px"));
+        assert_eq!(
+            Some(CssDimension::Px(0.0)),
+            CssDimension::from_raw_value("0px")
+        );
+        assert_eq!(
+            Some(CssDimension::Px(10.3)),
+            CssDimension::from_raw_value("10.3px")
+        );
+        assert_eq!(
+            Some(CssDimension::Px(-10.3)),
+            CssDimension::from_raw_value("-10.3px")
+        );
     }
 }

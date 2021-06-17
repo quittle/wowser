@@ -13,13 +13,28 @@ pub struct Window {
 
 impl Window {
     pub fn new() -> Result<Window, String> {
-        let bounds = Rect { x: 100, y: 100, width: 800, height: 600 };
+        let bounds = Rect {
+            x: 100,
+            y: 100,
+            width: 800,
+            height: 600,
+        };
 
         let window = glfw::Window::new(1, 1, "Wowser - what a browser!", None)
             .map_err::<String, _>(Into::into)?;
-        window.make_context_current().map_err::<String, _>(Into::into)?;
+        window
+            .make_context_current()
+            .map_err::<String, _>(Into::into)?;
 
-        let mut window = Window { window, bounds: Rect { x: 0, y: 0, width: 0, height: 0 } };
+        let mut window = Window {
+            window,
+            bounds: Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+            },
+        };
 
         window.resize(&bounds).map_err::<String, _>(Into::into)?;
 
@@ -28,7 +43,8 @@ impl Window {
 
     pub fn resize(&mut self, new_bounds: &Rect<i32>) -> UiResult {
         if new_bounds.width != self.bounds.width || new_bounds.height != self.bounds.height {
-            self.window.set_window_size(new_bounds.width, new_bounds.height)?;
+            self.window
+                .set_window_size(new_bounds.width, new_bounds.height)?;
         }
 
         if new_bounds.x != self.bounds.x || new_bounds.y != self.bounds.y {
@@ -39,7 +55,14 @@ impl Window {
             self.bounds.clone_from(&new_bounds);
 
             gl::viewport(0, 0, self.bounds.width, self.bounds.height)?;
-            gl::ortho(0.0, self.bounds.width.into(), self.bounds.height.into(), 0.0, -1.0, 1.0)?;
+            gl::ortho(
+                0.0,
+                self.bounds.width.into(),
+                self.bounds.height.into(),
+                0.0,
+                -1.0,
+                1.0,
+            )?;
             gl::clear(&[gl::BufferBit::Color])?;
 
             self.window.swap_buffers();
@@ -60,7 +83,12 @@ impl Window {
         if border_width > 0_f32 && border_color.a != 0 {
             gl::point_size(10.0)?;
             gl::line_width(border_width)?;
-            gl::color_4ub(border_color.r, border_color.g, border_color.b, border_color.a);
+            gl::color_4ub(
+                border_color.r,
+                border_color.g,
+                border_color.b,
+                border_color.a,
+            );
 
             gl::begin(gl::DrawMode::LineLoop);
             gl::vertex_2i(rect.x, rect.y);
@@ -108,7 +136,15 @@ impl Window {
             gl::raster_pos_2i(point.x, point.y + height)?;
             gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
             gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
-            gl::bitmap(width as i32 * 8, height, 0.0, 0.0, width as f32, 0.0, &bitmap)?;
+            gl::bitmap(
+                width as i32 * 8,
+                height,
+                0.0,
+                0.0,
+                width as f32,
+                0.0,
+                &bitmap,
+            )?;
             gl::pixel_zoom(1.0, 1.0)?;
             gl::flush()?;
 

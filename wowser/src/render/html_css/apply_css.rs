@@ -172,7 +172,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+            &vec![&CssProperty {
+                key: "color".into(),
+                value: "red".into()
+            }]
         );
     }
 
@@ -184,7 +187,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+            &vec![&CssProperty {
+                key: "color".into(),
+                value: "red".into()
+            }]
         );
     }
 
@@ -196,7 +202,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+            &vec![&CssProperty {
+                key: "color".into(),
+                value: "red".into()
+            }]
         );
     }
 
@@ -208,11 +217,17 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+            &vec![&CssProperty {
+                key: "color".into(),
+                value: "red".into()
+            }]
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![1])),
-            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+            &vec![&CssProperty {
+                key: "color".into(),
+                value: "red".into()
+            }]
         );
     }
 
@@ -225,8 +240,14 @@ mod tests {
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
             &vec![
-                &CssProperty { key: "color".into(), value: "red".into() },
-                &CssProperty { key: "color".into(), value: "blue".into() }
+                &CssProperty {
+                    key: "color".into(),
+                    value: "red".into()
+                },
+                &CssProperty {
+                    key: "color".into(),
+                    value: "blue".into()
+                }
             ]
         );
 
@@ -237,8 +258,14 @@ mod tests {
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
             &vec![
-                &CssProperty { key: "color".into(), value: "red".into() },
-                &CssProperty { key: "color".into(), value: "blue".into() }
+                &CssProperty {
+                    key: "color".into(),
+                    value: "red".into()
+                },
+                &CssProperty {
+                    key: "color".into(),
+                    value: "blue".into()
+                }
             ]
         );
     }
@@ -251,7 +278,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty { key: "color".into(), value: "red".into() }]
+            &vec![&CssProperty {
+                key: "color".into(),
+                value: "red".into()
+            }]
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![1])),
@@ -259,7 +289,10 @@ mod tests {
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0, 0])),
-            &vec![&CssProperty { key: "height".into(), value: "1".into() }]
+            &vec![&CssProperty {
+                key: "height".into(),
+                value: "1".into()
+            }]
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0, 0, 0])),

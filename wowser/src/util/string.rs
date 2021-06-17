@@ -64,7 +64,9 @@ pub fn bytes_to_hex(bytes: &[u8]) -> String {
 }
 
 pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
-    let normalized_string = s.replace(|c: char| c.is_whitespace(), "").to_ascii_lowercase();
+    let normalized_string = s
+        .replace(|c: char| c.is_whitespace(), "")
+        .to_ascii_lowercase();
     if normalized_string.len() % 2 != 0 {
         return Err("Even number of characters required".to_string());
     }
@@ -88,7 +90,11 @@ pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
 
 pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
     str::from_utf8(&bytes).map_err(|e| {
-        format!("{} - Original String<{}>", e.to_string(), String::from_utf8_lossy(&bytes))
+        format!(
+            "{} - Original String<{}>",
+            e.to_string(),
+            String::from_utf8_lossy(&bytes)
+        )
     })
 }
 

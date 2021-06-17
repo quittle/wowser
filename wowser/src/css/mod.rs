@@ -14,7 +14,9 @@ pub fn parse_css(document: &str) -> Result<CssDocument, String> {
     let lexer = Lexer::new(Box::new(CssToken::Document));
     let tokens = lexer.parse(document).ok_or("Failed to lex CSS")?;
     let ast = Parser {}.parse(&tokens, &CssRule::Document)?;
-    let document = CssInterpreter {}.interpret(&ast).ok_or("Failed to interpret Css")?;
+    let document = CssInterpreter {}
+        .interpret(&ast)
+        .ok_or("Failed to interpret Css")?;
     Ok(document)
 }
 
@@ -28,8 +30,16 @@ mod tests {
 
     #[test]
     fn empty_config() {
-        assert_eq!(CssDocument { blocks: vec![] }, parse(""), "Empty document without spaces");
-        assert_eq!(CssDocument { blocks: vec![] }, parse("  "), "Empty document with spaces");
+        assert_eq!(
+            CssDocument { blocks: vec![] },
+            parse(""),
+            "Empty document without spaces"
+        );
+        assert_eq!(
+            CssDocument { blocks: vec![] },
+            parse("  "),
+            "Empty document with spaces"
+        );
     }
 
     #[test]
@@ -119,8 +129,14 @@ mod tests {
                         }
                     ],
                     properties: vec![
-                        CssProperty { key: "hi".to_string(), value: "'there'".to_string() },
-                        CssProperty { key: "display".to_string(), value: "none".to_string() }
+                        CssProperty {
+                            key: "hi".to_string(),
+                            value: "'there'".to_string()
+                        },
+                        CssProperty {
+                            key: "display".to_string(),
+                            value: "none".to_string()
+                        }
                     ]
                 }]
             },
@@ -152,8 +168,14 @@ mod tests {
                             },
                         ],
                         properties: vec![
-                            CssProperty { key: "k".to_string(), value: "v".to_string() },
-                            CssProperty { key: "v".to_string(), value: "k".to_string() }
+                            CssProperty {
+                                key: "k".to_string(),
+                                value: "v".to_string()
+                            },
+                            CssProperty {
+                                key: "v".to_string(),
+                                value: "k".to_string()
+                            }
                         ]
                     }
                 ]

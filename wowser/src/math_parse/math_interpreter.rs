@@ -8,7 +8,11 @@ impl Interpreter<'_> for MathInterpreter {
     type Result = f32;
 
     fn on_node(&self, ast: &ASTNode<MathRule>) -> Option<f32> {
-        let ASTNode { rule, token, children } = ast;
+        let ASTNode {
+            rule,
+            token,
+            children,
+        } = ast;
 
         match **rule {
             MathRule::Document => self.on_node(&children[0]),

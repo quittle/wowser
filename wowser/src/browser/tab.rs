@@ -55,7 +55,10 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
                 font_size: _font_size,
                 text_color,
             }) => {
-                let mut offset = Point { x: bounds.x, y: bounds.y };
+                let mut offset = Point {
+                    x: bounds.x,
+                    y: bounds.y,
+                };
                 for text_char in text.chars() {
                     if let Some(c) = font.render_character(text_char) {
                         window

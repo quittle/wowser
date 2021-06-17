@@ -29,7 +29,9 @@ impl HtmlInterpreter {
         self.assert_rule_is(rule, HtmlRule::Doctype);
         self.assert_children_length(children, 3);
 
-        DoctypeHtmlNode { document_type_definition: self.on_doctype_contents(&children[1]) }
+        DoctypeHtmlNode {
+            document_type_definition: self.on_doctype_contents(&children[1]),
+        }
     }
 
     fn on_doctype_contents(&self, doctype_contents: &ASTNode<HtmlRule>) -> Vec<String> {
@@ -37,11 +39,18 @@ impl HtmlInterpreter {
 
         self.assert_rule_is(rule, HtmlRule::DoctypeContents);
 
-        children.iter().map(|child| self.on_doctype_contents_string(child)).collect()
+        children
+            .iter()
+            .map(|child| self.on_doctype_contents_string(child))
+            .collect()
     }
 
     fn on_doctype_contents_string(&self, doctype_contents_string: &ASTNode<HtmlRule>) -> String {
-        let ASTNode { rule, children, token } = doctype_contents_string;
+        let ASTNode {
+            rule,
+            children,
+            token,
+        } = doctype_contents_string;
 
         self.assert_rule_is(rule, HtmlRule::DoctypeContentsString);
         self.assert_no_children(children);
@@ -57,7 +66,11 @@ impl HtmlInterpreter {
 
         let (tag_name, attributes) = self.on_opening_tag(&children[0]);
         let children = self.on_tag_contents(&children[1]);
-        ElementHtmlNode { tag_name, attributes, children }
+        ElementHtmlNode {
+            tag_name,
+            attributes,
+            children,
+        }
     }
 
     fn on_self_closing_tag(&self, self_closing_tag: &ASTNode<HtmlRule>) -> ElementHtmlNode {
@@ -67,7 +80,11 @@ impl HtmlInterpreter {
         self.assert_children_length(children, 2);
 
         let (tag_name, attributes) = self.on_opening_tag_prelude(&children[0]);
-        ElementHtmlNode { tag_name, attributes, children: vec![] }
+        ElementHtmlNode {
+            tag_name,
+            attributes,
+            children: vec![],
+        }
     }
 
     fn on_opening_tag(
@@ -98,7 +115,11 @@ impl HtmlInterpreter {
     }
 
     fn on_opening_tag_name(&self, opening_tag_name: &ASTNode<HtmlRule>) -> String {
-        let ASTNode { rule, children, token } = opening_tag_name;
+        let ASTNode {
+            rule,
+            children,
+            token,
+        } = opening_tag_name;
 
         self.assert_rule_is(rule, HtmlRule::OpeningTagName);
         self.assert_no_children(children);
@@ -114,7 +135,10 @@ impl HtmlInterpreter {
 
         self.assert_rule_is(rule, HtmlRule::OpeningTagAttributes);
 
-        children.iter().map(|child| self.on_tag_attribute(child)).collect()
+        children
+            .iter()
+            .map(|child| self.on_tag_attribute(child))
+            .collect()
     }
 
     fn on_tag_attribute(&self, tag_attribute: &ASTNode<HtmlRule>) -> TagAttributeHtmlNode {
@@ -124,14 +148,21 @@ impl HtmlInterpreter {
         self.assert_children_length_one_of(children, vec![1, 2, 3]);
 
         let name = self.on_attribute_name(&children[0]);
-        let value =
-            if children.len() == 3 { Some(self.on_attribute_value(&children[2])) } else { None };
+        let value = if children.len() == 3 {
+            Some(self.on_attribute_value(&children[2]))
+        } else {
+            None
+        };
 
         TagAttributeHtmlNode { name, value }
     }
 
     fn on_attribute_name(&self, attribute_name: &ASTNode<HtmlRule>) -> String {
-        let ASTNode { rule, children, token } = attribute_name;
+        let ASTNode {
+            rule,
+            children,
+            token,
+        } = attribute_name;
 
         self.assert_rule_is(rule, HtmlRule::AttributeName);
         self.assert_no_children(children);
@@ -140,7 +171,11 @@ impl HtmlInterpreter {
     }
 
     fn on_attribute_value(&self, attribute_name: &ASTNode<HtmlRule>) -> String {
-        let ASTNode { rule, children, token } = attribute_name;
+        let ASTNode {
+            rule,
+            children,
+            token,
+        } = attribute_name;
 
         self.assert_rule_is(rule, HtmlRule::AttributeValue);
         self.assert_no_children(children);
@@ -173,7 +208,10 @@ impl HtmlInterpreter {
 
         self.assert_rule_is(rule, HtmlRule::TagsAndText);
 
-        children.iter().flat_map(|child| self.on_tag_and_text(child)).collect()
+        children
+            .iter()
+            .flat_map(|child| self.on_tag_and_text(child))
+            .collect()
     }
 
     fn on_tag_and_text(&self, tag_and_text: &ASTNode<HtmlRule>) -> Vec<ElementContents> {
@@ -206,12 +244,18 @@ impl HtmlInterpreter {
     }
 
     fn on_text(&self, text_node: &ASTNode<HtmlRule>) -> TextHtmlNode {
-        let ASTNode { rule, children, token } = text_node;
+        let ASTNode {
+            rule,
+            children,
+            token,
+        } = text_node;
 
         self.assert_rule_is(rule, HtmlRule::Text);
         self.assert_no_children(children);
 
-        TextHtmlNode { text: self.extract_token(token) }
+        TextHtmlNode {
+            text: self.extract_token(token),
+        }
     }
 
     fn assert_rule_is(&self, rule: &HtmlRule, expected_rule: HtmlRule) {
@@ -232,11 +276,18 @@ impl HtmlInterpreter {
     }
 
     fn assert_no_children(&self, children: &[ASTNode<HtmlRule>]) {
-        assert!(children.is_empty(), "Expected no children but found {}", children.len());
+        assert!(
+            children.is_empty(),
+            "Expected no children but found {}",
+            children.len()
+        );
     }
 
     fn extract_token(&self, token: &Option<&(Box<dyn Token>, &str)>) -> String {
-        (*token).expect("Missing token for required rule").1.to_string()
+        (*token)
+            .expect("Missing token for required rule")
+            .1
+            .to_string()
     }
 }
 

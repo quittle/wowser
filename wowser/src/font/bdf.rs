@@ -23,7 +23,12 @@ pub struct Bbx {
 }
 
 impl Bbx {
-    const DEFAULT: Bbx = Bbx { width: 0, height: 0, offset_x: 0, offset_y: 0 };
+    const DEFAULT: Bbx = Bbx {
+        width: 0,
+        height: 0,
+        offset_x: 0,
+        offset_y: 0,
+    };
 }
 
 #[derive(Debug, Default)]
@@ -111,7 +116,11 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
                         "Missing SIZE value",
                     )?;
 
-                font.size = Some(BDFPropertySize { point_size, x_resolution, y_resolution })
+                font.size = Some(BDFPropertySize {
+                    point_size,
+                    x_resolution,
+                    y_resolution,
+                })
             }
             "FONTBOUNDINGBOX" => {
                 let (width, height, offset_x, offset_y) = split_str_into_4::<_, _, _, _, FontError>(
@@ -120,7 +129,12 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
                     |v| v.parse::<i32>(),
                     "Missing BBX value",
                 )?;
-                font.bounding_box = Some(Bbx { width, height, offset_x, offset_y })
+                font.bounding_box = Some(Bbx {
+                    width,
+                    height,
+                    offset_x,
+                    offset_y,
+                })
             }
             "COMMENT" => { /* Skip */ }
             "STARTPROPERTIES" => {
@@ -162,7 +176,10 @@ fn parse_char(
     first_line: &str,
 ) -> Result<BDFCharacter, FontError> {
     let mut character = BDFCharacter::default();
-    let name = first_line.splitn(2, ' ').nth(1).ok_or("Missing character name")?;
+    let name = first_line
+        .splitn(2, ' ')
+        .nth(1)
+        .ok_or("Missing character name")?;
     character.name = Some(name.to_string());
     while let Some(line) = next_line(lines)? {
         if line == "ENDCHAR" {
@@ -200,7 +217,12 @@ fn parse_char(
                                 |v| v.parse::<i32>(),
                                 "Missing BBX value",
                             )?;
-                        character.bounding_box = Some(Bbx { width, height, offset_x, offset_y })
+                        character.bounding_box = Some(Bbx {
+                            width,
+                            height,
+                            offset_x,
+                            offset_y,
+                        })
                     }
                     "SWIDTH" => {
                         let (s_width_x, s_width_y) = split_str_into_2::<_, _, _, _, FontError>(
@@ -216,8 +238,13 @@ fn parse_char(
             }
         }
     }
-    let nested_bitmap = character.nested_bitmap.ok_or("BITMAP not provided for character")?;
-    let d_width_x = character.d_width.ok_or("DWIDTH not provided for character")?.0;
+    let nested_bitmap = character
+        .nested_bitmap
+        .ok_or("BITMAP not provided for character")?;
+    let d_width_x = character
+        .d_width
+        .ok_or("DWIDTH not provided for character")?
+        .0;
 
     let mut bitmap = Vec::with_capacity(d_width_x as usize * cmp::max(1, nested_bitmap.len()));
 

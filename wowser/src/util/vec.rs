@@ -72,9 +72,18 @@ mod tests {
 
         assert_eq!(v2(&[], &[]), vec_window_split(&[1], &[1]));
         assert_eq!(v2(&[0], &[2]), vec_window_split(&[0, 1, 2], &[1]));
-        assert_eq!(v3(&[1], &[], &[1]), vec_window_split(&[1, 8, 9, 8, 9, 1], &[8, 9]));
-        assert_eq!(v2(&[0, 1, 2], &[0]), vec_window_split(&[0, 1, 2, 1, 1, 0], &[1, 1]));
-        assert_eq!(v4(&[0], &[0], &[0], &[]), vec_window_split(&[0, 1, 0, 1, 0, 1], &[1]));
+        assert_eq!(
+            v3(&[1], &[], &[1]),
+            vec_window_split(&[1, 8, 9, 8, 9, 1], &[8, 9])
+        );
+        assert_eq!(
+            v2(&[0, 1, 2], &[0]),
+            vec_window_split(&[0, 1, 2, 1, 1, 0], &[1, 1])
+        );
+        assert_eq!(
+            v4(&[0], &[0], &[0], &[]),
+            vec_window_split(&[0, 1, 0, 1, 0, 1], &[1])
+        );
         assert_eq!(v2(&[], &[1]), vec_window_split(&[1, 1, 1], &[1, 1]));
         assert_eq!(v3(&[1], &[1], &[1]), vec_window_split(&[1, 1, 1], &[]));
     }

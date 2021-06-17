@@ -16,10 +16,11 @@ impl Lexer {
 
     /// Parses a source string into a series of tokens
     pub fn parse<'a>(&self, source: &'a str) -> Option<ParsedTokens<'a>> {
-        self.recursive_parse(source, self.root_token.as_ref()).map(|mut v| {
-            v.reverse();
-            v
-        })
+        self.recursive_parse(source, self.root_token.as_ref())
+            .map(|mut v| {
+                v.reverse();
+                v
+            })
     }
 
     fn recursive_parse<'a>(

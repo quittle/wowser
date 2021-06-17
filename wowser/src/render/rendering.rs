@@ -44,7 +44,11 @@ fn style_to_scene_r(
         return vec![];
     }
 
-    let root_offset = offset + &Point { x: style_node.margin, y: style_node.margin };
+    let root_offset = offset
+        + &Point {
+            x: style_node.margin,
+            y: style_node.margin,
+        };
     let default_content_width = match style_node.width {
         StyleNodeDimen::Auto => match style_node.display {
             StyleNodeDisplay::Inline => 0_f32,
@@ -69,7 +73,11 @@ fn style_to_scene_r(
         border_width: style_node.border_width,
     });
 
-    let base_child_offset = &root_offset + &Point { x: style_node.padding, y: style_node.padding };
+    let base_child_offset = &root_offset
+        + &Point {
+            x: style_node.padding,
+            y: style_node.padding,
+        };
     let mut child_offset = base_child_offset.clone();
 
     match &style_node.child {
@@ -122,8 +130,10 @@ fn style_to_scene_r(
                     font,
                 );
                 if let Some(child) = new_children.first() {
-                    child_offset +=
-                        Point { x: child.bounds().width + node.margin * 2_f32, y: 0_f32 };
+                    child_offset += Point {
+                        x: child.bounds().width + node.margin * 2_f32,
+                        y: 0_f32,
+                    };
                     max_child_height =
                         max_child_height.max(child.bounds().height + node.margin * 2_f32);
                 }
@@ -163,7 +173,10 @@ fn text_style_to_scene(
 fn calculate_text_width(text: &str, _font_size: f32, caching_font: &mut CachingFont) -> f32 {
     let mut ret = 0_f32;
     for char in text.chars() {
-        ret += caching_font.render_character(char).map(|c| c.width).unwrap_or(0_f32);
+        ret += caching_font
+            .render_character(char)
+            .map(|c| c.width)
+            .unwrap_or(0_f32);
     }
     ret
 }

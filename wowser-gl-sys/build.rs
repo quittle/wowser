@@ -8,7 +8,9 @@ fn generate_c_bindings(out_dir: &Path) {
         .generate()
         .expect("Unable to generate bindings");
 
-    bindings.write_to_file(out_dir.join("bindings.rs")).expect("Unable to write bindings");
+    bindings
+        .write_to_file(out_dir.join("bindings.rs"))
+        .expect("Unable to write bindings");
 }
 
 fn main() {

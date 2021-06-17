@@ -9,7 +9,10 @@ pub struct CachingFont {
 
 impl CachingFont {
     pub fn wrap(font: Box<dyn Font>) -> CachingFont {
-        CachingFont { font, character_map: HashMap::new() }
+        CachingFont {
+            font,
+            character_map: HashMap::new(),
+        }
     }
 
     pub fn render_character(&mut self, character: char) -> Option<RenderedCharacter> {

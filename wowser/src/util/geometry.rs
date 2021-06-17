@@ -16,7 +16,12 @@ where
 
 impl<T: Number + Add<Output = T>> Rect<T> {
     pub fn offset(&self, x: T, y: T) -> Rect<T> {
-        Rect { x: self.x + x, y: self.y + y, width: self.width, height: self.height }
+        Rect {
+            x: self.x + x,
+            y: self.y + y,
+            width: self.width,
+            height: self.height,
+        }
     }
 }
 
@@ -33,7 +38,10 @@ impl<U: Number, T: Number + Add<U, Output = U>> Add<&mut Point<U>> for &Point<T>
     type Output = Point<U>;
 
     fn add(self, rhs: &mut Point<U>) -> Self::Output {
-        Point { x: self.x + rhs.x, y: self.y + rhs.y }
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
@@ -41,7 +49,10 @@ impl<'a, U: Number, T: Number + Add<U, Output = U>> Add<&Point<U>> for &'a mut P
     type Output = Point<U>;
 
     fn add(self: &'a mut Point<T>, rhs: &Point<U>) -> Self::Output {
-        Point { x: self.x + rhs.x, y: self.y + rhs.y }
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
@@ -49,7 +60,10 @@ impl<U: Number, T: Number + Add<U, Output = U>> Add<&Point<U>> for &Point<T> {
     type Output = Point<U>;
 
     fn add(self, rhs: &Point<U>) -> Self::Output {
-        Point { x: self.x + rhs.x, y: self.y + rhs.y }
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
@@ -57,7 +71,10 @@ impl<U: Number, T: Number + Add<U, Output = U>> Add<Point<U>> for Point<T> {
     type Output = Point<U>;
 
     fn add(self, rhs: Point<U>) -> Self::Output {
-        Point { x: self.x + rhs.x, y: self.y + rhs.y }
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
@@ -72,7 +89,10 @@ macro_rules! point_from {
     ($i: ty, $o: ty) => {
         impl From<Point<$i>> for Point<$o> {
             fn from(point: Point<$i>) -> Point<$o> {
-                Point { x: point.x as $o, y: point.y as $o }
+                Point {
+                    x: point.x as $o,
+                    y: point.y as $o,
+                }
             }
         }
     };

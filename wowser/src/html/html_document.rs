@@ -12,7 +12,11 @@ impl Display for DocumentHtmlNode {
             f,
             "{}{}",
             self.doctype,
-            self.contents.iter().map(|child| child.to_string()).collect::<Vec<String>>().join("")
+            self.contents
+                .iter()
+                .map(|child| child.to_string())
+                .collect::<Vec<String>>()
+                .join("")
         )
     }
 }
@@ -126,15 +130,21 @@ mod tests {
     #[test]
     fn document_html_node() {
         let node = DocumentHtmlNode {
-            doctype: DoctypeHtmlNode { document_type_definition: vec![] },
-            contents: vec![ElementContents::Text(TextHtmlNode { text: "text".into() })],
+            doctype: DoctypeHtmlNode {
+                document_type_definition: vec![],
+            },
+            contents: vec![ElementContents::Text(TextHtmlNode {
+                text: "text".into(),
+            })],
         };
         assert_eq!("<!DOCTYPE>text", node.to_string());
     }
 
     #[test]
     fn doctype_html_node() {
-        let mut node = DoctypeHtmlNode { document_type_definition: vec![] };
+        let mut node = DoctypeHtmlNode {
+            document_type_definition: vec![],
+        };
         assert_eq!("<!DOCTYPE>", node.to_string());
         node.document_type_definition.push("html".into());
         assert_eq!("<!DOCTYPE \"html\">", node.to_string());
@@ -144,22 +154,31 @@ mod tests {
 
     #[test]
     fn element_html_node() {
-        let mut node =
-            ElementHtmlNode { tag_name: "tag".into(), attributes: vec![], children: vec![] };
+        let mut node = ElementHtmlNode {
+            tag_name: "tag".into(),
+            attributes: vec![],
+            children: vec![],
+        };
         assert_eq!("<tag />", node.to_string());
-        node.attributes.push(TagAttributeHtmlNode { name: "attr1".into(), value: None });
+        node.attributes.push(TagAttributeHtmlNode {
+            name: "attr1".into(),
+            value: None,
+        });
         assert_eq!("<tag attr1 />", node.to_string());
         node.attributes[0].value = Some("value".into());
         assert_eq!("<tag attr1=\"value\" />", node.to_string());
-        node.children.push(ElementContents::Text(TextHtmlNode { text: "text content".into() }));
+        node.children.push(ElementContents::Text(TextHtmlNode {
+            text: "text content".into(),
+        }));
         assert_eq!("<tag attr1=\"value\">text content</tag>", node.to_string());
         node.attributes.clear();
         assert_eq!("<tag>text content</tag>", node.to_string());
-        node.children.push(ElementContents::Element(ElementHtmlNode {
-            tag_name: "nested".into(),
-            attributes: vec![],
-            children: vec![],
-        }));
+        node.children
+            .push(ElementContents::Element(ElementHtmlNode {
+                tag_name: "nested".into(),
+                attributes: vec![],
+                children: vec![],
+            }));
         assert_eq!("<tag>text content<nested /></tag>", node.to_string());
         node.children.insert(
             0,
@@ -169,12 +188,18 @@ mod tests {
                 children: vec![],
             }),
         );
-        assert_eq!("<tag><first />text content<nested /></tag>", node.to_string());
+        assert_eq!(
+            "<tag><first />text content<nested /></tag>",
+            node.to_string()
+        );
     }
 
     #[test]
     fn tag_attribute_html_node() {
-        let mut node = TagAttributeHtmlNode { name: "name".into(), value: None };
+        let mut node = TagAttributeHtmlNode {
+            name: "name".into(),
+            value: None,
+        };
         assert_eq!("name", node.to_string());
         node.value = Some("value".into());
         assert_eq!("name=\"value\"", node.to_string());
@@ -182,13 +207,17 @@ mod tests {
 
     #[test]
     fn text_html_node() {
-        let node = TextHtmlNode { text: "text in node".into() };
+        let node = TextHtmlNode {
+            text: "text in node".into(),
+        };
         assert_eq!("text in node", node.to_string());
     }
 
     #[test]
     fn element_contents() {
-        let node = ElementContents::Text(TextHtmlNode { text: "text".into() });
+        let node = ElementContents::Text(TextHtmlNode {
+            text: "text".into(),
+        });
         assert_eq!("text", node.to_string());
 
         let node = ElementContents::Element(ElementHtmlNode {

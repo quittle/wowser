@@ -1,0 +1,22 @@
+html {
+  background-color: #fff;
+  color: #000;
+  display: block;
+  margin: 12px;
+}
+
+head {
+  display: none;
+}
+
+body {
+  display: block;
+}
+
+div {
+  display: block;
+}
+
+span {
+  display: inline;
+}

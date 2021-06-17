@@ -1,5 +1,6 @@
 extern crate wowser_glfw;
 
+pub mod browser;
 pub mod css;
 pub mod font;
 pub mod html;

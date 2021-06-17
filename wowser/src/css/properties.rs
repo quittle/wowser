@@ -6,6 +6,7 @@ use crate::util::{string_to_bytes, HexConversion};
 pub enum CssDisplay {
     Block,
     Inline,
+    None,
 }
 
 impl CssDisplay {
@@ -14,6 +15,8 @@ impl CssDisplay {
             Some(Self::Block)
         } else if value.eq_ignore_ascii_case("inline") {
             Some(Self::Inline)
+        } else if value.eq_ignore_ascii_case("none") {
+            Some(Self::None)
         } else {
             None
         }

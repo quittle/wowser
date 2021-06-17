@@ -13,9 +13,12 @@ use std::{borrow::Borrow, thread};
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
 
 fn render(window: &mut Window) {
-    let html = parse_html(r#"<div>hello <span>world</span></div>"#).unwrap();
+    let html = parse_html(
+        r#"<html><head><title>my title</title></head><div>hello <span>world</span></div></html>"#,
+    )
+    .unwrap();
     let css =
-        parse_css(r#"div { background-color: #f00; margin: 10px; color: #000; } span { background-color: #0f0; border-color: #0ff; border-width: 3px; }"#).unwrap();
+        parse_css(r#"head { display: none; color:#fff; } div { background-color: #f00; margin: 10px; color: #000; } span { background-color: #0f0; border-color: #0ff; border-width: 3px; }"#).unwrap();
     let css_styling = style_html(&html, &css);
     let mut example_root = html_css_to_styles(&html, &css_styling);
     normalize_style_nodes(&mut example_root);

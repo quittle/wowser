@@ -44,6 +44,7 @@ fn render(
         ) {
             CssDisplay::Block => StyleNodeDisplay::Block,
             CssDisplay::Inline => StyleNodeDisplay::Inline,
+            CssDisplay::None => StyleNodeDisplay::None,
         };
 
         let mut style_node = StyleNode::new_default(display);

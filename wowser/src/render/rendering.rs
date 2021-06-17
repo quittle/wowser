@@ -40,15 +40,21 @@ fn style_to_scene_r(
     parent_width: f32,
     font: &mut CachingFont,
 ) -> Vec<SceneNode> {
+    if style_node.display == StyleNodeDisplay::None {
+        return vec![];
+    }
+
     let root_offset = offset + &Point { x: style_node.margin, y: style_node.margin };
     let default_content_width = match style_node.width {
         StyleNodeDimen::Auto => match style_node.display {
             StyleNodeDisplay::Inline => 0_f32,
             StyleNodeDisplay::Block => parent_width,
+            StyleNodeDisplay::None => panic!("Should never be reached"),
         },
         StyleNodeDimen::Pixels(width) => match style_node.display {
             StyleNodeDisplay::Inline => 0_f32,
             StyleNodeDisplay::Block => width,
+            StyleNodeDisplay::None => panic!("Should never be reached"),
         },
     };
     let mut root = SceneNode::RectangleSceneNode(RectangleSceneNode {
@@ -122,12 +128,12 @@ fn style_to_scene_r(
                         max_child_height.max(child.bounds().height + node.margin * 2_f32);
                 }
                 ret.extend(new_children);
-                let last_child = ret.last().expect("").bounds();
+                let last_child = ret.last().unwrap().bounds();
                 child_offset.x = last_child.right();
                 child_offset.y = last_child.y;
             }
 
-            let mut root_bounds = ret.first_mut().expect("").mut_bounds();
+            let mut root_bounds = ret.first_mut().unwrap().mut_bounds();
             root_bounds.width += child_offset.x - base_child_offset.x;
             root_bounds.height += max_child_height;
 

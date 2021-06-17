@@ -33,6 +33,7 @@ impl StyleNode {
 pub enum StyleNodeDisplay {
     Inline,
     Block,
+    None,
 }
 
 impl StyleNodeDisplay {

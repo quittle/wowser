@@ -5,22 +5,18 @@ use crate::css::CssDocument;
 use crate::css::CssProperty;
 use crate::css::CssSelectorChain;
 use crate::css::CssSelectorChainItem;
-use crate::html::DocumentHtmlNode;
 use crate::html::ElementContents;
+use crate::html::HtmlDocument;
 
 /// Applies a CSS document to an HTML document, returning a mapping of the entries in
 /// `html_document` to their rendered CSS properties. All nodes in html_document are
 /// guaranteed to have an entry, even if it's just an empty vector. Property keys
 /// in each vec may be repeated but appear in order that they appear in the document.
 pub fn style_html<'html, 'css>(
-    html_document: &'html DocumentHtmlNode,
+    html_document: &'html HtmlDocument,
     css_document: &'css CssDocument,
 ) -> HashMap<*const ElementContents, Vec<&'css CssProperty>> {
-    html_document
-        .contents
-        .iter()
-        .flat_map(|element| recurse_style_html(element, css_document, &[]))
-        .collect()
+    recurse_style_html(&html_document.html, css_document, &[])
 }
 
 fn recurse_style_html<'element, 'css>(
@@ -132,10 +128,10 @@ mod tests {
         styles.get(&addr_of!(*element)).unwrap()
     }
 
-    fn get_element(html_document: &DocumentHtmlNode, children: Vec<usize>) -> &ElementContents {
-        let mut node = &html_document.contents[children[0]];
-        for index in children[1..].iter() {
-            node = &as_element(node).children[*index];
+    fn get_element(html_document: &HtmlDocument, children: Vec<usize>) -> &ElementContents {
+        let mut node = &html_document.html;
+        for index in children {
+            node = &as_element(node).children[index];
         }
         node
     }

@@ -10,14 +10,15 @@ pub use html_token::HtmlToken;
 
 use crate::parse::*;
 
-pub fn parse_html(document: &str) -> Result<DocumentHtmlNode, String> {
+pub fn parse_html(document: &str) -> Result<HtmlDocument, String> {
     let lexer = Lexer::new(Box::new(HtmlToken::Document));
     let tokens = lexer.parse(document).ok_or("Failed to lex HTML")?;
     let ast = Parser {}.parse(&tokens, &HtmlRule::Document)?;
-    let document = HtmlInterpreter {}
+    let document_html_node = HtmlInterpreter {}
         .interpret(&ast)
         .ok_or("Failed to interpret HTML")?;
-    Ok(document)
+    let html_document = HtmlDocument::from(document_html_node);
+    Ok(html_document)
 }
 
 #[cfg(test)]
@@ -32,13 +33,13 @@ mod tests {
 
     #[test]
     fn empty_config() {
-        assert_eq!(String::from("<!DOCTYPE>"), parse(""));
+        assert_eq!(String::from("<!DOCTYPE><html></html>"), parse(""));
     }
 
     #[test]
     fn simple_html() {
         assert_eq!(
-            String::from("<!DOCTYPE \"html\" \"PUBLIC\" \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\"><img src=\"foo\" preload />text<br /><b color=\"red\">here</b> as well\n"),
+            String::from("<!DOCTYPE \"html\" \"PUBLIC\" \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\"><html><img src=\"foo\" preload />text<br /><b color=\"red\">here</b> as well\n</html>"),
             parse(include_str!("../../data/simple.html")));
     }
 }

@@ -1,5 +1,43 @@
 use std::fmt::{Display, Write};
 
+pub struct HtmlDocument {
+    pub doctype: DoctypeHtmlNode,
+    pub html: ElementContents,
+}
+
+impl HtmlDocument {
+    pub fn from(document_node: DocumentHtmlNode) -> HtmlDocument {
+        let first_html_node = document_node.contents.iter()
+        .find_map(|child|
+            child.find_first(|element|
+                matches!(element, ElementContents::Element(ElementHtmlNode{tag_name, ..}) if tag_name == "html")));
+        let html = if let Some(ElementContents::Element(element)) = first_html_node {
+            ElementHtmlNode {
+                tag_name: "html".into(),
+                attributes: element.attributes.clone(),
+                children: document_node.contents,
+            }
+        } else {
+            ElementHtmlNode {
+                tag_name: "html".into(),
+                children: document_node.contents,
+                ..Default::default()
+            }
+        };
+
+        HtmlDocument {
+            doctype: document_node.doctype,
+            html: ElementContents::Element(html),
+        }
+    }
+}
+
+impl Display for HtmlDocument {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}{}", self.doctype, self.html.to_string())
+    }
+}
+
 /// Represents an entires HTML document
 #[derive(Debug, Default)]
 pub struct DocumentHtmlNode {
@@ -22,7 +60,7 @@ impl Display for DocumentHtmlNode {
 }
 
 /// Represents a text node
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct TextHtmlNode {
     pub text: String,
 }
@@ -34,10 +72,35 @@ impl Display for TextHtmlNode {
 }
 
 /// Represents the units that can make up the contents of an element. There can be text interspersed with other elements
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ElementContents {
     Text(TextHtmlNode),
     Element(ElementHtmlNode),
+}
+
+impl ElementContents {
+    pub fn find_first<P>(&self, mut predicate: P) -> Option<&ElementContents>
+    where
+        P: FnMut(&ElementContents) -> bool,
+    {
+        self._find_first(&mut predicate)
+    }
+
+    fn _find_first<P>(&self, predicate: &mut P) -> Option<&ElementContents>
+    where
+        P: FnMut(&ElementContents) -> bool,
+    {
+        if predicate(self) {
+            Some(self)
+        } else if let Self::Element(element_node) = self {
+            element_node
+                .children
+                .iter()
+                .find_map(|child| child._find_first(predicate))
+        } else {
+            None
+        }
+    }
 }
 
 impl Display for ElementContents {
@@ -68,7 +131,7 @@ impl Display for DoctypeHtmlNode {
 }
 
 /// Represents an element node
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct ElementHtmlNode {
     pub tag_name: String,
     pub attributes: Vec<TagAttributeHtmlNode>,
@@ -106,7 +169,7 @@ impl Display for ElementHtmlNode {
 }
 
 /// Represents a text node
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct TagAttributeHtmlNode {
     pub name: String,
     pub value: Option<String>,
@@ -126,6 +189,67 @@ impl Display for TagAttributeHtmlNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn element_contents_find() {
+        let root = ElementContents::Element(ElementHtmlNode {
+            tag_name: "a".into(),
+            children: vec![
+                ElementContents::Element(ElementHtmlNode {
+                    tag_name: "aa".into(),
+                    children: vec![
+                        ElementContents::Text(TextHtmlNode {
+                            text: "aa-text".into(),
+                        }),
+                        ElementContents::Element(ElementHtmlNode {
+                            tag_name: "aaa".into(),
+                            ..Default::default()
+                        }),
+                    ],
+                    ..Default::default()
+                }),
+                ElementContents::Text(TextHtmlNode {
+                    text: "a-text".into(),
+                }),
+                ElementContents::Element(ElementHtmlNode {
+                    tag_name: "ab".into(),
+                    ..Default::default()
+                }),
+            ],
+            ..Default::default()
+        });
+
+        // Reverse the order because Vec.pop() grabs from the end. This list should be
+        // written in the expected order of access
+        let mut order = vec!["a", "aa", "aa-text", "aaa", "a-text", "ab"];
+        order.reverse();
+
+        let ret = root.find_first(|node| {
+            match node {
+                ElementContents::Element(element) => {
+                    assert_eq!(order.pop().unwrap(), element.tag_name)
+                }
+                ElementContents::Text(text) => assert_eq!(order.pop().unwrap(), text.text),
+            }
+            false
+        });
+        assert_eq!(None, ret);
+
+        let ret = root.find_first(|node|
+            matches!(node, ElementContents::Element(ElementHtmlNode { tag_name, .. }) if tag_name == "aaa"));
+
+        assert!(matches!(
+            ret,
+            Some(ElementContents::Element(ElementHtmlNode { tag_name, .. })) if tag_name == "aaa"
+        ));
+
+        let ret = root.find_first(|_node| true);
+
+        assert!(matches!(
+            ret,
+            Some(ElementContents::Element(ElementHtmlNode { tag_name, .. })) if tag_name == "a"
+        ));
+    }
 
     #[test]
     fn document_html_node() {

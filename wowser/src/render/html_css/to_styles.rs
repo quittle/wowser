@@ -2,23 +2,18 @@ use std::{collections::HashMap, ptr::addr_of};
 
 use crate::{
     css::{CssColor, CssDimension, CssDisplay, CssProperty},
-    html::{DocumentHtmlNode, ElementContents},
+    html::{ElementContents, HtmlDocument},
     render::{Color, StyleNode, StyleNodeChild, StyleNodeDisplay, TextStyleNode},
 };
 
 pub fn html_css_to_styles(
-    html_document: &DocumentHtmlNode,
+    html_document: &HtmlDocument,
     styles: &HashMap<*const ElementContents, Vec<&CssProperty>>,
 ) -> StyleNode {
     let mut root = StyleNode::new_default(StyleNodeDisplay::Block);
     let inherited_styles = InheritedStyles::default();
-    root.child = StyleNodeChild::Nodes(
-        html_document
-            .contents
-            .iter()
-            .map(|child| render(styles, &inherited_styles, child))
-            .collect(),
-    );
+    root.child =
+        StyleNodeChild::Nodes(vec![render(styles, &inherited_styles, &html_document.html)]);
     root
 }
 

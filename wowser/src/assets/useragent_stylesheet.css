@@ -9,6 +9,11 @@ head {
   display: none;
 }
 
+style,
+script {
+  display: none;
+}
+
 body {
   display: block;
 }

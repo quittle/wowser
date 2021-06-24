@@ -3,7 +3,7 @@ use std::{collections::HashMap, ptr::addr_of};
 use crate::{
     css::{CssColor, CssDimension, CssDisplay, CssProperty},
     html::{ElementContents, HtmlDocument},
-    render::{Color, StyleNode, StyleNodeChild, StyleNodeDisplay, TextStyleNode},
+    render::{Color, StyleNode, StyleNodeChild, StyleNodeDisplay, StyleNodeMargin, TextStyleNode},
 };
 
 pub fn html_css_to_styles(
@@ -71,13 +71,19 @@ fn render(
             CssColor::Rgba(r, g, b, a) => Color { r, g, b, a },
         };
 
-        style_node.margin = match get_style_prop(
+        let margin_getter = |direction: &str| match get_style_prop_overrides(
             props,
-            "margin",
+            &[direction, "margin"],
             CssDimension::from_raw_value,
             CssDimension::Px(0.0),
         ) {
             CssDimension::Px(px) => px,
+        };
+        style_node.margin = StyleNodeMargin {
+            left: margin_getter("margin-left"),
+            top: margin_getter("margin-top"),
+            right: margin_getter("margin-right"),
+            bottom: margin_getter("margin-bottom"),
         };
 
         if let Some(text_color) = maybe_get_style_prop(props, "color", CssColor::from_raw_value) {
@@ -110,24 +116,41 @@ fn render(
     style_node
 }
 
-fn find_prop<'a>(props: &[&'a CssProperty], key: &str) -> Option<&'a String> {
+fn find_first_prop<'a>(props: &[&'a CssProperty], key: &[&str]) -> Option<&'a String> {
     props
         .iter()
         // Last property takes precedence
         .rev()
-        .find(|prop| prop.key == key)
+        .find(|prop| key.contains(&prop.key.as_str()))
         .map(|prop| &prop.value)
 }
 
 fn maybe_get_style_prop<T, F: Fn(&str) -> Option<T>>(
     props: &[&CssProperty],
-    property_name: &str,
+    property_names: &str,
     from_raw_value: F,
 ) -> Option<T> {
-    find_prop(props, property_name)
+    maybe_get_style_prop_overrides(props, &[property_names], from_raw_value)
+}
+
+fn maybe_get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
+    props: &[&CssProperty],
+    property_names: &[&str],
+    from_raw_value: F,
+) -> Option<T> {
+    find_first_prop(props, property_names)
         .iter()
         .flat_map(|property_value| from_raw_value(property_value))
         .last()
+}
+
+fn get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
+    props: &[&CssProperty],
+    property_names: &[&str],
+    from_raw_value: F,
+    default_value: T,
+) -> T {
+    maybe_get_style_prop_overrides(props, property_names, from_raw_value).unwrap_or(default_value)
 }
 
 fn get_style_prop<T, F: Fn(&str) -> Option<T>>(
@@ -136,13 +159,5 @@ fn get_style_prop<T, F: Fn(&str) -> Option<T>>(
     from_raw_value: F,
     default_value: T,
 ) -> T {
-    if let Some(property_value) = find_prop(props, property_name) {
-        if let Some(materialized_value) = from_raw_value(property_value) {
-            materialized_value
-        } else {
-            default_value
-        }
-    } else {
-        default_value
-    }
+    get_style_prop_overrides(props, &[property_name], from_raw_value, default_value)
 }

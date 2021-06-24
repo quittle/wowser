@@ -43,6 +43,10 @@ impl Color {
         b: 0,
         a: 0,
     };
+
+    pub fn is_transparent(&self) -> bool {
+        self.a == 0
+    }
 }
 
 impl From<&ColorPercent> for Color {
@@ -72,5 +76,23 @@ impl From<&Color> for ColorPercent {
             b: color.b as f32 / 255_f32,
             a: color.a as f32 / 255_f32,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn color_is_transparent() {
+        assert!(Color::TRANSPARENT.is_transparent());
+        assert!(!Color::RED.is_transparent());
+        assert!(!Color {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 1
+        }
+        .is_transparent());
     }
 }

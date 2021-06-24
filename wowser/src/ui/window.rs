@@ -80,7 +80,7 @@ impl Window {
     ) -> UiResult {
         let mut action_taken = false;
 
-        if border_width > 0_f32 && border_color.a != 0 {
+        if border_width > 0_f32 && !border_color.is_transparent() {
             gl::point_size(10.0)?;
             gl::line_width(border_width)?;
             gl::color_4ub(
@@ -99,9 +99,9 @@ impl Window {
             action_taken = true;
         }
 
-        if fill_color.a != 0 {
-            gl::point_size(1_f32)?;
-            gl::line_width(1_f32)?;
+        if !fill_color.is_transparent() {
+            gl::point_size(10_f32)?;
+            gl::line_width(10_f32)?;
             gl::color_4ub(fill_color.r, fill_color.g, fill_color.b, fill_color.a);
             gl::begin(gl::DrawMode::Polygon);
             gl::vertex_2i(rect.x, rect.y);

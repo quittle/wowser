@@ -31,23 +31,24 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
 
     // Convert the HTML+CSS Properties to style nodes, an intermediary representation of styles nodes
     // with all styling, but not layout and placement resolved
-    let mut example_root = html_css_to_styles(&html, &css_styling);
+    let mut style_root = html_css_to_styles(&html, &css_styling);
 
     // Simplifies the style nodes to make converting to scenes cleaner and handle cases like text wrapping
     // which otherwise would be treated as a single, rectangular block
-    normalize_style_nodes(&mut example_root);
+    normalize_style_nodes(&mut style_root);
 
     // Flatten the hierarchy on nodes to a scene, which incorporates layout, sizing, text wrapping, etc. The
     // output should be pretty much ready to draw at this point
-    let style_root = render::style_to_scene(&example_root, 0_f32, window.get_bounds().width as f32);
+    let scene_nodes = render::style_to_scene(&style_root, 0_f32, window.get_bounds().width as f32);
 
+    println!("{:?}", scene_nodes);
     // Wowser only supports one font right now. Eventually this may need to be lifted up with character
     // properties used in style_to_scene
     let mut font: CachingFont = CachingFont::wrap(Box::new(
         BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
     ));
 
-    for node in style_root {
+    for node in scene_nodes {
         match node {
             render::SceneNode::TextSceneNode(render::TextSceneNode {
                 bounds,

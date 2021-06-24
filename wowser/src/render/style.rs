@@ -9,7 +9,7 @@ pub struct StyleNode {
     pub border_color: Color,
     pub background_color: Color,
     pub padding: f32,
-    pub margin: f32,
+    pub margin: StyleNodeMargin,
     pub width: StyleNodeDimen,
     pub child: StyleNodeChild,
 }
@@ -22,9 +22,28 @@ impl StyleNode {
             border_color: Color::TRANSPARENT,
             background_color: Color::TRANSPARENT,
             padding: 0_f32,
-            margin: 0_f32,
+            margin: StyleNodeMargin::default(),
             width: StyleNodeDimen::Auto,
             child: StyleNodeChild::Nodes(vec![]),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Default)]
+pub struct StyleNodeMargin {
+    pub left: f32,
+    pub top: f32,
+    pub right: f32,
+    pub bottom: f32,
+}
+
+impl StyleNodeMargin {
+    pub fn all(value: f32) -> Self {
+        Self {
+            left: value,
+            top: value,
+            right: value,
+            bottom: value,
         }
     }
 }
@@ -85,7 +104,7 @@ pub fn normalize_style_nodes(style_node: &mut StyleNode) -> &mut StyleNode {
                                 border_color: Color::TRANSPARENT,
                                 background_color,
                                 padding: 0_f32,
-                                margin: 0_f32,
+                                margin: StyleNodeMargin::default(),
                                 width: StyleNodeDimen::Auto,
                                 child: StyleNodeChild::Text(node),
                             }
@@ -153,7 +172,7 @@ mod tests {
                 border_color: Color::RED,
                 background_color: Color::BLUE,
                 padding: 2_f32,
-                margin: 3_f32,
+                margin: StyleNodeMargin::all(3_f32),
                 width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Nodes(vec![
                     StyleNode::new_default(StyleNodeDisplay::Inline),
@@ -170,7 +189,7 @@ mod tests {
                     border_color: Color::RED,
                     background_color: Color::BLUE,
                     padding: 2_f32,
-                    margin: 3_f32,
+                    margin: StyleNodeMargin::all(3_f32),
                     width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode::new_default(StyleNodeDisplay::Inline),
@@ -189,7 +208,7 @@ mod tests {
                 border_color: Color::RED,
                 background_color: Color::BLUE,
                 padding: 2_f32,
-                margin: 3_f32,
+                margin: StyleNodeMargin::all(3_f32),
                 width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Nodes(vec![
                     StyleNode::new_default(StyleNodeDisplay::Block),
@@ -206,7 +225,7 @@ mod tests {
                     border_color: Color::RED,
                     background_color: Color::BLUE,
                     padding: 2_f32,
-                    margin: 3_f32,
+                    margin: StyleNodeMargin::all(3_f32),
                     width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode::new_default(StyleNodeDisplay::Block),
@@ -225,7 +244,7 @@ mod tests {
                 border_color: Color::RED,
                 background_color: Color::BLUE,
                 padding: 2_f32,
-                margin: 3_f32,
+                margin: StyleNodeMargin::all(3_f32),
                 width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Nodes(vec![
                     StyleNode::new_default(StyleNodeDisplay::Inline),
@@ -243,7 +262,7 @@ mod tests {
                     border_color: Color::RED,
                     background_color: Color::BLUE,
                     padding: 2_f32,
-                    margin: 3_f32,
+                    margin: StyleNodeMargin::all(3_f32),
                     width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode {
@@ -252,7 +271,7 @@ mod tests {
                             border_color: Color::TRANSPARENT,
                             background_color: Color::TRANSPARENT,
                             padding: 0_f32,
-                            margin: 0_f32,
+                            margin: StyleNodeMargin::all(0_f32),
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Nodes(vec!(StyleNode::new_default(
                                 StyleNodeDisplay::Inline
@@ -265,7 +284,7 @@ mod tests {
                             border_color: Color::TRANSPARENT,
                             background_color: Color::TRANSPARENT,
                             padding: 0_f32,
-                            margin: 0_f32,
+                            margin: StyleNodeMargin::all(0_f32),
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Nodes(vec!(StyleNode::new_default(
                                 StyleNodeDisplay::Inline
@@ -285,7 +304,7 @@ mod tests {
                 border_color: Color::RED,
                 background_color: Color::BLUE,
                 padding: 2_f32,
-                margin: 3_f32,
+                margin: StyleNodeMargin::all(3_f32),
                 width: StyleNodeDimen::Pixels(4_f32),
                 child: StyleNodeChild::Text(TextStyleNode {
                     text: "text with spaces".to_string(),
@@ -304,7 +323,7 @@ mod tests {
                     border_color: Color::RED,
                     background_color: Color::BLUE,
                     padding: 2_f32,
-                    margin: 3_f32,
+                    margin: StyleNodeMargin::all(3_f32),
                     width: StyleNodeDimen::Pixels(4_f32),
                     child: StyleNodeChild::Nodes(vec!(
                         StyleNode {
@@ -313,7 +332,7 @@ mod tests {
                             border_color: Color::TRANSPARENT,
                             background_color: Color::BLUE,
                             padding: 0_f32,
-                            margin: 0_f32,
+                            margin: StyleNodeMargin::all(0_f32),
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
                                 text: "text ".to_string(),
@@ -327,7 +346,7 @@ mod tests {
                             border_color: Color::TRANSPARENT,
                             background_color: Color::BLUE,
                             padding: 0_f32,
-                            margin: 0_f32,
+                            margin: StyleNodeMargin::all(0_f32),
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
                                 text: "with ".to_string(),
@@ -341,7 +360,7 @@ mod tests {
                             border_color: Color::TRANSPARENT,
                             background_color: Color::BLUE,
                             padding: 0_f32,
-                            margin: 0_f32,
+                            margin: StyleNodeMargin::all(0_f32),
                             width: StyleNodeDimen::Auto,
                             child: StyleNodeChild::Text(TextStyleNode {
                                 text: "spaces ".to_string(),

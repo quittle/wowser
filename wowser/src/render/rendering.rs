@@ -23,6 +23,19 @@ pub fn style_to_scene(
         parent_width,
         &mut font,
     )
+    .into_iter()
+    .filter(|node| match node {
+        SceneNode::RectangleSceneNode(rect_node) => {
+            !rect_node.fill.is_transparent()
+                || !rect_node.border_color.is_transparent()
+                || rect_node.bounds.width == 0_f32
+                || rect_node.bounds.height == 0_f32
+        }
+        SceneNode::TextSceneNode(text_node) => {
+            !text_node.text_color.is_transparent() || text_node.text.is_empty()
+        }
+    })
+    .collect()
 }
 
 // Notes:
@@ -46,19 +59,19 @@ fn style_to_scene_r(
 
     let root_offset = offset
         + &Point {
-            x: style_node.margin,
-            y: style_node.margin,
+            x: style_node.margin.left,
+            y: style_node.margin.top,
         };
     let default_content_width = match style_node.width {
         StyleNodeDimen::Auto => match style_node.display {
             StyleNodeDisplay::Inline => 0_f32,
             StyleNodeDisplay::Block => parent_width,
-            StyleNodeDisplay::None => panic!("Should never be reached"),
+            StyleNodeDisplay::None => unreachable!(),
         },
         StyleNodeDimen::Pixels(width) => match style_node.display {
             StyleNodeDisplay::Inline => 0_f32,
             StyleNodeDisplay::Block => width,
-            StyleNodeDisplay::None => panic!("Should never be reached"),
+            StyleNodeDisplay::None => unreachable!(),
         },
     };
     let mut root = SceneNode::RectangleSceneNode(RectangleSceneNode {
@@ -131,11 +144,11 @@ fn style_to_scene_r(
                 );
                 if let Some(child) = new_children.first() {
                     child_offset += Point {
-                        x: child.bounds().width + node.margin * 2_f32,
+                        x: child.bounds().width + node.margin.left + node.margin.right,
                         y: 0_f32,
                     };
-                    max_child_height =
-                        max_child_height.max(child.bounds().height + node.margin * 2_f32);
+                    max_child_height = max_child_height
+                        .max(child.bounds().height + node.margin.top + node.margin.bottom);
                 }
                 ret.extend(new_children);
                 let last_child = ret.last().unwrap().bounds();

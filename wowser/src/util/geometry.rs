@@ -67,6 +67,17 @@ impl<U: Number, T: Number + Add<U, Output = U>> Add<&Point<U>> for &Point<T> {
     }
 }
 
+impl<U: Number, T: Number + Add<U, Output = U>> Add<Point<U>> for &Point<T> {
+    type Output = Point<U>;
+
+    fn add(self, rhs: Point<U>) -> Self::Output {
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
 impl<U: Number, T: Number + Add<U, Output = U>> Add<Point<U>> for Point<T> {
     type Output = Point<U>;
 

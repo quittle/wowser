@@ -46,6 +46,14 @@ impl StyleNodeMargin {
             bottom: value,
         }
     }
+
+    pub fn horizontal(&self) -> f32 {
+        self.left + self.right
+    }
+
+    pub fn vertical(&self) -> f32 {
+        self.top + self.bottom
+    }
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -76,6 +84,12 @@ pub struct TextStyleNode {
     pub text: String,
     pub font_size: f32,
     pub text_color: Color,
+}
+
+impl TextStyleNode {
+    pub fn affects_layout(&self) -> bool {
+        !self.text.is_empty() && self.font_size > 0_f32
+    }
 }
 
 #[derive(Debug, PartialEq)]

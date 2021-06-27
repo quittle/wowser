@@ -11,16 +11,25 @@ fn main() {
         let mut window = Window::new().unwrap();
         let html = r#"
             <html>
-                <head>
-                    <title>my title</title>
-                </head>
-                <div>hello <span>world</span></div>
+                <div class="wrapper">
+                    <div>aaa<span>aa</span>aa</div>
+                    <div class="foo">bbbbbbb</div>
+                </div>
             </html>
         "#;
         let css = r#"
             div {
                 background-color: #f00;
                 color: #000;
+            }
+
+            .foo {
+                background-color: #0ff;
+            }
+
+            .wrapper {
+                background-color: #00f;
+                color:#fff;
             }
 
             span {

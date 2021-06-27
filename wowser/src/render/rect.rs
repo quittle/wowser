@@ -22,6 +22,10 @@ impl Rect {
     pub fn left(&self) -> f32 {
         self.x
     }
+
+    pub fn area(&self) -> f32 {
+        self.width * self.height
+    }
 }
 
 #[cfg(test)]
@@ -54,5 +58,40 @@ mod tests {
     #[test]
     fn rect_left() {
         assert_eq!(1_f32, RECT.left());
+    }
+
+    #[test]
+    fn rect_area() {
+        assert_eq!(12_f32, RECT.area());
+        assert_eq!(
+            0_f32,
+            Rect {
+                x: 0_f32,
+                y: 0_f32,
+                width: 0_f32,
+                height: 1_f32
+            }
+            .area()
+        );
+        assert_eq!(
+            0_f32,
+            Rect {
+                x: 0_f32,
+                y: 0_f32,
+                width: 1_f32,
+                height: 0_f32
+            }
+            .area()
+        );
+        assert_eq!(
+            1_f32,
+            Rect {
+                x: 0_f32,
+                y: 0_f32,
+                width: 1_f32,
+                height: 1_f32
+            }
+            .area()
+        );
     }
 }

@@ -21,6 +21,7 @@ pub fn style_to_scene(
         &Point { x: 0_f32, y: 0_f32 },
         parent_left,
         parent_width,
+        0_f32,
         &mut font,
     )
     .into_iter()
@@ -51,17 +52,27 @@ fn style_to_scene_r(
     offset: &Point<f32>,
     parent_left: f32,
     parent_width: f32,
+    prev_node_bottom: f32,
     font: &mut CachingFont,
 ) -> Vec<SceneNode> {
     if style_node.display == StyleNodeDisplay::None {
         return vec![];
     }
 
-    let root_offset = offset
-        + &Point {
-            x: style_node.margin.left,
-            y: style_node.margin.top,
-        };
+    let margin_offset = Point {
+        x: style_node.margin.left,
+        y: style_node.margin.top,
+    };
+    let root_offset = match style_node.display {
+        StyleNodeDisplay::Block => {
+            Point {
+                x: parent_left,
+                y: prev_node_bottom,
+            } + margin_offset
+        }
+        StyleNodeDisplay::Inline => offset + margin_offset,
+        StyleNodeDisplay::None => unreachable!(),
+    };
     let default_content_width = match style_node.width {
         StyleNodeDimen::Auto => match style_node.display {
             StyleNodeDisplay::Inline => 0_f32,
@@ -95,30 +106,34 @@ fn style_to_scene_r(
 
     match &style_node.child {
         StyleNodeChild::Text(text) => {
-            let mut child_text: SceneNode = text_style_to_scene(text, &child_offset, font);
-            if let SceneNode::TextSceneNode(text_node) = &mut child_text {
-                if text_node.bounds.right() > parent_left + parent_width
-                    && text_node.bounds.x != 0_f32
-                {
-                    text_node.bounds.x = parent_left;
-                    text_node.bounds.y += text_node.font_size;
+            if text.affects_layout() {
+                let mut child_text: SceneNode = text_style_to_scene(text, &child_offset, font);
+                if let SceneNode::TextSceneNode(text_node) = &mut child_text {
+                    if text_node.bounds.right() > parent_left + parent_width
+                        && text_node.bounds.x != 0_f32
+                    {
+                        text_node.bounds.x = parent_left;
+                        text_node.bounds.y += text_node.font_size;
 
-                    root.mut_bounds().x = parent_left;
-                    root.mut_bounds().y += text_node.font_size;
+                        root.mut_bounds().x = parent_left;
+                        root.mut_bounds().y += text_node.font_size;
 
-                    child_offset.x = root.bounds().right();
-                    child_offset.y = root.bounds().y;
+                        child_offset.x = root.bounds().right();
+                        child_offset.y = root.bounds().y;
+                    }
+
+                    root.mut_bounds().width += text_node.bounds.width;
+                    root.mut_bounds().height += text_node.font_size;
+                } else {
+                    unreachable!("Expected TextSceneNode");
                 }
-
-                root.mut_bounds().width += text_node.bounds.width;
-                root.mut_bounds().height += text_node.font_size;
+                vec![root, child_text]
             } else {
-                debug_assert!(false, "Expected TextSceneNode");
+                vec![root]
             }
-            vec![root, child_text]
         }
         StyleNodeChild::Nodes(nodes) => {
-            let mut max_child_height = 0_f32;
+            let mut max_child_bottom = prev_node_bottom + style_node.margin.top;
 
             let mut ret = vec![root];
 
@@ -128,10 +143,16 @@ fn style_to_scene_r(
                     if style_node.display.is_block() {
                         (child_offset.x, my_width)
                     } else {
-                        (parent_left, parent_width)
+                        (
+                            parent_left + style_node.margin.left,
+                            parent_width - style_node.margin.horizontal(),
+                        )
                     }
                 } else {
-                    (parent_left, parent_width)
+                    (
+                        parent_left + style_node.margin.left,
+                        parent_width - style_node.margin.horizontal(),
+                    )
                 };
 
             for node in nodes {
@@ -140,16 +161,22 @@ fn style_to_scene_r(
                     &child_offset,
                     parent_left_for_children,
                     parent_width_for_children,
+                    max_child_bottom,
                     font,
                 );
-                if let Some(child) = new_children.first() {
-                    child_offset += Point {
-                        x: child.bounds().width + node.margin.left + node.margin.right,
-                        y: 0_f32,
-                    };
-                    max_child_height = max_child_height
-                        .max(child.bounds().height + node.margin.top + node.margin.bottom);
+                if let Some(first_child) = new_children.first() {
+                    let bounds = first_child.bounds();
+                    // If the prev node doesn't take up space, don't worry about wrapping blocks
+                    if bounds.area() != 0_f32 {
+                        child_offset += Point {
+                            x: bounds.width + node.margin.left + node.margin.right,
+                            y: 0_f32,
+                        };
+                        max_child_bottom =
+                            max_child_bottom.max(bounds.bottom() + node.margin.bottom);
+                    }
                 }
+
                 ret.extend(new_children);
                 let last_child = ret.last().unwrap().bounds();
                 child_offset.x = last_child.right();
@@ -158,7 +185,7 @@ fn style_to_scene_r(
 
             let mut root_bounds = ret.first_mut().unwrap().mut_bounds();
             root_bounds.width += child_offset.x - base_child_offset.x;
-            root_bounds.height += max_child_height;
+            root_bounds.height = max_child_bottom - root_bounds.top();
 
             ret
         }

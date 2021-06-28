@@ -51,6 +51,13 @@ pub struct BDFCharacter {
 #[derive(Debug, Default)]
 pub struct BDFRealProperties {
     copyright: Option<String>,
+    foundry: Option<String>,
+    family_name: Option<String>,
+    weight_name: Option<String>,
+    font_name: Option<String>,
+    set_width_name: Option<String>,
+    font_name_registry: Option<String>,
+    font_descent: Option<u32>,
 }
 
 #[derive(Debug)]
@@ -79,12 +86,19 @@ impl Font for BDFFont {
                     .as_ref()
                     .or_else(|| self.bounding_box.as_ref())
                     .unwrap_or(&Bbx::DEFAULT);
+                let font_descent = self
+                    .properties
+                    .as_ref()
+                    .map_or(0, |properties| properties.font_descent.unwrap_or(0));
                 return Some(RenderedCharacter {
                     bitmap: c.bitmap.clone()?,
                     width: c.d_width?.0 as f32,
                     offset: Point {
                         x: bounding_box.offset_x as f32,
-                        y: bounding_box.offset_y as f32,
+                        y: ((self.size.as_ref().map_or(0, |size| size.point_size) as i32
+                            - bounding_box.height)
+                            - bounding_box.offset_y
+                            - font_descent as i32) as f32,
                     },
                     next_char_offset: c.d_width?.0 as f32,
                 });
@@ -287,10 +301,17 @@ fn parse_real_properties(
 
         let mut parts = line.splitn(2, ' ');
         let property_name = parts.next().ok_or("Missing name of property line")?;
-        let property_value_literal = parts.next().ok_or("Missing property value")?;
+        let property_value_literal = parts.next().ok_or("Missing property value")?.to_string();
 
         match property_name {
-            "COPYRIGHT" => ret.copyright = Some(property_value_literal.to_string()),
+            "COPYRIGHT" => ret.copyright = Some(property_value_literal),
+            "FOUNDRY" => ret.foundry = Some(property_value_literal),
+            "FAMILY_NAME" => ret.family_name = Some(property_value_literal),
+            "WEIGHT_NAME" => ret.weight_name = Some(property_value_literal),
+            "FONT_NAME" => ret.font_name = Some(property_value_literal),
+            "SETWIDTH_NAME" => ret.set_width_name = Some(property_value_literal),
+            "FONTNAME_REGISTRY" => ret.font_name_registry = Some(property_value_literal),
+            "FONT_DESCENT" => ret.font_descent = Some(property_value_literal.parse::<u32>()?),
             _ => println!("Dropping property {}", line),
         }
     }

@@ -12,7 +12,7 @@ fn main() {
         let html = r#"
             <html>
                 <div class="wrapper">
-                    <div>aaa<span>aa</span>aa</div>
+                    <div>abc<span>def</span>ghi</div>
                     <div class="foo">bbbbbbb</div>
                 </div>
             </html>

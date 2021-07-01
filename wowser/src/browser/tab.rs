@@ -41,7 +41,6 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
     // output should be pretty much ready to draw at this point
     let scene_nodes = render::style_to_scene(&style_root, 0_f32, window.get_bounds().width as f32);
 
-    println!("{:?}", scene_nodes);
     // Wowser only supports one font right now. Eventually this may need to be lifted up with character
     // properties used in style_to_scene
     let mut font: CachingFont = CachingFont::wrap(Box::new(

@@ -50,6 +50,12 @@ impl Window {
         set_window_pos(self, xpos, ypos)
     }
 
+    pub fn get_window_bounds(&self) -> Result<(u32, u32, u32, u32), GlfwError> {
+        let (width, height) = get_window_size(self)?;
+        let (x, y) = get_window_pos(self)?;
+        Ok((x, y, width, height))
+    }
+
     pub fn make_context_current(&self) -> GlfwResult {
         match make_context_current(&self) {
             GlfwError::NoError => Ok(()),
@@ -64,7 +70,6 @@ impl Window {
 
 impl Drop for Window {
     fn drop(&mut self) {
-        println!("Destroying window");
         destroy_window(self);
     }
 }
@@ -81,8 +86,10 @@ pub fn create_window(
         None => ptr::null_mut(),
     };
 
+    let c_title_ptr = c_title.as_ptr();
+
     let window =
-        unsafe { glfwCreateWindow(width, height, c_title.as_ptr(), ptr::null_mut(), share_ptr) };
+        unsafe { glfwCreateWindow(width, height, c_title_ptr, ptr::null_mut(), share_ptr) };
 
     if window.is_null() {
         Err(get_error())
@@ -126,4 +133,34 @@ pub fn make_context_current(window: &Window) -> GlfwError {
 
 pub fn swap_buffers(window: &Window) {
     unsafe { glfwSwapBuffers(window.window) }
+}
+
+pub fn get_window_pos(window: &Window) -> Result<(u32, u32), GlfwError> {
+    let mut xpos = 0;
+    let mut ypos = 0;
+    let xpos_ptr = ptr::addr_of_mut!(xpos);
+    let ypos_ptr = ptr::addr_of_mut!(ypos);
+    unsafe {
+        glfwGetWindowPos(window.window, xpos_ptr, ypos_ptr);
+    }
+
+    match get_error() {
+        GlfwError::NoError => Ok((xpos as u32, ypos as u32)),
+        err => Err(err),
+    }
+}
+
+pub fn get_window_size(window: &Window) -> Result<(u32, u32), GlfwError> {
+    let mut width = 0;
+    let mut height = 0;
+    let width_ptr = ptr::addr_of_mut!(width);
+    let height_ptr = ptr::addr_of_mut!(height);
+    unsafe {
+        glfwGetWindowSize(window.window, width_ptr, height_ptr);
+    }
+
+    match get_error() {
+        GlfwError::NoError => Ok((width as u32, height as u32)),
+        err => Err(err),
+    }
 }

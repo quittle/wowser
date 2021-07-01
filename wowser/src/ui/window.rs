@@ -1,4 +1,4 @@
-use super::UiResult;
+use super::{UiError, UiResult};
 use crate::{
     render::Color,
     util::{Point, Rect},
@@ -41,6 +41,9 @@ impl Window {
         Ok(window)
     }
 
+    /// Attempts to update the position and size of the window. Not all OS's support all possible
+    /// values and may move or resize windows after attempting to handle the resize. After resizing,
+    /// check the bounds to get the actual values.
     pub fn resize(&mut self, new_bounds: &Rect<i32>) -> UiResult {
         if new_bounds.width != self.bounds.width || new_bounds.height != self.bounds.height {
             self.window
@@ -51,10 +54,23 @@ impl Window {
             self.window.set_window_pos(new_bounds.x, new_bounds.y)?;
         }
 
-        if new_bounds != &self.bounds {
-            self.bounds.clone_from(&new_bounds);
+        // Despite attempting to set bounds, OS's may not accept a given value. For instance,
+        // they may require a minimum width and height, or not support a position that is fully off
+        // screen. We need to read the actual bounds after attempting to set them to avoid bounds
+        // getting out of sync.
+        let (x, y, width, height) = self.window.get_window_bounds()?;
+        let actualized_bounds = Rect {
+            x: x as i32,
+            y: y as i32,
+            width: width as i32,
+            height: height as i32,
+        };
 
+        if actualized_bounds != self.bounds {
+            self.bounds.clone_from(&actualized_bounds);
             gl::viewport(0, 0, self.bounds.width, self.bounds.height)?;
+            // Reset the projection matrix before resetting ortho
+            gl::load_identity()?;
             gl::ortho(
                 0.0,
                 self.bounds.width.into(),
@@ -63,7 +79,6 @@ impl Window {
                 -1.0,
                 1.0,
             )?;
-            gl::clear(&[gl::BufferBit::Color])?;
 
             self.window.swap_buffers();
         }
@@ -152,6 +167,17 @@ impl Window {
         }
 
         Ok(())
+    }
+
+    pub fn get_pixels_rgb(&self) -> Result<Vec<u8>, UiError> {
+        Ok(gl::read_pixels(
+            0,
+            0,
+            self.bounds.width as usize,
+            self.bounds.height as usize,
+            gl::Format::Rgb,
+            gl::PixelDataType::UnsignedByte,
+        )?)
     }
 
     pub fn get_bounds(&self) -> &Rect<i32> {

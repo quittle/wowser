@@ -51,5 +51,5 @@ fn main() {
             .unwrap();
         thread::sleep(std::time::Duration::from_millis(2000));
     }
-    wowser_glfw::terminate();
+    startup::stop();
 }

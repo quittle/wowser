@@ -96,3 +96,87 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::env;
+    use std::panic::{catch_unwind, UnwindSafe};
+    use std::{
+        fs,
+        sync::atomic::{AtomicBool, Ordering},
+    };
+
+    use crate::util::get_bool_env;
+    use crate::{function_name, startup};
+
+    use super::*;
+
+    static UI_LOCK: AtomicBool = AtomicBool::new(false);
+
+    fn get_test_file(function_name: &'static str) -> String {
+        format!("src/browser/test_data/{}.rgb", function_name)
+    }
+
+    /// If these tests fail and you have verified the failures were expected, set the
+    /// WOWSER_UPDATE_TESTS env variable to true and re-run to automatically update them expected
+    /// values.
+    fn screenshot_test<F>(function_name: &'static str, setup: F)
+    where
+        F: FnOnce(&mut Window) + UnwindSafe,
+    {
+        let should_update_tests = get_bool_env("WOWSER_UPDATE_TESTS", false);
+        while UI_LOCK
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {}
+        let result = catch_unwind(|| {
+            startup::start();
+            let mut window = Window::new().unwrap();
+            window
+                .resize(&Rect {
+                    x: 0,
+                    y: 0,
+                    width: 100,
+                    height: 100,
+                })
+                .unwrap();
+            setup(&mut window);
+            let actual_pixels = window.get_pixels_rgb().unwrap();
+            let expected_pixels_file = get_test_file(function_name);
+            let expected_pixels = fs::read(&expected_pixels_file).unwrap();
+            if actual_pixels != expected_pixels {
+                if should_update_tests {
+                    println!("Updating screenshot for {}", expected_pixels_file);
+                    fs::write(expected_pixels_file, &actual_pixels).unwrap();
+                } else {
+                    let actual_pixels_file = env::temp_dir().join(format!("{}.rgb", function_name));
+                    fs::write(&actual_pixels_file, &actual_pixels).unwrap();
+                    panic!(
+                            "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the differnce",
+                            &expected_pixels_file,
+                            actual_pixels_file.to_str().unwrap(),
+                        );
+                }
+            }
+        });
+        startup::stop();
+        UI_LOCK.store(false, Ordering::SeqCst);
+        result.unwrap();
+    }
+
+    #[test]
+    fn test_blank_render() {
+        screenshot_test(function_name!(), |_window| {
+            // Default test
+        });
+    }
+
+    #[test]
+    fn test_minimal_html() {
+        screenshot_test(function_name!(), |window| {
+            // Currently buggy because it doesn't render a white background by default
+            render(window, "", "");
+            // std::thread::sleep(std::time::Duration::from_secs(5));
+        });
+    }
+}

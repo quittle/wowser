@@ -43,7 +43,7 @@ fn main() -> Result<(), FontError> {
         }
         thread::sleep(std::time::Duration::from_millis(200000));
     }
-    wowser_glfw::terminate();
+    startup::stop();
     Ok(())
 }
 

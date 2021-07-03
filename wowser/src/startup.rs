@@ -24,3 +24,12 @@ pub fn start() {
     initialize_glfw().expect("Unable to initialize GLFW");
     initialize_gl().expect("Unable to initialize GL");
 }
+
+fn destroy_glfw() -> glfw::GlfwResult {
+    glfw::terminate()?;
+    Ok(())
+}
+
+pub fn stop() {
+    destroy_glfw().expect("Unable to destroy glfw");
+}

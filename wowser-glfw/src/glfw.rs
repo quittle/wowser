@@ -22,9 +22,14 @@ pub fn init() -> GlfwResult {
     }
 }
 
-pub fn terminate() {
+pub fn terminate() -> GlfwResult {
     unsafe {
         glfwTerminate();
+    }
+
+    match get_error() {
+        GlfwError::NoError => Ok(()),
+        err => Err(err),
     }
 }
 

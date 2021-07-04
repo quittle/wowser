@@ -58,6 +58,7 @@ impl Token for CssToken {
             ],
             Self::PropertyValue => vec![
                 Box::new(Self::PropertyTerminator),
+                Box::new(Self::CloseBrace),
             ],
             Self::PropertyTerminator => vec![
                 Box::new(Self::PropertyKey),

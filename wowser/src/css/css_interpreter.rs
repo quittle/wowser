@@ -46,6 +46,15 @@ pub struct CssProperty {
     pub value: String,
 }
 
+impl CssProperty {
+    pub fn new(key: &str, value: &str) -> CssProperty {
+        CssProperty {
+            key: key.into(),
+            value: value.into(),
+        }
+    }
+}
+
 pub struct CssInterpreter {}
 
 impl CssInterpreter {
@@ -171,6 +180,29 @@ impl CssInterpreter {
             "Unexpected child type: {:?}",
             rule
         );
+        assert!(
+            children.len() == 1 || children.len() == 2,
+            "Unexpected number of children"
+        );
+        let mut properties = self.on_strict_property_list(&children[0]);
+        if let Some(trailing_property) = children.get(1) {
+            properties.push(self.on_trailing_property(trailing_property));
+        }
+
+        properties
+    }
+
+    fn on_strict_property_list<'a>(
+        &self,
+        property_list: &ASTNode<'a, CssRule>,
+    ) -> Vec<CssProperty> {
+        let ASTNode { rule, children, .. } = property_list;
+        assert_eq!(
+            **rule,
+            CssRule::StrictPropertyList,
+            "Unexpected child type: {:?}",
+            rule
+        );
         children
             .iter()
             .map(|child| self.on_property(child))
@@ -186,6 +218,22 @@ impl CssInterpreter {
             rule
         );
         assert_eq!(4, children.len(), "Unexpected children length");
+
+        CssProperty {
+            key: self.on_property_key(&children[0]),
+            value: self.on_property_value(&children[2]),
+        }
+    }
+
+    fn on_trailing_property<'a>(&self, property: &ASTNode<'a, CssRule>) -> CssProperty {
+        let ASTNode { rule, children, .. } = property;
+        assert_eq!(
+            **rule,
+            CssRule::TrailingProperty,
+            "Unexpected child type: {:?}",
+            rule
+        );
+        assert_eq!(3, children.len(), "Unexpected children length");
 
         CssProperty {
             key: self.on_property_key(&children[0]),

@@ -15,6 +15,8 @@ pub enum CssRule {
     BlockBodyOpen,
     BlockBodyClose,
     PropertyList,
+    StrictPropertyList,
+    TrailingProperty,
     Property,
     PropertyKey,
     PropertySeparator,
@@ -62,7 +64,19 @@ impl Rule for CssRule {
                 RuleType::Token(CssToken::CloseBrace.b())
             ],
             Self::PropertyList => vec![
+                RuleType::Sequence(vec![Self::StrictPropertyList.b(), Self::TrailingProperty.b()]),
+                RuleType::Rule(Self::StrictPropertyList.b()),
+            ],
+            Self::StrictPropertyList => vec![
                 RuleType::RepeatableRule(Self::Property.b())
+            ],
+            Self::TrailingProperty => vec![
+                RuleType::Sequence(vec![
+                    Self::PropertyKey.b(),
+                    Self::PropertySeparator.b(),
+                    Self::PropertyValue.b(),
+                    // No PropertyTerminator
+                ])
             ],
             Self::Property => vec![
                 RuleType::Sequence(vec![
@@ -79,7 +93,7 @@ impl Rule for CssRule {
                 RuleType::Token(CssToken::PropertySeparator.b())
             ],
             Self::PropertyValue => vec![
-                RuleType::Token(CssToken::PropertyValue.b())
+                RuleType::Token(CssToken::PropertyValue.b()),
             ],
             Self::PropertyTerminator => vec![
                 RuleType::Token(CssToken::PropertyTerminator.b())

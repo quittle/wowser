@@ -1,4 +1,4 @@
-//! Structured defined in https://www.ietf.org/rfc/rfc1035.txt
+//! Structures defined in <https://www.ietf.org/rfc/rfc1035.txt>
 
 use std::{convert::TryFrom, net::Ipv4Addr};
 

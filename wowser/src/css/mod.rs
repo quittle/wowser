@@ -108,6 +108,22 @@ mod tests {
             parse("foo, bar { }"),
             "Multiple selectors with comma"
         );
+        assert_eq!(
+            CssDocument {
+                blocks: vec![CssBlock {
+                    selectors: vec![CssSelectorChain {
+                        item: CssSelectorChainItem::Tag("foo".into()),
+                        next: None
+                    }],
+                    properties: vec![
+                        CssProperty::new("key", "value"),
+                        CssProperty::new("key2", "value2"),
+                    ]
+                }]
+            },
+            parse("foo { key: value; key2: value2 }"),
+            "Trailing CSS Property without semicolon"
+        );
     }
 
     #[test]

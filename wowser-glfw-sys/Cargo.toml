@@ -9,6 +9,6 @@ links = "glfw3"
 wowser-gl-sys = { path = "../wowser-gl-sys" }
 
 [build-dependencies]
-cmake = "0"
-git2 = "0"
-bindgen = "0"
+cmake = "*"
+git2 = "*"
+bindgen = "*"

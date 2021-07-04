@@ -143,7 +143,7 @@ mod tests {
             setup(&mut window);
             let actual_pixels = window.get_pixels_rgb().unwrap();
             let expected_pixels_file = get_test_file(function_name);
-            let expected_pixels = fs::read(&expected_pixels_file).unwrap();
+            let expected_pixels = fs::read(&expected_pixels_file).unwrap_or_default();
             if actual_pixels != expected_pixels {
                 if should_update_tests {
                     println!("Updating screenshot for {}", expected_pixels_file);
@@ -152,10 +152,10 @@ mod tests {
                     let actual_pixels_file = env::temp_dir().join(format!("{}.rgb", function_name));
                     fs::write(&actual_pixels_file, &actual_pixels).unwrap();
                     panic!(
-                            "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the differnce",
-                            &expected_pixels_file,
-                            actual_pixels_file.to_str().unwrap(),
-                        );
+                        "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the differnce",
+                        &expected_pixels_file,
+                        actual_pixels_file.to_str().unwrap(),
+                    );
                 }
             }
         });
@@ -176,7 +176,53 @@ mod tests {
         screenshot_test(function_name!(), |window| {
             // Currently buggy because it doesn't render a white background by default
             render(window, "", "");
-            // std::thread::sleep(std::time::Duration::from_secs(5));
+        });
+    }
+
+    #[test]
+    fn test_layout() {
+        let html = r#"
+            <html>
+                <head>
+                    Content Ignored
+                </head>
+                <div class="wrapper">
+                    <div>abc<span>def</span>ghi</div>
+                    <div class="foo">bbbbbbb</div>
+                </div>
+            </html>
+        "#;
+        let css = r#"
+            div {
+                background-color: #f00;
+                color: #000;
+            }
+
+            .foo {
+                background-color: #0ff;
+            }
+
+            .wrapper {
+                background-color: #00f;
+                color:#fff;
+            }
+
+            span {
+                background-color: #0f0;
+                border-color: #0ff;
+                border-width: 3px;
+            }
+        "#;
+        screenshot_test(function_name!(), |window| {
+            window
+                .resize(&Rect {
+                    x: 0,
+                    y: 0,
+                    width: 200,
+                    height: 100,
+                })
+                .unwrap();
+            render(window, html, css);
         });
     }
 }

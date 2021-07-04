@@ -12,8 +12,10 @@ pub fn html_css_to_styles(
 ) -> StyleNode {
     let mut root = StyleNode::new_default(StyleNodeDisplay::Block);
     let inherited_styles = InheritedStyles::default();
-    root.child =
-        StyleNodeChild::Nodes(vec![render(styles, &inherited_styles, &html_document.html)]);
+    let html_style_node = render(styles, &inherited_styles, &html_document.html);
+    root.background_color = html_style_node.background_color;
+    // TODO: force size to fill window. Requires display: absolute support
+    root.child = StyleNodeChild::Nodes(vec![html_style_node]);
     root
 }
 

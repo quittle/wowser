@@ -1,5 +1,6 @@
 use std::fmt::{Display, Write};
 
+#[derive(Debug)]
 pub struct HtmlDocument {
     pub doctype: DoctypeHtmlNode,
     pub html: ElementContents,

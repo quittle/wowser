@@ -1,7 +1,6 @@
+use super::{get_error, set_window_size_callback, GlfwError, GlfwResult};
 use std::ffi::CString;
-use std::ptr;
-
-use super::{get_error, GlfwError, GlfwResult};
+use std::ptr::{self, NonNull};
 use wowser_glfw_sys::*;
 
 pub type ErrorCallback = unsafe extern "C" fn(i32, *const i8);
@@ -34,7 +33,7 @@ pub fn terminate() -> GlfwResult {
 }
 
 pub struct Window {
-    window: *mut GLFWwindow,
+    window: NonNull<GLFWwindow>,
 }
 
 impl Window {
@@ -49,6 +48,10 @@ impl Window {
 
     pub fn set_window_size(&self, width: i32, height: i32) -> GlfwResult {
         set_window_size(self, width, height)
+    }
+
+    pub fn set_window_size_callback(&self, callback: Option<fn(i32, i32)>) -> GlfwResult {
+        set_window_size_callback(self, callback)
     }
 
     pub fn set_window_pos(&self, xpos: i32, ypos: i32) -> GlfwResult {
@@ -71,11 +74,16 @@ impl Window {
     pub fn swap_buffers(&self) {
         swap_buffers(self);
     }
+
+    pub fn get_glfw_window_ptr(&self) -> *mut GLFWwindow {
+        self.window.as_ptr()
+    }
 }
 
 impl Drop for Window {
     fn drop(&mut self) {
-        destroy_window(self);
+        set_window_size_callback(self, None).unwrap();
+        unsafe { glfwDestroyWindow(self.window.as_ptr()) };
     }
 }
 
@@ -87,7 +95,7 @@ pub fn create_window(
 ) -> Result<Window, GlfwError> {
     let c_title = CString::new(title).expect("Invalid string");
     let share_ptr = match share {
-        Some(window) => window.window,
+        Some(window) => window.get_glfw_window_ptr(),
         None => ptr::null_mut(),
     };
 
@@ -96,48 +104,37 @@ pub fn create_window(
     let window =
         unsafe { glfwCreateWindow(width, height, c_title_ptr, ptr::null_mut(), share_ptr) };
 
-    if window.is_null() {
-        Err(get_error())
-    } else {
+    if let Some(window) = NonNull::new(window) {
         Ok(Window { window })
+    } else {
+        Err(get_error())
     }
 }
 
 pub fn set_window_size(window: &Window, width: i32, height: i32) -> GlfwResult {
     unsafe {
-        glfwSetWindowSize(window.window, width, height);
+        glfwSetWindowSize(window.get_glfw_window_ptr(), width, height);
     }
 
-    match get_error() {
-        GlfwError::NoError => Ok(()),
-        err => Err(err),
-    }
+    get_glfw_result()
 }
 
 pub fn set_window_pos(window: &Window, xpos: i32, ypos: i32) -> GlfwResult {
     unsafe {
-        glfwSetWindowPos(window.window, xpos, ypos);
+        glfwSetWindowPos(window.get_glfw_window_ptr(), xpos, ypos);
     }
 
-    match get_error() {
-        GlfwError::NoError => Ok(()),
-        err => Err(err),
-    }
-}
-
-pub fn destroy_window(window: &mut Window) {
-    unsafe { glfwDestroyWindow(window.window) }
-    window.window = ptr::null_mut();
+    get_glfw_result()
 }
 
 pub fn make_context_current(window: &Window) -> GlfwError {
-    unsafe { glfwMakeContextCurrent(window.window) }
+    unsafe { glfwMakeContextCurrent(window.get_glfw_window_ptr()) }
 
     get_error()
 }
 
 pub fn swap_buffers(window: &Window) {
-    unsafe { glfwSwapBuffers(window.window) }
+    unsafe { glfwSwapBuffers(window.get_glfw_window_ptr()) }
 }
 
 pub fn get_window_pos(window: &Window) -> Result<(u32, u32), GlfwError> {
@@ -146,13 +143,12 @@ pub fn get_window_pos(window: &Window) -> Result<(u32, u32), GlfwError> {
     let xpos_ptr = ptr::addr_of_mut!(xpos);
     let ypos_ptr = ptr::addr_of_mut!(ypos);
     unsafe {
-        glfwGetWindowPos(window.window, xpos_ptr, ypos_ptr);
+        glfwGetWindowPos(window.get_glfw_window_ptr(), xpos_ptr, ypos_ptr);
     }
 
-    match get_error() {
-        GlfwError::NoError => Ok((xpos as u32, ypos as u32)),
-        err => Err(err),
-    }
+    get_glfw_result()?;
+
+    Ok((xpos as u32, ypos as u32))
 }
 
 pub fn get_window_size(window: &Window) -> Result<(u32, u32), GlfwError> {
@@ -161,11 +157,25 @@ pub fn get_window_size(window: &Window) -> Result<(u32, u32), GlfwError> {
     let width_ptr = ptr::addr_of_mut!(width);
     let height_ptr = ptr::addr_of_mut!(height);
     unsafe {
-        glfwGetWindowSize(window.window, width_ptr, height_ptr);
+        glfwGetWindowSize(window.get_glfw_window_ptr(), width_ptr, height_ptr);
     }
 
+    get_glfw_result()?;
+
+    Ok((width as u32, height as u32))
+}
+
+pub fn wait_events() -> GlfwResult {
+    unsafe {
+        glfwWaitEvents();
+    }
+
+    get_glfw_result()
+}
+
+pub fn get_glfw_result() -> GlfwResult {
     match get_error() {
-        GlfwError::NoError => Ok((width as u32, height as u32)),
+        GlfwError::NoError => Ok(()),
         err => Err(err),
     }
 }

@@ -1,9 +1,7 @@
 use wowser::browser;
 use wowser::startup;
 use wowser::ui::Window;
-use wowser::util::Rect;
-
-use std::thread;
+use wowser_glfw as glfw;
 
 fn main() {
     startup::start();
@@ -40,16 +38,8 @@ fn main() {
         "#;
 
         browser::render(&mut window, html, css);
-        thread::sleep(std::time::Duration::from_millis(20000));
-        window
-            .resize(&Rect {
-                x: 100,
-                y: 100,
-                width: 200,
-                height: 200,
-            })
-            .unwrap();
-        thread::sleep(std::time::Duration::from_millis(2000));
+        loop {
+            glfw::wait_events().unwrap();
+        }
     }
-    startup::stop();
 }

@@ -10,6 +10,7 @@ mod tests {
     fn smoke_test() {
         unsafe {
             glfwInit();
+            glfwTerminate();
         }
     }
 }

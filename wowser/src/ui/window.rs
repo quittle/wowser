@@ -36,6 +36,14 @@ impl Window {
             },
         };
 
+        window
+            .window
+            .set_window_size_callback(Some(|width, height| {
+                // TODO: Update window bounds
+                println!("new size: {} x {}", width, height)
+            }))
+            .map_err::<String, _>(Into::into)?;
+
         window.resize(&bounds).map_err::<String, _>(Into::into)?;
 
         Ok(window)

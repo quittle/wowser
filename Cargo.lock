@@ -694,6 +694,7 @@ dependencies = [
 name = "wowser-glfw"
 version = "0.0.1"
 dependencies = [
+ "lazy_static",
  "libc",
  "wowser-glfw-sys",
  "wowser-macros",

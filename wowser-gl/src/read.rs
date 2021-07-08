@@ -1,6 +1,8 @@
 use std::ffi::c_void;
 
-use crate::{get_error_result, Format, GlError, PixelDataType};
+use crate::{
+    get_error_result, pixel_store_i, Alignment, AlignmentValue, Format, GlError, PixelDataType,
+};
 
 pub fn read_pixels(
     x: i32,
@@ -12,6 +14,8 @@ pub fn read_pixels(
 ) -> Result<Vec<u8>, GlError> {
     // TODO: Support more types
     assert_eq!(pixel_data_type, PixelDataType::UnsignedByte);
+
+    pixel_store_i(Alignment::PackAlignment, AlignmentValue::One);
 
     let mut pixels = vec![0_u8; width * height * format.get_stride() as usize];
 

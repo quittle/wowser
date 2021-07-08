@@ -1,4 +1,9 @@
-use std::{error::Error, ffi::CStr, ptr};
+use std::{
+    error::Error,
+    ffi::CStr,
+    ptr,
+    sync::{PoisonError, TryLockError},
+};
 use wowser_glfw_sys::*;
 use wowser_macros::DisplayFromDebug;
 
@@ -18,6 +23,7 @@ pub enum GlfwError {
     FormatUnavailable(String),
     NoWindowContext(String),
     UnknownError(String),
+    WowserConcurrencyError(&'static str),
 }
 
 impl Error for GlfwError {}
@@ -25,6 +31,21 @@ impl Error for GlfwError {}
 impl From<GlfwError> for String {
     fn from(error: GlfwError) -> String {
         error.to_string()
+    }
+}
+
+impl<T> From<TryLockError<T>> for GlfwError {
+    fn from(error: TryLockError<T>) -> GlfwError {
+        match error {
+            TryLockError::WouldBlock => Self::WowserConcurrencyError("Would block"),
+            TryLockError::Poisoned(_) => Self::WowserConcurrencyError("Poisoned"),
+        }
+    }
+}
+
+impl<T> From<PoisonError<T>> for GlfwError {
+    fn from(_error: PoisonError<T>) -> GlfwError {
+        Self::WowserConcurrencyError("Poisoned")
     }
 }
 

@@ -331,6 +331,6 @@ mod tests {
             font.name,
             Some("-gnu-Unifont-Medium-R-Normal-Sans-16-160-75-75-c-80-iso10646-1".to_string())
         );
-        font.properties.expect("Expecte propertiers");
+        font.properties.expect("Expected properties");
     }
 }

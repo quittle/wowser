@@ -1,6 +1,29 @@
-use super::enums::{BufferBit, DrawMode};
+use std::ffi::c_void;
+
+use super::enums::{BufferBit, DrawMode, Format, PixelDataType};
 use super::{get_error_result, GlResult};
 use wowser_gl_sys::*;
+
+/// Draws pixels from the bottom-left corner to the top-right corner of the screen.
+pub fn draw_pixels(
+    width: usize,
+    height: usize,
+    format: Format,
+    pixel_data_type: PixelDataType,
+    data: &[u8],
+) -> GlResult {
+    let data_ptr = data.as_ptr() as *const c_void;
+    unsafe {
+        glDrawPixels(
+            width as i32,
+            height as i32,
+            format.into(),
+            pixel_data_type.into(),
+            data_ptr,
+        );
+    }
+    get_error_result()
+}
 
 pub fn bitmap(
     width: i32,

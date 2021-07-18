@@ -4,7 +4,7 @@ use super::{
 };
 use crate::net::NETWORK_BUFFER_SIZE;
 use crate::util::{
-    get_bit, offset_bit_merge, u4_from_u8, u8_arr_to_u16, u8_to_i32, u8_to_str, Bit, U4Bit,
+    get_bit, offset_bit_merge, u4_from_u8, u8_arr_to_u16, u8_to_i32, u8_to_str, Bit, U4BitOffset,
 };
 
 use std::convert::TryFrom;
@@ -34,12 +34,12 @@ fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage,
     let flags_b = message[3];
     let flags = DNSFlagsHeader {
         is_reply: get_bit(flags_a, Bit::Zero),
-        op_code: OpCode::try_from(u4_from_u8(flags_a, U4Bit::One))?,
+        op_code: OpCode::try_from(u4_from_u8(flags_a, U4BitOffset::One))?,
         is_authoritative_answer: get_bit(flags_a, Bit::Five),
         is_truncated: get_bit(flags_a, Bit::Six),
         recursion_desired: get_bit(flags_a, Bit::Seven),
         recursion_available: get_bit(flags_b, Bit::Zero),
-        response_code: ResponseCode::try_from(u4_from_u8(flags_b, U4Bit::Four))?,
+        response_code: ResponseCode::try_from(u4_from_u8(flags_b, U4BitOffset::Four))?,
     };
 
     if get_bit(flags_b, Bit::One) || get_bit(flags_b, Bit::Two) || get_bit(flags_b, Bit::Three) {

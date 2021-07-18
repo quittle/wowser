@@ -44,6 +44,10 @@ impl Color {
         a: 0,
     };
 
+    pub fn rgb(r: u8, g: u8, b: u8) -> Color {
+        Color { r, g, b, a: 255 }
+    }
+
     pub fn is_transparent(&self) -> bool {
         self.a == 0
     }
@@ -94,5 +98,18 @@ mod tests {
             a: 1
         }
         .is_transparent());
+    }
+
+    #[test]
+    fn rgb() {
+        assert_eq!(
+            Color::rgb(11, 22, 33),
+            Color {
+                r: 11,
+                g: 22,
+                b: 33,
+                a: 255
+            }
+        )
     }
 }

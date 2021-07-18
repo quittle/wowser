@@ -152,7 +152,7 @@ mod tests {
                     let actual_pixels_file = env::temp_dir().join(format!("{}.rgb", function_name));
                     fs::write(&actual_pixels_file, &actual_pixels).unwrap();
                     panic!(
-                        "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the differnce",
+                        "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the difference",
                         &expected_pixels_file,
                         actual_pixels_file.to_str().unwrap(),
                     );

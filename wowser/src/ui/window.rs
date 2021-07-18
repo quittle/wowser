@@ -144,6 +144,27 @@ impl Window {
         Ok(())
     }
 
+    pub fn draw_pixels(&mut self, point: &Point<i32>, pixels: &[Color], width: usize) -> UiResult {
+        let height = pixels.len() / width;
+
+        gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
+        gl::raster_pos_2i(point.x, point.y + height as i32)?;
+
+        let pixel_data: Vec<u8> = pixels
+            .iter()
+            .flat_map(|color| [color.r, color.g, color.b])
+            .collect();
+        gl::draw_pixels(
+            width,
+            height,
+            gl::Format::Rgb,
+            gl::PixelDataType::UnsignedByte,
+            &pixel_data,
+        )?;
+        self.window.swap_buffers();
+        Ok(())
+    }
+
     pub fn draw_bitmap(
         &mut self,
         point: &Point<i32>,
@@ -157,7 +178,6 @@ impl Window {
             gl::color_4ub(color.r, color.g, color.b, color.a);
             gl::pixel_zoom(1.0, -1.0)?;
             gl::raster_pos_2i(point.x, point.y + height)?;
-            gl::pixel_store_i(gl::Alignment::PackAlignment, gl::AlignmentValue::One);
             gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
             gl::bitmap(
                 width as i32 * 8,

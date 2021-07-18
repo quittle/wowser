@@ -15,3 +15,5 @@ wowser-glfw-sys = { path = "../wowser-glfw-sys" }
 regex = "*"
 futures = "*"
 futures-util = "*"
+libc = "*"
+lazy_static = "*"

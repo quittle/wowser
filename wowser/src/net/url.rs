@@ -4,7 +4,7 @@ use std::net::IpAddr;
 use regex::Regex;
 
 /// Represents protocols supported by wowser. Future additions to include HTTPS, FTP, FILE, etc.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UrlProtocol {
     Http,
 }
@@ -29,7 +29,7 @@ impl fmt::Display for UrlProtocol {
 }
 
 /// Represents the host portion of a URL.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UrlHost {
     IP(IpAddr),
     DomainName(String),
@@ -56,7 +56,7 @@ impl fmt::Display for UrlHost {
 
 /// Represents an entire URL in a way helpful for an HTTP library. The querystring is intentionally
 /// not a represented as a map because it's simply a string for the purposes of the protocol.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Url {
     pub protocol: UrlProtocol,
     pub host: UrlHost,

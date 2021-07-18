@@ -699,6 +699,8 @@ version = "0.0.1"
 dependencies = [
  "futures",
  "futures-util",
+ "lazy_static",
+ "libc",
  "regex",
  "wowser-gl",
  "wowser-gl-sys",

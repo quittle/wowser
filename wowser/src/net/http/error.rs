@@ -26,3 +26,5 @@ impl Display for HttpRequestError {
         write!(f, "HTTP Request error: {}", self.err)
     }
 }
+
+unsafe impl Send for HttpRequestError {}

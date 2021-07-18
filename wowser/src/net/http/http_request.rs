@@ -1,11 +1,15 @@
 use super::super::dns::resolve_domain_name_to_ip;
 use super::super::stream::AsyncTcpStream;
-use super::{structures::HttpVerb, HttpHeader, HttpRequestError, HttpResponse, HttpStatus, Result};
+use super::{
+    structures::HttpVerb, HttpHeader, HttpRequestError, HttpResponse, HttpResult, HttpStatus,
+    Result,
+};
 use crate::{
     net::{Url, UrlHost},
     util::{vec_contains, vec_window_split, StringError},
 };
 use core::result;
+use futures::Future;
 use futures_util::stream::StreamExt;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpStream};
@@ -96,26 +100,25 @@ impl HttpRequest {
     }
 
     /// Performs a GET request
-    pub async fn get(&mut self) -> Result<HttpResponse> {
-        self.make_request(&self.url, &HttpVerb::Get).await
+    pub fn get(&self) -> impl Future<Output = HttpResult> {
+        Self::make_request(self.url.clone(), HttpVerb::Get)
     }
 
-    pub async fn head(&mut self) -> Result<HttpResponse> {
-        self.make_request(&self.url, &HttpVerb::Head).await
+    /// Performs a HEAD request
+    pub fn head(&self) -> impl Future<Output = HttpResult> {
+        Self::make_request(self.url.clone(), HttpVerb::Head)
     }
 
-    async fn make_request(&self, url: &Url, verb: &HttpVerb) -> Result<HttpResponse> {
-        let (host, ip) = self.get_ip_address(&url).await?;
+    async fn make_request(url: Url, verb: HttpVerb) -> HttpResult {
+        let (host, ip) = Self::get_ip_address(&url).await?;
 
-        let stream = self
-            .get_tcp(host, &ip, &verb)
-            .await
+        let stream = Self::get_tcp(host, &ip, url.port, url.http_request_path().as_str(), &verb)
             .map_err(|e| HttpRequestError::from(Box::new(e)))?;
 
-        self.read_full_response(verb, stream).await
+        Self::read_full_response(verb, stream).await
     }
 
-    async fn get_ip_address(&self, url: &Url) -> Result<(String, IpAddr)> {
+    async fn get_ip_address(url: &Url) -> Result<(String, IpAddr)> {
         match &(url.host) {
             UrlHost::IP(ip) => Ok((ip.to_string(), *ip)),
             UrlHost::DomainName(domain) => {
@@ -126,10 +129,11 @@ impl HttpRequest {
         }
     }
 
-    async fn get_tcp(
-        &self,
+    fn get_tcp(
         host: String,
         ip: &IpAddr,
+        port: u16,
+        path: &str,
         verb: &HttpVerb,
     ) -> result::Result<AsyncTcpStream, std::io::Error> {
         let verb_str = match verb {
@@ -137,11 +141,11 @@ impl HttpRequest {
             HttpVerb::Head => "HEAD",
         };
 
-        let mut stream = TcpStream::connect(SocketAddr::new(*ip, self.url.port))?;
+        let mut stream = TcpStream::connect(SocketAddr::new(*ip, port))?;
         let request = format!(
             "{verb} {path} HTTP/1.1\r\nHost: {domain}\r\n\r\n",
             verb = verb_str,
-            path = self.url.http_request_path(),
+            path = path,
             domain = host
         );
         stream.write_all(request.as_bytes())?;
@@ -149,8 +153,7 @@ impl HttpRequest {
     }
 
     async fn read_full_response(
-        &self,
-        verb: &HttpVerb,
+        verb: HttpVerb,
         mut stream: AsyncTcpStream,
     ) -> Result<HttpResponse> {
         let mut result = vec![];

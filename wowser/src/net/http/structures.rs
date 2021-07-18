@@ -1,3 +1,5 @@
+use crate::net;
+
 #[derive(Debug, Default, PartialEq)]
 pub struct HttpStatus {
     pub http_version: String,
@@ -23,3 +25,5 @@ pub enum HttpVerb {
     Get,
     Head,
 }
+
+pub type HttpResult = net::Result<HttpResponse>;

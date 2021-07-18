@@ -1,3 +1,4 @@
+pub mod async_net;
 mod dns;
 mod http;
 mod stream;
@@ -5,8 +6,9 @@ mod url;
 
 pub const NETWORK_BUFFER_SIZE: usize = 512;
 
+pub use async_net::NETWORK_EXECUTOR;
 pub use dns::{build_resolve_bytes, resolve_domain_name_to_ip};
-pub use http::{HttpHeader, HttpRequest, HttpResponse, HttpStatus, Result};
+pub use http::{HttpHeader, HttpRequest, HttpResponse, HttpResult, HttpStatus, Result};
 pub use stream::AsyncTcpStream;
 pub use url::{Url, UrlHost, UrlProtocol};
 
@@ -16,7 +18,7 @@ mod tests {
 
     #[test]
     pub fn head_example_com() {
-        let mut request = HttpRequest::new(Url::new(
+        let request = HttpRequest::new(Url::new(
             UrlProtocol::Http,
             UrlHost::DomainName("example.com".to_string()),
             80,
@@ -32,7 +34,7 @@ mod tests {
 
     #[test]
     pub fn get_example_com() {
-        let mut request = HttpRequest::new(Url::new(
+        let request = HttpRequest::new(Url::new(
             UrlProtocol::Http,
             UrlHost::DomainName("example.com".to_string()),
             80,

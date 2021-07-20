@@ -8,6 +8,7 @@ use crate::{
     util::{get_bit, u4_from_u8, Bit, U4BitOffset},
 };
 
+#[derive(Debug)]
 pub struct Bitmap {
     pub width: usize,
     pub height: usize,

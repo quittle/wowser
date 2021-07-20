@@ -147,7 +147,8 @@ impl HtmlInterpreter {
         self.assert_rule_is(rule, HtmlRule::TagAttribute);
         self.assert_children_length_one_of(children, vec![1, 2, 3]);
 
-        let name = self.on_attribute_name(&children[0]);
+        // Normalize the attribute name here so it can always be assumed to be lowercase later on.
+        let name = self.on_attribute_name(&children[0]).to_ascii_lowercase();
         let value = if children.len() == 3 {
             Some(self.on_attribute_value(&children[2]))
         } else {

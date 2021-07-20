@@ -139,6 +139,25 @@ pub struct ElementHtmlNode {
     pub children: Vec<ElementContents>,
 }
 
+impl ElementHtmlNode {
+    pub fn get_attribute(&self, name: &str) -> Option<&str> {
+        let lowercase_name = name.to_ascii_lowercase();
+        self.attributes
+            .iter()
+            .find(|attribute| attribute.name == lowercase_name)
+            .map(|attribute| attribute.value.as_ref())
+            .flatten()
+            .map(|value| value.as_str())
+    }
+
+    pub fn has_attribute(&self, name: &str) -> bool {
+        let lowercase_name = name.to_ascii_lowercase();
+        self.attributes
+            .iter()
+            .any(|attribute| attribute.name == lowercase_name)
+    }
+}
+
 impl Display for ElementHtmlNode {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_fmt(format_args!("<{}", self.tag_name))?;
@@ -351,5 +370,44 @@ mod tests {
             children: vec![],
         });
         assert_eq!("<tag />", node.to_string());
+    }
+
+    #[test]
+    fn get_has_attribute() {
+        let element = ElementHtmlNode {
+            tag_name: "tag".into(),
+            attributes: vec![
+                TagAttributeHtmlNode {
+                    name: "a".into(),
+                    value: Some("a".into()),
+                },
+                TagAttributeHtmlNode {
+                    name: "b".into(),
+                    value: Some("b".into()),
+                },
+                TagAttributeHtmlNode {
+                    name: "B".into(),
+                    value: Some("B".into()),
+                },
+                TagAttributeHtmlNode {
+                    name: "c".into(),
+                    value: None,
+                },
+            ],
+            children: vec![],
+        };
+        assert_eq!(Some("a"), element.get_attribute("a"));
+        assert_eq!(true, element.has_attribute("a"));
+
+        assert_eq!(Some("b"), element.get_attribute("b"));
+        assert_eq!(Some("b"), element.get_attribute("B"));
+        assert_eq!(true, element.has_attribute("b"));
+
+        assert_eq!(None, element.get_attribute("c"));
+        assert_eq!(true, element.has_attribute("c"));
+
+        assert_eq!(None, element.get_attribute("d"));
+        assert_eq!(false, element.has_attribute("d"));
+        // element.get_attribute(name);
     }
 }

@@ -9,6 +9,9 @@ fn main() {
         let mut window = Window::new().unwrap();
         let html = r#"
             <html>
+                before
+                <img src="http://www.w3.org/People/mimasa/test/imgformat/img/w3c_home.bmp" />
+                after
                 <div class="wrapper">
                     <div>abc<span>def</span>ghi</div>
                     <div class="foo">bbbbbbb</div>

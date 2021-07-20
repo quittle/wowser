@@ -7,6 +7,12 @@ pub struct HttpStatus {
     pub reason_phrase: String,
 }
 
+impl HttpStatus {
+    pub fn contains_success_content(&self) -> bool {
+        self.status_code == 200
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct HttpResponse {
     pub status: HttpStatus,

@@ -1,14 +1,18 @@
 pub mod async_net;
 mod dns;
 mod http;
+mod network_resource_manager;
 mod stream;
 mod url;
 
 pub const NETWORK_BUFFER_SIZE: usize = 512;
 
-pub use async_net::NETWORK_EXECUTOR;
+pub use async_net::*;
 pub use dns::{build_resolve_bytes, resolve_domain_name_to_ip};
-pub use http::{HttpHeader, HttpRequest, HttpResponse, HttpResult, HttpStatus, Result};
+pub use http::{
+    HttpHeader, HttpRequest, HttpRequestError, HttpResponse, HttpResult, HttpStatus, Result,
+};
+pub use network_resource_manager::*;
 pub use stream::AsyncTcpStream;
 pub use url::{Url, UrlHost, UrlProtocol};
 

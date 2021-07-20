@@ -35,6 +35,7 @@ pub struct TextSceneNode {
 pub struct RectangleSceneNode {
     pub bounds: Rect,
     pub fill: Color,
+    pub fill_pixels: Vec<Color>,
     pub border_color: Color,
     pub border_width: f32,
 }

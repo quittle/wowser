@@ -1,10 +1,10 @@
-use std::borrow::Borrow;
+use std::{borrow::Borrow, collections::HashMap};
 
 use crate::{
-    css::{parse_css, CssDocument},
+    css::{parse_css, CssDocument, CssProperty},
     font::{BDFFont, CachingFont},
-    html::parse_html,
-    render::{self, html_css_to_styles, normalize_style_nodes, style_html},
+    html::{parse_html, ElementContents, HtmlDocument},
+    render::{self, html_css_to_styles, normalize_style_nodes, style_html, AsyncRenderContext},
     ui::Window,
     util::{Point, Rect},
 };
@@ -13,9 +13,9 @@ const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
 
 const USERAGENT_CSS: &[u8] = include_bytes!("../assets/useragent_stylesheet.css");
 
-fn add_useragent_css(extertnal: &mut CssDocument) {
+fn add_useragent_css(external: &mut CssDocument) {
     let useragent_css = parse_css(std::str::from_utf8(USERAGENT_CSS).unwrap()).unwrap();
-    extertnal.blocks.splice(0..0, useragent_css.blocks);
+    external.blocks.splice(0..0, useragent_css.blocks);
 }
 
 pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
@@ -29,9 +29,21 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
     // Associate the CSS properties with individual HTML elements
     let css_styling = style_html(&html, &css);
 
+    let mut async_render_context = AsyncRenderContext::default();
+    loop {
+        render_once(window, &html, &css_styling, &mut async_render_context);
+    }
+}
+
+fn render_once(
+    window: &mut Window,
+    html: &HtmlDocument,
+    css_styling: &HashMap<*const ElementContents, Vec<&CssProperty>>,
+    async_render_context: &mut AsyncRenderContext,
+) {
     // Convert the HTML+CSS Properties to style nodes, an intermediary representation of styles nodes
     // with all styling, but not layout and placement resolved
-    let mut style_root = html_css_to_styles(&html, &css_styling);
+    let mut style_root = html_css_to_styles(&html, &css_styling, async_render_context);
 
     // Simplifies the style nodes to make converting to scenes cleaner and handle cases like text wrapping
     // which otherwise would be treated as a single, rectangular block
@@ -76,6 +88,7 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
             render::SceneNode::RectangleSceneNode(render::RectangleSceneNode {
                 bounds,
                 fill,
+                fill_pixels,
                 border_color,
                 border_width,
             }) => {
@@ -92,6 +105,18 @@ pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
                         border_width,
                     )
                     .unwrap();
+                if !fill_pixels.is_empty() {
+                    window
+                        .draw_pixels(
+                            &Point {
+                                x: bounds.x as i32,
+                                y: bounds.y as i32,
+                            },
+                            &fill_pixels,
+                            bounds.width as usize,
+                        )
+                        .unwrap()
+                }
             }
         }
     }

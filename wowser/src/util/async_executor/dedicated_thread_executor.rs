@@ -1,10 +1,8 @@
-use std::{
-    any::Any,
-    panic::{catch_unwind, AssertUnwindSafe},
-};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use super::{
-    executor::{Executor, ExecutorErr},
+    execution_error::ExecutionError,
+    executor::Executor,
     spawner::Spawner,
     task::{Task, TaskToken},
 };
@@ -20,7 +18,7 @@ use {
     },
 };
 
-type ResultMap<T> = Arc<Mutex<HashMap<TaskToken, Result<T, Box<dyn Send + Any>>>>>;
+type ResultMap<T> = Arc<Mutex<HashMap<TaskToken, Result<T, ExecutionError>>>>;
 
 fn spawn_thread_and_run<T>(task_receiver: Receiver<Arc<Task<T>>>, result_map: ResultMap<T>)
 where
@@ -45,7 +43,11 @@ where
                         let poll = catch_unwind(AssertUnwindSafe(|| future.as_mut().poll(context)));
                         match poll {
                             Err(err) => {
-                                result_map.lock().unwrap().insert(task.token, Err(err));
+                                let execution_error = ExecutionError(format!("{:?}", err));
+                                result_map
+                                    .lock()
+                                    .unwrap()
+                                    .insert(task.token, Err(execution_error));
                             }
                             Ok(Poll::Pending) => {
                                 // We're not done processing the future, so put it
@@ -79,16 +81,16 @@ where
     fn run(
         &mut self,
         future: impl Future<Output = T> + 'static + Send,
-    ) -> Result<TaskToken, ExecutorErr> {
+    ) -> Result<TaskToken, ExecutionError> {
         let token = self.last_token;
         self.last_token += 1;
         self.spawner
             .spawn(future, token)
-            .map_err(|_err| ExecutorErr {})?;
+            .map_err(|err| ExecutionError(err.to_string()))?;
         Ok(token)
     }
 
-    fn get_result(&self, token: TaskToken) -> Option<Result<T, Box<dyn Send + Any>>> {
+    fn get_result(&self, token: TaskToken) -> Option<Result<T, ExecutionError>> {
         self.result_map.lock().unwrap().remove(&token)
     }
 }

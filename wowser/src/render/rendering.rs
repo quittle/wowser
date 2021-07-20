@@ -1,4 +1,4 @@
-use crate::{font::BDFFont, font::CachingFont, util::Point};
+use crate::{font::BDFFont, font::CachingFont, render::Color, util::Point};
 
 use super::{
     Rect, RectangleSceneNode, SceneNode, StyleNode, StyleNodeChild, StyleNodeDimen,
@@ -28,6 +28,7 @@ pub fn style_to_scene(
     .filter(|node| match node {
         SceneNode::RectangleSceneNode(rect_node) => {
             !rect_node.fill.is_transparent()
+                || !rect_node.fill_pixels.is_empty()
                 || !rect_node.border_color.is_transparent()
                 || rect_node.bounds.width == 0_f32
                 || rect_node.bounds.height == 0_f32
@@ -93,6 +94,7 @@ fn style_to_scene_r(
             height: style_node.padding * 2_f32,
         },
         fill: style_node.background_color,
+        fill_pixels: vec![],
         border_color: style_node.border_color,
         border_width: style_node.border_width,
     });
@@ -131,6 +133,25 @@ fn style_to_scene_r(
             } else {
                 vec![root]
             }
+        }
+        StyleNodeChild::Native(native) => {
+            let child = SceneNode::RectangleSceneNode(RectangleSceneNode {
+                bounds: Rect {
+                    x: offset.x,
+                    y: offset.y,
+                    width: native.width as f32,
+                    height: native.height as f32,
+                },
+                border_color: Color::TRANSPARENT,
+                border_width: 0_f32,
+                fill: Color::TRANSPARENT,
+                fill_pixels: native.pixels.clone(),
+            });
+
+            root.mut_bounds().height += native.height as f32;
+            root.mut_bounds().width += native.width as f32;
+
+            vec![root, child]
         }
         StyleNodeChild::Nodes(nodes) => {
             let mut max_child_bottom = prev_node_bottom + style_node.margin.top;

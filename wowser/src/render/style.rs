@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use super::color::Color;
 
 /// Represents a DOM node after attaching all applicable CSS styles.
@@ -92,10 +94,21 @@ impl TextStyleNode {
     }
 }
 
+/// Represents a baked-in element with custom rendering. This is as plain as it comes and is just a
+/// rectangle of pixels. If padding/border/margin are necessary, they should go in a style node that
+/// wraps this.
+#[derive(Debug, PartialEq)]
+pub struct NativeStyleNode {
+    pub width: usize,
+    pub height: usize,
+    pub pixels: Vec<Color>,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum StyleNodeChild {
     Text(TextStyleNode),
     Nodes(Vec<StyleNode>),
+    Native(NativeStyleNode),
 }
 
 /// Transform a StyleNode and its children recursively to be as explicit as possible
@@ -166,6 +179,9 @@ pub fn normalize_style_nodes(style_node: &mut StyleNode) -> &mut StyleNode {
                     style_node.child = StyleNodeChild::Nodes(replaced_nodes);
                 }
             }
+        }
+        StyleNodeChild::Native(_) => {
+            // Nothing to optimize here
         }
     }
     style_node

@@ -165,6 +165,14 @@ pub fn get_window_size(window: &Window) -> Result<(u32, u32), GlfwError> {
     Ok((width as u32, height as u32))
 }
 
+pub fn poll_events() -> GlfwResult {
+    unsafe {
+        glfwPollEvents();
+    }
+
+    get_glfw_result()
+}
+
 pub fn wait_events() -> GlfwResult {
     unsafe {
         glfwWaitEvents();

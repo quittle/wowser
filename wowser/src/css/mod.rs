@@ -64,10 +64,7 @@ mod tests {
                         item: CssSelectorChainItem::Tag("foo".into()),
                         next: None
                     }],
-                    properties: vec![CssProperty {
-                        key: "key".to_string(),
-                        value: "value".to_string(),
-                    }]
+                    properties: vec![CssProperty::new_rc("key", "value")]
                 }]
             },
             parse("foo { key: value; }"),
@@ -116,8 +113,8 @@ mod tests {
                         next: None
                     }],
                     properties: vec![
-                        CssProperty::new("key", "value"),
-                        CssProperty::new("key2", "value2"),
+                        CssProperty::new_rc("key", "value"),
+                        CssProperty::new_rc("key2", "value2"),
                     ]
                 }]
             },
@@ -145,14 +142,8 @@ mod tests {
                         }
                     ],
                     properties: vec![
-                        CssProperty {
-                            key: "hi".to_string(),
-                            value: "'there'".to_string()
-                        },
-                        CssProperty {
-                            key: "display".to_string(),
-                            value: "none".to_string()
-                        }
+                        CssProperty::new_rc("hi", "'there'"),
+                        CssProperty::new_rc("display", "none")
                     ]
                 }]
             },
@@ -167,10 +158,7 @@ mod tests {
                             item: CssSelectorChainItem::Tag("foo".into()),
                             next: None
                         }],
-                        properties: vec![CssProperty {
-                            key: "key".to_string(),
-                            value: "'value-with_symbols'".to_string()
-                        },]
+                        properties: vec![CssProperty::new_rc("key", "'value-with_symbols'"),]
                     },
                     CssBlock {
                         selectors: vec![
@@ -184,14 +172,8 @@ mod tests {
                             },
                         ],
                         properties: vec![
-                            CssProperty {
-                                key: "k".to_string(),
-                                value: "v".to_string()
-                            },
-                            CssProperty {
-                                key: "v".to_string(),
-                                value: "k".to_string()
-                            }
+                            CssProperty::new_rc("k", "v"),
+                            CssProperty::new_rc("v", "k"),
                         ]
                     }
                 ]

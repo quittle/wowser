@@ -66,11 +66,7 @@ impl HtmlInterpreter {
 
         let (tag_name, attributes) = self.on_opening_tag(&children[0]);
         let children = self.on_tag_contents(&children[1]);
-        ElementHtmlNode {
-            tag_name,
-            attributes,
-            children,
-        }
+        ElementHtmlNode::new(tag_name, attributes, children)
     }
 
     fn on_self_closing_tag(&self, self_closing_tag: &ASTNode<HtmlRule>) -> ElementHtmlNode {
@@ -80,11 +76,7 @@ impl HtmlInterpreter {
         self.assert_children_length(children, 2);
 
         let (tag_name, attributes) = self.on_opening_tag_prelude(&children[0]);
-        ElementHtmlNode {
-            tag_name,
-            attributes,
-            children: vec![],
-        }
+        ElementHtmlNode::new(tag_name, attributes, vec![])
     }
 
     fn on_opening_tag(
@@ -254,9 +246,7 @@ impl HtmlInterpreter {
         self.assert_rule_is(rule, HtmlRule::Text);
         self.assert_no_children(children);
 
-        TextHtmlNode {
-            text: self.extract_token(token),
-        }
+        TextHtmlNode::new(self.extract_token(token))
     }
 
     fn assert_rule_is(&self, rule: &HtmlRule, expected_rule: HtmlRule) {

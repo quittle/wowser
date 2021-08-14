@@ -1,8 +1,8 @@
-use std::{collections::HashMap, ptr::addr_of};
+use std::{collections::HashMap, rc::Rc};
 
 use crate::{
     css::{CssColor, CssDimension, CssDisplay, CssProperty},
-    html::{ElementContents, ElementHtmlNode, HtmlDocument},
+    html::{ElementContents, ElementContentsId, ElementHtmlNode, HtmlDocument},
     image::Bitmap,
     net::Url,
     render::{
@@ -15,7 +15,7 @@ use super::AsyncRenderContext;
 
 pub fn html_css_to_styles(
     html_document: &HtmlDocument,
-    styles: &HashMap<*const ElementContents, Vec<&CssProperty>>,
+    styles: &HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
     async_render_context: &mut AsyncRenderContext,
 ) -> StyleNode {
     let mut root = StyleNode::new_default(StyleNodeDisplay::Block);
@@ -40,13 +40,13 @@ struct InheritedStyles {
 }
 
 fn render(
-    styles: &HashMap<*const ElementContents, Vec<&CssProperty>>,
+    styles: &HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
     inherited_styles: &InheritedStyles,
     element: &ElementContents,
     async_render_context: &mut AsyncRenderContext,
 ) -> StyleNode {
     let mut cur_inherited_styles = inherited_styles.clone();
-    let mut style_node = if let Some(props) = styles.get(&addr_of!(*element)) {
+    let mut style_node = if let Some(props) = styles.get(&(*element).get_id()) {
         let display = match get_style_prop(
             props,
             "display",
@@ -110,6 +110,7 @@ fn render(
 
         style_node
     } else {
+        println!("No styles {:?}", (*element));
         StyleNode::new_default(StyleNodeDisplay::Inline)
     };
 
@@ -139,17 +140,17 @@ fn render(
     style_node
 }
 
-fn find_first_prop<'a>(props: &[&'a CssProperty], key: &[&str]) -> Option<&'a String> {
+fn find_first_prop(props: &[Rc<CssProperty>], key: &[&str]) -> Option<String> {
     props
         .iter()
         // Last property takes precedence
         .rev()
         .find(|prop| key.contains(&prop.key.as_str()))
-        .map(|prop| &prop.value)
+        .map(|prop| prop.value.clone())
 }
 
 fn maybe_get_style_prop<T, F: Fn(&str) -> Option<T>>(
-    props: &[&CssProperty],
+    props: &[Rc<CssProperty>],
     property_names: &str,
     from_raw_value: F,
 ) -> Option<T> {
@@ -157,7 +158,7 @@ fn maybe_get_style_prop<T, F: Fn(&str) -> Option<T>>(
 }
 
 fn maybe_get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
-    props: &[&CssProperty],
+    props: &[Rc<CssProperty>],
     property_names: &[&str],
     from_raw_value: F,
 ) -> Option<T> {
@@ -168,7 +169,7 @@ fn maybe_get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
 }
 
 fn get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
-    props: &[&CssProperty],
+    props: &[Rc<CssProperty>],
     property_names: &[&str],
     from_raw_value: F,
     default_value: T,
@@ -177,7 +178,7 @@ fn get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
 }
 
 fn get_style_prop<T, F: Fn(&str) -> Option<T>>(
-    props: &[&CssProperty],
+    props: &[Rc<CssProperty>],
     property_name: &str,
     from_raw_value: F,
     default_value: T,

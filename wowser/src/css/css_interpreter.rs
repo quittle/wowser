@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::CssRule;
 use crate::parse::*;
 
@@ -24,7 +26,7 @@ pub struct CssDocument {
 #[derive(PartialEq, Debug, Clone)]
 pub struct CssBlock {
     pub selectors: Vec<CssSelectorChain>,
-    pub properties: Vec<CssProperty>,
+    pub properties: Vec<Rc<CssProperty>>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -53,12 +55,16 @@ impl CssProperty {
             value: value.into(),
         }
     }
+
+    pub fn new_rc(key: &str, value: &str) -> Rc<CssProperty> {
+        Rc::new(Self::new(key, value))
+    }
 }
 
 pub struct CssInterpreter {}
 
 impl CssInterpreter {
-    fn on_blocks<'a>(&self, blocks: &ASTNode<'a, CssRule>) -> Vec<CssBlock> {
+    fn on_blocks(&self, blocks: &ASTNode<CssRule>) -> Vec<CssBlock> {
         let ASTNode { rule, children, .. } = blocks;
         assert_eq!(**rule, CssRule::Blocks, "Unexpected child type: {:?}", rule);
 
@@ -73,10 +79,10 @@ impl CssInterpreter {
             .collect()
     }
 
-    fn on_block<'a>(
+    fn on_block(
         &self,
-        selector_list: &ASTNode<'a, CssRule>,
-        block_body: &ASTNode<'a, CssRule>,
+        selector_list: &ASTNode<CssRule>,
+        block_body: &ASTNode<CssRule>,
     ) -> CssBlock {
         CssBlock {
             selectors: self.on_selector_list(selector_list),
@@ -84,7 +90,7 @@ impl CssInterpreter {
         }
     }
 
-    fn on_selector_list<'a>(&self, selector_list: &ASTNode<'a, CssRule>) -> Vec<CssSelectorChain> {
+    fn on_selector_list(&self, selector_list: &ASTNode<CssRule>) -> Vec<CssSelectorChain> {
         let ASTNode { rule, children, .. } = selector_list;
         assert_eq!(
             **rule,
@@ -107,7 +113,7 @@ impl CssInterpreter {
         }
     }
 
-    fn on_selector<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelectorChain {
+    fn on_selector(&self, selector: &ASTNode<CssRule>) -> CssSelectorChain {
         let ASTNode { rule, children, .. } = selector;
         assert_eq!(
             **rule,
@@ -135,7 +141,7 @@ impl CssInterpreter {
         ret
     }
 
-    fn on_selector_item<'a>(&self, selector: &ASTNode<'a, CssRule>) -> CssSelectorChainItem {
+    fn on_selector_item(&self, selector: &ASTNode<CssRule>) -> CssSelectorChainItem {
         let ASTNode {
             rule,
             token,
@@ -160,7 +166,7 @@ impl CssInterpreter {
         }
     }
 
-    fn on_block_body<'a>(&self, block_body: &ASTNode<'a, CssRule>) -> Vec<CssProperty> {
+    fn on_block_body(&self, block_body: &ASTNode<CssRule>) -> Vec<Rc<CssProperty>> {
         let ASTNode { rule, children, .. } = block_body;
         assert_eq!(
             **rule,
@@ -172,7 +178,7 @@ impl CssInterpreter {
         self.on_property_list(&children[1])
     }
 
-    fn on_property_list<'a>(&self, property_list: &ASTNode<'a, CssRule>) -> Vec<CssProperty> {
+    fn on_property_list(&self, property_list: &ASTNode<CssRule>) -> Vec<Rc<CssProperty>> {
         let ASTNode { rule, children, .. } = property_list;
         assert_eq!(
             **rule,
@@ -186,16 +192,13 @@ impl CssInterpreter {
         );
         let mut properties = self.on_strict_property_list(&children[0]);
         if let Some(trailing_property) = children.get(1) {
-            properties.push(self.on_trailing_property(trailing_property));
+            properties.push(Rc::new(self.on_trailing_property(trailing_property)));
         }
 
         properties
     }
 
-    fn on_strict_property_list<'a>(
-        &self,
-        property_list: &ASTNode<'a, CssRule>,
-    ) -> Vec<CssProperty> {
+    fn on_strict_property_list(&self, property_list: &ASTNode<CssRule>) -> Vec<Rc<CssProperty>> {
         let ASTNode { rule, children, .. } = property_list;
         assert_eq!(
             **rule,
@@ -205,11 +208,11 @@ impl CssInterpreter {
         );
         children
             .iter()
-            .map(|child| self.on_property(child))
+            .map(|child| Rc::new(self.on_property(child)))
             .collect()
     }
 
-    fn on_property<'a>(&self, property: &ASTNode<'a, CssRule>) -> CssProperty {
+    fn on_property(&self, property: &ASTNode<CssRule>) -> CssProperty {
         let ASTNode { rule, children, .. } = property;
         assert_eq!(
             **rule,
@@ -225,7 +228,7 @@ impl CssInterpreter {
         }
     }
 
-    fn on_trailing_property<'a>(&self, property: &ASTNode<'a, CssRule>) -> CssProperty {
+    fn on_trailing_property(&self, property: &ASTNode<CssRule>) -> CssProperty {
         let ASTNode { rule, children, .. } = property;
         assert_eq!(
             **rule,
@@ -241,7 +244,7 @@ impl CssInterpreter {
         }
     }
 
-    fn on_property_key<'a>(&self, selector: &ASTNode<'a, CssRule>) -> String {
+    fn on_property_key(&self, selector: &ASTNode<CssRule>) -> String {
         let ASTNode {
             rule,
             token,
@@ -259,7 +262,7 @@ impl CssInterpreter {
         (*parsed_token).1.trim().to_string()
     }
 
-    fn on_property_value<'a>(&self, selector: &ASTNode<'a, CssRule>) -> String {
+    fn on_property_value(&self, selector: &ASTNode<CssRule>) -> String {
         let ASTNode {
             rule,
             token,
@@ -278,11 +281,11 @@ impl CssInterpreter {
     }
 }
 
-impl<'a> Interpreter<'a> for CssInterpreter {
+impl Interpreter<'_> for CssInterpreter {
     type RuleType = CssRule;
     type Result = CssDocument;
 
-    fn on_node(&self, document: &ASTNode<'a, CssRule>) -> Option<CssDocument> {
+    fn on_node(&self, document: &ASTNode<CssRule>) -> Option<CssDocument> {
         let ASTNode { rule, children, .. } = document;
         assert_eq!(
             **rule,

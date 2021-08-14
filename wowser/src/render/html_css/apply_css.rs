@@ -1,29 +1,30 @@
 use std::collections::HashMap;
-use std::ptr::addr_of;
+use std::rc::Rc;
 
 use crate::css::CssDocument;
 use crate::css::CssProperty;
 use crate::css::CssSelectorChain;
 use crate::css::CssSelectorChainItem;
 use crate::html::ElementContents;
+use crate::html::ElementContentsId;
 use crate::html::HtmlDocument;
 
 /// Applies a CSS document to an HTML document, returning a mapping of the entries in
 /// `html_document` to their rendered CSS properties. All nodes in html_document are
 /// guaranteed to have an entry, even if it's just an empty vector. Property keys
 /// in each vec may be repeated but appear in order that they appear in the document.
-pub fn style_html<'html, 'css>(
-    html_document: &'html HtmlDocument,
-    css_document: &'css CssDocument,
-) -> HashMap<*const ElementContents, Vec<&'css CssProperty>> {
+pub fn style_html(
+    html_document: &HtmlDocument,
+    css_document: &CssDocument,
+) -> HashMap<ElementContentsId, Vec<Rc<CssProperty>>> {
     recurse_style_html(&html_document.html, css_document, &[])
 }
 
-fn recurse_style_html<'element, 'css>(
-    element: &'element ElementContents,
-    css_document: &'css CssDocument,
+fn recurse_style_html(
+    element: &ElementContents,
+    css_document: &CssDocument,
     parents: &[&ElementContents],
-) -> HashMap<*const ElementContents, Vec<&'css CssProperty>> {
+) -> HashMap<ElementContentsId, Vec<Rc<CssProperty>>> {
     let cur_styles = get_applicable_styles(element, &css_document, parents);
     let mut child_styles = if let ElementContents::Element(element_node) = element {
         let mut new_parents = parents.to_vec();
@@ -36,7 +37,7 @@ fn recurse_style_html<'element, 'css>(
     } else {
         HashMap::new()
     };
-    child_styles.insert(addr_of!(*element), cur_styles);
+    child_styles.insert((*element).get_id(), cur_styles);
     child_styles
 }
 
@@ -44,7 +45,7 @@ fn get_applicable_styles<'a>(
     element: &ElementContents,
     css_document: &'a CssDocument,
     parents: &[&ElementContents],
-) -> Vec<&'a CssProperty> {
+) -> Vec<Rc<CssProperty>> {
     css_document
         .blocks
         .iter()
@@ -54,7 +55,7 @@ fn get_applicable_styles<'a>(
                 .iter()
                 .any(|selector_chain| do_elements_match(element, parents, selector_chain))
         })
-        .flat_map(|block| &block.properties)
+        .flat_map(|block| block.properties.clone())
         .collect()
 }
 
@@ -106,7 +107,7 @@ fn does_element_match(element_contents: &ElementContents, selector: &CssSelector
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, ptr::addr_of};
+    use std::collections::HashMap;
 
     use super::*;
     use crate::{
@@ -122,10 +123,10 @@ mod tests {
     }
 
     fn get_style<'css>(
-        styles: &'css HashMap<*const ElementContents, Vec<&CssProperty>>,
+        styles: &'css HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
         element: &ElementContents,
-    ) -> &'css Vec<&'css CssProperty> {
-        styles.get(&addr_of!(*element)).unwrap()
+    ) -> &'css Vec<Rc<CssProperty>> {
+        styles.get(&(*element).get_id()).unwrap()
     }
 
     fn get_element(html_document: &HtmlDocument, children: Vec<usize>) -> &ElementContents {
@@ -144,7 +145,7 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &Vec::<&CssProperty>::new()
+            &Vec::<Rc<CssProperty>>::new()
         );
     }
 
@@ -156,7 +157,7 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &Vec::<&CssProperty>::new()
+            &Vec::<Rc<CssProperty>>::new()
         );
     }
 
@@ -168,10 +169,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "color".into(),
                 value: "red".into()
-            }]
+            })]
         );
     }
 
@@ -183,10 +184,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "color".into(),
                 value: "red".into()
-            }]
+            })]
         );
     }
 
@@ -198,10 +199,10 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "color".into(),
                 value: "red".into()
-            }]
+            })]
         );
     }
 
@@ -213,17 +214,17 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "color".into(),
                 value: "red".into()
-            }]
+            })]
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![1])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "color".into(),
                 value: "red".into()
-            }]
+            })]
         );
     }
 
@@ -236,14 +237,14 @@ mod tests {
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
             &vec![
-                &CssProperty {
+                Rc::new(CssProperty {
                     key: "color".into(),
                     value: "red".into()
-                },
-                &CssProperty {
+                }),
+                Rc::new(CssProperty {
                     key: "color".into(),
                     value: "blue".into()
-                }
+                })
             ]
         );
 
@@ -254,14 +255,14 @@ mod tests {
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
             &vec![
-                &CssProperty {
+                Rc::new(CssProperty {
                     key: "color".into(),
                     value: "red".into()
-                },
-                &CssProperty {
+                }),
+                Rc::new(CssProperty {
                     key: "color".into(),
                     value: "blue".into()
-                }
+                })
             ]
         );
     }
@@ -274,25 +275,25 @@ mod tests {
 
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "color".into(),
                 value: "red".into()
-            }]
+            })]
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![1])),
-            &Vec::<&CssProperty>::new()
+            &Vec::<Rc<CssProperty>>::new()
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0, 0])),
-            &vec![&CssProperty {
+            &vec![Rc::new(CssProperty {
                 key: "height".into(),
                 value: "1".into()
-            }]
+            })]
         );
         assert_eq!(
             get_style(&styling, get_element(&html_document, vec![0, 0, 0])),
-            &Vec::<&CssProperty>::new()
+            &Vec::<Rc<CssProperty>>::new()
         );
     }
 }

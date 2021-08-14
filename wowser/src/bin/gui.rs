@@ -1,4 +1,4 @@
-use wowser::browser;
+use wowser::browser::Tab;
 use wowser::startup;
 use wowser::ui::Window;
 use wowser_glfw as glfw;
@@ -40,9 +40,11 @@ fn main() {
             }
         "#;
 
-        browser::render(&mut window, html, css);
+        let mut tab = Tab::load(&mut window, html, css);
+
         loop {
-            glfw::wait_events().unwrap();
+            glfw::poll_events().unwrap();
+            tab.render();
         }
     }
 }

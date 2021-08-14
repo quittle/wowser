@@ -1,4 +1,7 @@
-use std::fmt::{Display, Write};
+use std::{
+    fmt::{Display, Write},
+    sync::atomic::{AtomicU32, Ordering},
+};
 
 #[derive(Debug)]
 pub struct HtmlDocument {
@@ -13,17 +16,13 @@ impl HtmlDocument {
             child.find_first(|element|
                 matches!(element, ElementContents::Element(ElementHtmlNode{tag_name, ..}) if tag_name == "html")));
         let html = if let Some(ElementContents::Element(element)) = first_html_node {
-            ElementHtmlNode {
-                tag_name: "html".into(),
-                attributes: element.attributes.clone(),
-                children: document_node.contents,
-            }
+            ElementHtmlNode::new(
+                "html".into(),
+                element.attributes.clone(),
+                document_node.contents,
+            )
         } else {
-            ElementHtmlNode {
-                tag_name: "html".into(),
-                children: document_node.contents,
-                ..Default::default()
-            }
+            ElementHtmlNode::new("html".into(), vec![], document_node.contents)
         };
 
         HtmlDocument {
@@ -63,7 +62,17 @@ impl Display for DocumentHtmlNode {
 /// Represents a text node
 #[derive(Debug, Default, PartialEq)]
 pub struct TextHtmlNode {
+    id: ElementContentsId,
     pub text: String,
+}
+
+impl TextHtmlNode {
+    pub fn new(text: String) -> Self {
+        Self {
+            id: ELEMENT_CONTENTS_ID_PROVIDER.fetch_add(1, Ordering::Acquire),
+            text,
+        }
+    }
 }
 
 impl Display for TextHtmlNode {
@@ -71,6 +80,9 @@ impl Display for TextHtmlNode {
         f.write_str(&self.text)
     }
 }
+
+pub type ElementContentsId = u32;
+static ELEMENT_CONTENTS_ID_PROVIDER: AtomicU32 = AtomicU32::new(1);
 
 /// Represents the units that can make up the contents of an element. There can be text interspersed with other elements
 #[derive(Debug, PartialEq)]
@@ -80,6 +92,12 @@ pub enum ElementContents {
 }
 
 impl ElementContents {
+    pub fn get_id(&self) -> ElementContentsId {
+        match self {
+            Self::Text(node) => node.id,
+            Self::Element(node) => node.id,
+        }
+    }
     pub fn find_first<P>(&self, mut predicate: P) -> Option<&ElementContents>
     where
         P: FnMut(&ElementContents) -> bool,
@@ -134,12 +152,26 @@ impl Display for DoctypeHtmlNode {
 /// Represents an element node
 #[derive(Debug, Default, PartialEq)]
 pub struct ElementHtmlNode {
+    id: ElementContentsId,
     pub tag_name: String,
     pub attributes: Vec<TagAttributeHtmlNode>,
     pub children: Vec<ElementContents>,
 }
 
 impl ElementHtmlNode {
+    pub fn new(
+        tag_name: String,
+        attributes: Vec<TagAttributeHtmlNode>,
+        children: Vec<ElementContents>,
+    ) -> ElementHtmlNode {
+        ElementHtmlNode {
+            id: ELEMENT_CONTENTS_ID_PROVIDER.fetch_add(1, Ordering::Acquire),
+            tag_name,
+            attributes,
+            children,
+        }
+    }
+
     pub fn get_attribute(&self, name: &str) -> Option<&str> {
         let lowercase_name = name.to_ascii_lowercase();
         self.attributes
@@ -212,32 +244,29 @@ mod tests {
 
     #[test]
     fn element_contents_find() {
-        let root = ElementContents::Element(ElementHtmlNode {
-            tag_name: "a".into(),
-            children: vec![
-                ElementContents::Element(ElementHtmlNode {
-                    tag_name: "aa".into(),
-                    children: vec![
-                        ElementContents::Text(TextHtmlNode {
-                            text: "aa-text".into(),
-                        }),
-                        ElementContents::Element(ElementHtmlNode {
-                            tag_name: "aaa".into(),
-                            ..Default::default()
-                        }),
+        let root = ElementContents::Element(ElementHtmlNode::new(
+            "a".into(),
+            vec![],
+            vec![
+                ElementContents::Element(ElementHtmlNode::new(
+                    "aa".into(),
+                    vec![],
+                    vec![
+                        ElementContents::Text(TextHtmlNode::new("aa-text".into())),
+                        ElementContents::Element(ElementHtmlNode::new(
+                            "aaa".into(),
+                            vec![],
+                            vec![],
+                        )),
                     ],
-                    ..Default::default()
-                }),
-                ElementContents::Text(TextHtmlNode {
-                    text: "a-text".into(),
-                }),
+                )),
+                ElementContents::Text(TextHtmlNode::new("a-text".into())),
                 ElementContents::Element(ElementHtmlNode {
                     tag_name: "ab".into(),
                     ..Default::default()
                 }),
             ],
-            ..Default::default()
-        });
+        ));
 
         // Reverse the order because Vec.pop() grabs from the end. This list should be
         // written in the expected order of access
@@ -277,9 +306,7 @@ mod tests {
             doctype: DoctypeHtmlNode {
                 document_type_definition: vec![],
             },
-            contents: vec![ElementContents::Text(TextHtmlNode {
-                text: "text".into(),
-            })],
+            contents: vec![ElementContents::Text(TextHtmlNode::new("text".into()))],
         };
         assert_eq!("<!DOCTYPE>text", node.to_string());
     }
@@ -298,11 +325,7 @@ mod tests {
 
     #[test]
     fn element_html_node() {
-        let mut node = ElementHtmlNode {
-            tag_name: "tag".into(),
-            attributes: vec![],
-            children: vec![],
-        };
+        let mut node = ElementHtmlNode::new("tag".into(), vec![], vec![]);
         assert_eq!("<tag />", node.to_string());
         node.attributes.push(TagAttributeHtmlNode {
             name: "attr1".into(),
@@ -311,26 +334,22 @@ mod tests {
         assert_eq!("<tag attr1 />", node.to_string());
         node.attributes[0].value = Some("value".into());
         assert_eq!("<tag attr1=\"value\" />", node.to_string());
-        node.children.push(ElementContents::Text(TextHtmlNode {
-            text: "text content".into(),
-        }));
+        node.children.push(ElementContents::Text(TextHtmlNode::new(
+            "text content".into(),
+        )));
         assert_eq!("<tag attr1=\"value\">text content</tag>", node.to_string());
         node.attributes.clear();
         assert_eq!("<tag>text content</tag>", node.to_string());
         node.children
-            .push(ElementContents::Element(ElementHtmlNode {
-                tag_name: "nested".into(),
-                attributes: vec![],
-                children: vec![],
-            }));
+            .push(ElementContents::Element(ElementHtmlNode::new(
+                "nested".into(),
+                vec![],
+                vec![],
+            )));
         assert_eq!("<tag>text content<nested /></tag>", node.to_string());
         node.children.insert(
             0,
-            ElementContents::Element(ElementHtmlNode {
-                tag_name: "first".into(),
-                attributes: vec![],
-                children: vec![],
-            }),
+            ElementContents::Element(ElementHtmlNode::new("first".into(), vec![], vec![])),
         );
         assert_eq!(
             "<tag><first />text content<nested /></tag>",
@@ -351,32 +370,24 @@ mod tests {
 
     #[test]
     fn text_html_node() {
-        let node = TextHtmlNode {
-            text: "text in node".into(),
-        };
+        let node = TextHtmlNode::new("text in node".into());
         assert_eq!("text in node", node.to_string());
     }
 
     #[test]
     fn element_contents() {
-        let node = ElementContents::Text(TextHtmlNode {
-            text: "text".into(),
-        });
+        let node = ElementContents::Text(TextHtmlNode::new("text".into()));
         assert_eq!("text", node.to_string());
 
-        let node = ElementContents::Element(ElementHtmlNode {
-            tag_name: "tag".into(),
-            attributes: vec![],
-            children: vec![],
-        });
+        let node = ElementContents::Element(ElementHtmlNode::new("tag".into(), vec![], vec![]));
         assert_eq!("<tag />", node.to_string());
     }
 
     #[test]
     fn get_has_attribute() {
-        let element = ElementHtmlNode {
-            tag_name: "tag".into(),
-            attributes: vec![
+        let element = ElementHtmlNode::new(
+            "tag".into(),
+            vec![
                 TagAttributeHtmlNode {
                     name: "a".into(),
                     value: Some("a".into()),
@@ -394,20 +405,19 @@ mod tests {
                     value: None,
                 },
             ],
-            children: vec![],
-        };
+            vec![],
+        );
         assert_eq!(Some("a"), element.get_attribute("a"));
-        assert_eq!(true, element.has_attribute("a"));
+        assert!(element.has_attribute("a"));
 
         assert_eq!(Some("b"), element.get_attribute("b"));
         assert_eq!(Some("b"), element.get_attribute("B"));
-        assert_eq!(true, element.has_attribute("b"));
+        assert!(element.has_attribute("b"));
 
         assert_eq!(None, element.get_attribute("c"));
-        assert_eq!(true, element.has_attribute("c"));
+        assert!(element.has_attribute("c"));
 
         assert_eq!(None, element.get_attribute("d"));
-        assert_eq!(false, element.has_attribute("d"));
-        // element.get_attribute(name);
+        assert!(!element.has_attribute("d"));
     }
 }

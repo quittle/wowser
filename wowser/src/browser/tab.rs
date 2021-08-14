@@ -1,9 +1,9 @@
-use std::{borrow::Borrow, collections::HashMap};
+use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 use crate::{
     css::{parse_css, CssDocument, CssProperty},
     font::{BDFFont, CachingFont},
-    html::{parse_html, ElementContents, HtmlDocument},
+    html::{parse_html, ElementContentsId, HtmlDocument},
     render::{self, html_css_to_styles, normalize_style_nodes, style_html, AsyncRenderContext},
     ui::Window,
     util::{Point, Rect},
@@ -18,32 +18,54 @@ fn add_useragent_css(external: &mut CssDocument) {
     external.blocks.splice(0..0, useragent_css.blocks);
 }
 
-pub fn render(window: &mut Window, html_contents: &str, css_contents: &str) {
-    // Parse the documents
-    let html = parse_html(html_contents).unwrap();
-    let mut css = parse_css(css_contents).unwrap();
+pub struct Tab<'w> {
+    window: &'w mut Window,
+    html: HtmlDocument,
+    css_styling: HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
+    async_render_context: AsyncRenderContext,
+}
 
-    // Add useragent stylesheet
-    add_useragent_css(&mut css);
+impl<'w> Tab<'w> {
+    pub fn load(window: &'w mut Window, html_contents: &str, css_contents: &str) -> Tab<'w> {
+        // Parse the documents
+        let html = parse_html(html_contents).unwrap();
+        let mut css = parse_css(css_contents).unwrap();
 
-    // Associate the CSS properties with individual HTML elements
-    let css_styling = style_html(&html, &css);
+        // Add useragent stylesheet
+        add_useragent_css(&mut css);
 
-    let mut async_render_context = AsyncRenderContext::default();
-    loop {
-        render_once(window, &html, &css_styling, &mut async_render_context);
+        // Associate the CSS properties with individual HTML elements
+        let css_styling = style_html(&html, &css);
+
+        let async_render_context = AsyncRenderContext::default();
+
+        Tab {
+            window,
+            html,
+            css_styling,
+            async_render_context,
+        }
+    }
+
+    pub fn render(&mut self) {
+        render_once(
+            self.window,
+            &self.html,
+            &self.css_styling,
+            &mut self.async_render_context,
+        );
     }
 }
 
 fn render_once(
     window: &mut Window,
     html: &HtmlDocument,
-    css_styling: &HashMap<*const ElementContents, Vec<&CssProperty>>,
+    css_styling: &HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
     async_render_context: &mut AsyncRenderContext,
 ) {
     // Convert the HTML+CSS Properties to style nodes, an intermediary representation of styles nodes
     // with all styling, but not layout and placement resolved
-    let mut style_root = html_css_to_styles(&html, &css_styling, async_render_context);
+    let mut style_root = html_css_to_styles(html, css_styling, async_render_context);
 
     // Simplifies the style nodes to make converting to scenes cleaner and handle cases like text wrapping
     // which otherwise would be treated as a single, rectangular block
@@ -200,7 +222,7 @@ mod tests {
     fn test_minimal_html() {
         screenshot_test(function_name!(), |window| {
             // Currently buggy because it doesn't render a white background by default
-            render(window, "", "");
+            Tab::load(window, "", "").render();
         });
     }
 
@@ -247,7 +269,8 @@ mod tests {
                     height: 100,
                 })
                 .unwrap();
-            render(window, html, css);
+
+            Tab::load(window, html, css).render();
         });
     }
 }

@@ -145,7 +145,7 @@ mod tests {
             })
             .unwrap();
         assert!(executor.get_result(token).is_none());
-        thread::sleep(SLEEP_DURATION * 2);
+        thread::sleep(SLEEP_DURATION * 3);
         let result = executor.get_result(token);
         assert!(result.is_some());
         assert!(result.unwrap().is_err());

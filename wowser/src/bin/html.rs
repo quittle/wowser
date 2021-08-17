@@ -1,5 +1,5 @@
-use wowser::html;
 use wowser::parse::{Interpreter, Lexer, Parser};
+use wowser::{html, log};
 
 use std::env;
 use std::fs;
@@ -11,16 +11,16 @@ fn main() {
     let document = fs::read_to_string(arg_1).expect("Unable to read file");
     let lexer = Lexer::new(Box::new(html::HtmlToken::Document));
     let tokens = lexer.parse(document.as_str());
-    println!("Tokens: {:?}", tokens);
+    log!(INFO: "Tokens:", tokens);
     if let Some(tokens) = tokens {
         let parser = Parser {};
         let ast = parser.parse(&tokens, &html::HtmlRule::Document);
-        println!("AST: {:?}", ast);
+        log!(INFO: "AST:", ast);
         if let Ok(ast) = ast {
             let interpreter = html::HtmlInterpreter {};
             if let Some(result) = interpreter.interpret(&ast) {
-                println!("Evaulated result {:?}", result);
-                println!("Rendered doc {}", result.to_string());
+                log!(INFO: "Evaulated result", result);
+                log!(INFO: "Rendered doc", result.to_string());
             }
         }
     }

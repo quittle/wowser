@@ -40,7 +40,7 @@ impl Window {
             .window
             .set_window_size_callback(Some(|width, height| {
                 // TODO: Update window bounds
-                println!("new size: {} x {}", width, height)
+                log!(DEBUG: "new size:", width, "x", height);
             }))
             .map_err::<String, _>(Into::into)?;
 

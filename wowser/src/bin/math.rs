@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use wowser::log;
 use wowser::math_parse::*;
 use wowser::parse::*;
 
@@ -10,15 +11,15 @@ fn main() {
     let document = fs::read_to_string(arg_1).expect("Unable to read file");
     let lexer = Lexer::new(Box::new(MathToken::Document));
     let tokens = lexer.parse(document.as_str());
-    println!("Tokens: {:?}", tokens);
+    log!(INFO: "Tokens:", tokens);
     if let Some(tokens) = tokens {
         let parser = Parser {};
         let ast = parser.parse(&tokens, &MathRule::Document);
-        println!("AST: {:?}", ast);
+        log!(INFO: "AST:", ast);
         if let Ok(ast) = ast {
             let interpreter = MathInterpreter {};
             if let Some(result) = interpreter.interpret(&ast) {
-                println!("Evaulated result {}", result);
+                log!(INFO: "Evaulated result", result);
             }
         }
     }

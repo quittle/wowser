@@ -166,7 +166,7 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
 
                 font.characters = Some(chars);
             }
-            _ => println!("Unknown property {}", line),
+            _ => log!(WARN: "Unknown property", line),
         };
     }
 
@@ -247,7 +247,7 @@ fn parse_char(
                         )?;
                         character.s_width = Some((s_width_x, s_width_y))
                     }
-                    _ => println!("Unexpected character property {}", line),
+                    _ => log!(WARN: "Unexpected character property", line),
                 }
             }
         }
@@ -312,7 +312,7 @@ fn parse_real_properties(
             "SETWIDTH_NAME" => ret.set_width_name = Some(property_value_literal),
             "FONTNAME_REGISTRY" => ret.font_name_registry = Some(property_value_literal),
             "FONT_DESCENT" => ret.font_descent = Some(property_value_literal.parse::<u32>()?),
-            _ => println!("Dropping property {}", line),
+            _ => log!(WARN: "Dropping property", line),
         }
     }
     Ok(ret)

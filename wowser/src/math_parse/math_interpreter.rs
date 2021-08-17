@@ -21,7 +21,7 @@ impl Interpreter<'_> for MathInterpreter {
 
                 for child in children {
                     if let Some(value) = self.on_node(child) {
-                        println!("Computed: {}", value);
+                        log!(INFO: "Computed:", value);
 
                         result = Some(value);
                     }

@@ -110,7 +110,6 @@ fn render(
 
         style_node
     } else {
-        println!("No styles {:?}", (*element));
         StyleNode::new_default(StyleNodeDisplay::Inline)
     };
 

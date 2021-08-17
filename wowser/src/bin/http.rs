@@ -1,4 +1,5 @@
 use futures::Future;
+use wowser::log;
 use wowser::net::async_net::NETWORK_EXECUTOR;
 use wowser::net::{self, HttpResult};
 use wowser::util::{Executor, TaskToken};
@@ -23,9 +24,9 @@ fn main() {
         let executor = NETWORK_EXECUTOR.lock().unwrap();
         if let Some(result) = executor.get_result(request_token) {
             let response = result.unwrap().unwrap();
-            println!(
-                "HTTP Response {:?}\nBody\n{}",
-                response,
+            log!(INFO:
+                "HTTP Response", response,
+                "\nBody\n",
                 String::from_utf8_lossy(&response.body)
             );
             break;

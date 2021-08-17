@@ -3,7 +3,7 @@ use wowser_glfw as glfw;
 
 glfw::ErrorCallback!(
     fn callback(err: wowser_glfw::GlfwError, m: str) {
-        println!("GLFW Error {}: {}", err, m);
+        log!(ERROR["GLFW"]: err, m);
     }
 );
 

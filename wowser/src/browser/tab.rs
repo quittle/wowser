@@ -193,7 +193,7 @@ mod tests {
             let expected_pixels = fs::read(&expected_pixels_file).unwrap_or_default();
             if actual_pixels != expected_pixels {
                 if should_update_tests {
-                    println!("Updating screenshot for {}", expected_pixels_file);
+                    log!(INFO: "Updating screenshot for", expected_pixels_file);
                     fs::write(expected_pixels_file, &actual_pixels).unwrap();
                 } else {
                     let actual_pixels_file = env::temp_dir().join(format!("{}.rgb", function_name));

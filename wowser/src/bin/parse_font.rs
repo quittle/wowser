@@ -2,7 +2,7 @@ use wowser::startup;
 use wowser::ui::Window;
 use wowser::util::{get_bit, Bit, Point};
 use wowser::{
-    font::{BDFFont, Font, FontError, RenderedCharacter},
+    font::{BDFFont, Font, FontError},
     render::Color,
 };
 
@@ -18,8 +18,7 @@ fn main() -> Result<(), FontError> {
     let font_bytes = fs::read(font_file).expect("Unable to read file");
     let font = BDFFont::load(&font_bytes)?;
 
-    let characters: Vec<Option<RenderedCharacter>> =
-        message.chars().map(|c| font.render_character(c)).collect();
+    let characters = message.chars().map(|c| font.render_character(c));
 
     // Draw character in GUI
     startup::start();
@@ -30,7 +29,7 @@ fn main() -> Result<(), FontError> {
             x: 10_f32,
             y: 10_f32,
         };
-        for char in characters.into_iter().flatten() {
+        for char in characters.flatten() {
             window
                 .draw_bitmap(
                     &(offset.borrow() + &char.offset).into(),

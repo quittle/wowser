@@ -186,7 +186,7 @@ impl Window {
                 0.0,
                 width as f32,
                 0.0,
-                &bitmap,
+                bitmap,
             )?;
             gl::pixel_zoom(1.0, 1.0)?;
             gl::flush()?;

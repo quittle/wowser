@@ -25,7 +25,7 @@ fn recurse_style_html(
     css_document: &CssDocument,
     parents: &[&ElementContents],
 ) -> HashMap<ElementContentsId, Vec<Rc<CssProperty>>> {
-    let cur_styles = get_applicable_styles(element, &css_document, parents);
+    let cur_styles = get_applicable_styles(element, css_document, parents);
     let mut child_styles = if let ElementContents::Element(element_node) = element {
         let mut new_parents = parents.to_vec();
         new_parents.push(element);

@@ -192,7 +192,7 @@ fn on_img_node(
 ) -> StyleNodeChild {
     let style_node = (|| -> Option<StyleNodeChild> {
         let src = element.get_attribute("src")?;
-        let url = Url::parse(&src)?;
+        let url = Url::parse(src)?;
         if !url.path.ends_with(".bmp") {
             // Only bitmaps are supported for now
             return None;

@@ -124,7 +124,7 @@ fn parse_bdf_font(lines: &mut Lines<BufReader<&[u8]>>) -> Result<BDFFont, FontEr
             "SIZE" => {
                 let (point_size, x_resolution, y_resolution) =
                     split_str_into_3::<_, _, _, _, FontError>(
-                        &property_value_literal,
+                        property_value_literal,
                         " ",
                         |v| v.parse::<u32>(),
                         "Missing SIZE value",
@@ -216,7 +216,7 @@ fn parse_char(
                     "ENCODING" => character.encoding = Some(property_value_literal.parse::<u32>()?),
                     "DWIDTH" => {
                         let (d_width_x, d_width_y) = split_str_into_2::<_, _, _, _, FontError>(
-                            &property_value_literal,
+                            property_value_literal,
                             " ",
                             |v| v.parse::<u32>(),
                             "Missing DWIDTH value",
@@ -226,7 +226,7 @@ fn parse_char(
                     "BBX" => {
                         let (width, height, offset_x, offset_y) =
                             split_str_into_4::<_, _, _, _, FontError>(
-                                &property_value_literal,
+                                property_value_literal,
                                 " ",
                                 |v| v.parse::<i32>(),
                                 "Missing BBX value",
@@ -240,7 +240,7 @@ fn parse_char(
                     }
                     "SWIDTH" => {
                         let (s_width_x, s_width_y) = split_str_into_2::<_, _, _, _, FontError>(
-                            &property_value_literal,
+                            property_value_literal,
                             " ",
                             |v| v.parse::<u32>(),
                             "Missing SWIDTH value",

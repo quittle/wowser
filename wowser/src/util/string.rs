@@ -89,11 +89,11 @@ pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
 }
 
 pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
-    str::from_utf8(&bytes).map_err(|e| {
+    str::from_utf8(bytes).map_err(|e| {
         format!(
             "{} - Original String<{}>",
             e.to_string(),
-            String::from_utf8_lossy(&bytes)
+            String::from_utf8_lossy(bytes)
         )
     })
 }

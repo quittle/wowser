@@ -65,7 +65,7 @@ impl Window {
     }
 
     pub fn make_context_current(&self) -> GlfwResult {
-        match make_context_current(&self) {
+        match make_context_current(self) {
             GlfwError::NoError => Ok(()),
             err => Err(err),
         }

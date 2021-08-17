@@ -131,7 +131,7 @@ impl CssInterpreter {
         let mut cur_node = &mut ret;
         for child in children.iter().skip(1) {
             let next_node = CssSelectorChain {
-                item: self.on_selector_item(&child),
+                item: self.on_selector_item(child),
                 next: None,
             };
             cur_node.next = Some(Box::new(next_node));

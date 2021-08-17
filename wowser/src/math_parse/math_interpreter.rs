@@ -35,8 +35,8 @@ impl Interpreter<'_> for MathInterpreter {
                 let operator = &children[1];
                 let expression = &children[2];
 
-                let v1 = self.on_node(&number);
-                let v2 = self.on_node(&expression);
+                let v1 = self.on_node(number);
+                let v2 = self.on_node(expression);
 
                 let operator: &str = if let Some(token) = operator.token {
                     token.1

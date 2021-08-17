@@ -1,4 +1,4 @@
-# Wowser [![Build Status](https://travis-ci.com/quittle/wowser.svg?branch=main)](https://travis-ci.com/quittle/wowser)
+# Wowser [![Build Status](https://github.com/quittle/wowser/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/quittle/wowser/actions/workflows/rust.yml?query=branch%3Amain)
 
 This is a side-project writen to learn Rust and therefore likely contains numerous issues, lacks in performance, and may have security or availability risks.
 

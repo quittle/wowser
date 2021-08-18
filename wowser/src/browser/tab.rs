@@ -81,6 +81,8 @@ fn render_once(
         BDFFont::load(DEFAULT_FONT_BYTES).expect("Unable to load default font"),
     ));
 
+    let mut window_mutator = window.mutate();
+
     for node in scene_nodes {
         match node {
             render::SceneNode::TextSceneNode(render::TextSceneNode {
@@ -95,7 +97,7 @@ fn render_once(
                 };
                 for text_char in text.chars() {
                     if let Some(c) = font.render_character(text_char) {
-                        window
+                        window_mutator
                             .draw_bitmap(
                                 &(offset.borrow() + &c.offset).into(),
                                 &c.bitmap,
@@ -114,7 +116,7 @@ fn render_once(
                 border_color,
                 border_width,
             }) => {
-                window
+                window_mutator
                     .draw_rect(
                         &Rect {
                             x: bounds.x as i32,
@@ -128,7 +130,7 @@ fn render_once(
                     )
                     .unwrap();
                 if !fill_pixels.is_empty() {
-                    window
+                    window_mutator
                         .draw_pixels(
                             &Point {
                                 x: bounds.x as i32,

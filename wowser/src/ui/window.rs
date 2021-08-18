@@ -94,6 +94,32 @@ impl Window {
         Ok(())
     }
 
+    pub fn mutate(&mut self) -> WindowMutator {
+        WindowMutator { window: self }
+    }
+
+    pub fn get_pixels_rgb(&self) -> Result<Vec<u8>, UiError> {
+        Ok(gl::read_pixels(
+            0,
+            0,
+            self.bounds.width as usize,
+            self.bounds.height as usize,
+            gl::Format::Rgb,
+            gl::PixelDataType::UnsignedByte,
+        )?)
+    }
+
+    pub fn get_bounds(&self) -> &Rect<i32> {
+        &self.bounds
+    }
+}
+
+/// Performs mutations to a window, drop when complete to actually render the update.
+pub struct WindowMutator<'window> {
+    window: &'window mut Window,
+}
+
+impl WindowMutator<'_> {
     pub fn draw_rect(
         &mut self,
         rect: &Rect<i32>,
@@ -101,8 +127,6 @@ impl Window {
         border_color: &Color,
         border_width: f32,
     ) -> UiResult {
-        let mut action_taken = false;
-
         if border_width > 0_f32 && !border_color.is_transparent() {
             gl::point_size(10.0)?;
             gl::line_width(border_width)?;
@@ -119,7 +143,6 @@ impl Window {
             gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
             gl::vertex_2i(rect.x, rect.y + rect.height);
             gl::end()?;
-            action_taken = true;
         }
 
         if !fill_color.is_transparent() {
@@ -132,13 +155,6 @@ impl Window {
             gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
             gl::vertex_2i(rect.x, rect.y + rect.height);
             gl::end()?;
-            action_taken = true;
-        }
-
-        if action_taken {
-            gl::flush()?;
-
-            self.window.swap_buffers();
         }
 
         Ok(())
@@ -161,7 +177,6 @@ impl Window {
             gl::PixelDataType::UnsignedByte,
             &pixel_data,
         )?;
-        self.window.swap_buffers();
         Ok(())
     }
 
@@ -189,26 +204,15 @@ impl Window {
                 bitmap,
             )?;
             gl::pixel_zoom(1.0, 1.0)?;
-            gl::flush()?;
-
-            self.window.swap_buffers();
         }
 
         Ok(())
     }
+}
 
-    pub fn get_pixels_rgb(&self) -> Result<Vec<u8>, UiError> {
-        Ok(gl::read_pixels(
-            0,
-            0,
-            self.bounds.width as usize,
-            self.bounds.height as usize,
-            gl::Format::Rgb,
-            gl::PixelDataType::UnsignedByte,
-        )?)
-    }
-
-    pub fn get_bounds(&self) -> &Rect<i32> {
-        &self.bounds
+impl Drop for WindowMutator<'_> {
+    fn drop(&mut self) {
+        let _ignore_error = gl::flush();
+        self.window.window.swap_buffers();
     }
 }

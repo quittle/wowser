@@ -29,16 +29,19 @@ fn main() -> Result<(), FontError> {
             x: 10_f32,
             y: 10_f32,
         };
-        for char in characters.flatten() {
-            window
-                .draw_bitmap(
-                    &(offset.borrow() + &char.offset).into(),
-                    &char.bitmap,
-                    char.width as u32,
-                    &Color::RED,
-                )
-                .expect("Unable to draw bitmap");
-            offset.x += char.next_char_offset;
+        {
+            let mut window_mutator = window.mutate();
+            for char in characters.flatten() {
+                window_mutator
+                    .draw_bitmap(
+                        &(offset.borrow() + &char.offset).into(),
+                        &char.bitmap,
+                        char.width as u32,
+                        &Color::RED,
+                    )
+                    .expect("Unable to draw bitmap");
+                offset.x += char.next_char_offset;
+            }
         }
         thread::sleep(std::time::Duration::from_millis(200000));
     }

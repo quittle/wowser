@@ -1,3 +1,5 @@
+use std::cmp;
+
 use super::{UiError, UiResult};
 use crate::{
     render::Color,
@@ -164,15 +166,43 @@ impl WindowMutator<'_> {
         let height = pixels.len() / width;
 
         gl::pixel_store_i(gl::Alignment::UnpackAlignment, gl::AlignmentValue::One);
-        gl::raster_pos_2i(point.x, point.y + height as i32)?;
+
+        let bounds = self.window.get_bounds();
+
+        let left_offset = if point.x < 0 { point.x.abs() } else { 0 };
+
+        let draw_height = bounds.height - point.y;
+        let bottom_offset = height as i32 - draw_height;
+
+        let adjusted_x = cmp::max(0, point.x);
+        let adjusted_y = point.y + height as i32 - bottom_offset;
+
+        if left_offset > width as i32
+            || adjusted_x > width as i32
+            || bottom_offset > height as i32
+            || adjusted_y > height as i32
+        {
+            return Ok(());
+        }
+
+        gl::raster_pos_2i(adjusted_x, adjusted_y)?;
 
         let pixel_data: Vec<u8> = pixels
             .iter()
-            .flat_map(|color| [color.r, color.g, color.b])
+            .enumerate()
+            .flat_map(|(index, color)| {
+                let x = index % width;
+                let y = index / width;
+                if x as i32 >= left_offset && y as i32 >= bottom_offset {
+                    vec![color.r, color.g, color.b]
+                } else {
+                    vec![]
+                }
+            })
             .collect();
         gl::draw_pixels(
-            width,
-            height,
+            width - left_offset as usize,
+            height - bottom_offset as usize,
             gl::Format::Rgb,
             gl::PixelDataType::UnsignedByte,
             &pixel_data,
@@ -214,5 +244,51 @@ impl Drop for WindowMutator<'_> {
     fn drop(&mut self) {
         let _ignore_error = gl::flush();
         self.window.window.swap_buffers();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{render::Color, startup, ui::tests::lock_for_ui_threads, util::Point};
+
+    use super::Window;
+
+    /// This test doesn't check if it rendered successfully but mostly verifies bounds checks are successful.
+    #[test]
+    pub fn test_draw_pixels_bounds() {
+        lock_for_ui_threads(|| {
+            startup::start();
+
+            let mut window = Window::new().unwrap();
+
+            // Should be bigger than the window
+            let length = 1000_i32;
+            let pixels = vec![Color::WHITE; (length * length) as usize];
+
+            // Should be smaller than the window
+            let small_length = 200;
+            let small_pixels = vec![Color::WHITE; (small_length * small_length) as usize];
+
+            let mut draw = |x: i32, y: i32| {
+                let mut window_mutator = window.mutate();
+                window_mutator
+                    .draw_pixels(&Point { x, y }, &pixels, length as usize)
+                    .unwrap();
+                window_mutator
+                    .draw_pixels(&Point { x, y }, &small_pixels, small_length as usize)
+                    .unwrap();
+            };
+
+            draw(-100, -100);
+            draw(-100, 100);
+            draw(100, -100);
+
+            draw(0, 0);
+            draw(length, length);
+
+            draw(100, length + 100);
+            draw(100 + length, length);
+            draw(100 + length, length + 100);
+        });
     }
 }

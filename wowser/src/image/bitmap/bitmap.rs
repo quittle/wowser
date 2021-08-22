@@ -146,7 +146,6 @@ fn get_pixels(
                 let bit = get_bit(color_offset, Bit::from(bit_offset));
                 let specific_color_offset = if bit { 1 } else { 0 };
 
-                dbg!(byte_offset, bit_offset, bit);
                 pixels.push(colors[specific_color_offset]);
 
                 if bit_offset == 7 {

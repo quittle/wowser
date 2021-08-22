@@ -148,19 +148,15 @@ fn render_once(
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-    use std::panic::{catch_unwind, UnwindSafe};
-    use std::{
-        fs,
-        sync::atomic::{AtomicBool, Ordering},
-    };
-
+    use crate::ui::tests::lock_for_ui_threads;
     use crate::util::get_bool_env;
     use crate::{function_name, startup};
+    use std::{
+        env, fs,
+        panic::{catch_unwind, UnwindSafe},
+    };
 
     use super::*;
-
-    static UI_LOCK: AtomicBool = AtomicBool::new(false);
 
     fn get_test_file(function_name: &'static str) -> String {
         format!("src/browser/test_data/{}.rgb", function_name)
@@ -174,43 +170,41 @@ mod tests {
         F: FnOnce(&mut Window) + UnwindSafe,
     {
         let should_update_tests = get_bool_env("WOWSER_UPDATE_TESTS", false);
-        while UI_LOCK
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {}
-        let result = catch_unwind(|| {
-            startup::start();
-            let mut window = Window::new().unwrap();
-            window
-                .resize(&Rect {
-                    x: 0,
-                    y: 0,
-                    width: 150,
-                    height: 150,
-                })
-                .unwrap();
-            setup(&mut window);
-            let actual_pixels = window.get_pixels_rgb().unwrap();
-            let expected_pixels_file = get_test_file(function_name);
-            let expected_pixels = fs::read(&expected_pixels_file).unwrap_or_default();
-            if actual_pixels != expected_pixels {
-                if should_update_tests {
-                    log!(INFO: "Updating screenshot for", expected_pixels_file);
-                    fs::write(expected_pixels_file, &actual_pixels).unwrap();
-                } else {
-                    let actual_pixels_file = env::temp_dir().join(format!("{}.rgb", function_name));
-                    fs::write(&actual_pixels_file, &actual_pixels).unwrap();
-                    panic!(
+        lock_for_ui_threads(|| {
+            let result = catch_unwind(|| {
+                startup::start();
+                let mut window = Window::new().unwrap();
+                window
+                    .resize(&Rect {
+                        x: 0,
+                        y: 0,
+                        width: 150,
+                        height: 150,
+                    })
+                    .unwrap();
+                setup(&mut window);
+                let actual_pixels = window.get_pixels_rgb().unwrap();
+                let expected_pixels_file = get_test_file(function_name);
+                let expected_pixels = fs::read(&expected_pixels_file).unwrap_or_default();
+                if actual_pixels != expected_pixels {
+                    if should_update_tests {
+                        log!(INFO: "Updating screenshot for", expected_pixels_file);
+                        fs::write(expected_pixels_file, &actual_pixels).unwrap();
+                    } else {
+                        let actual_pixels_file =
+                            env::temp_dir().join(format!("{}.rgb", function_name));
+                        fs::write(&actual_pixels_file, &actual_pixels).unwrap();
+                        panic!(
                         "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the difference",
                         &expected_pixels_file,
                         actual_pixels_file.to_str().unwrap(),
                     );
+                    }
                 }
-            }
+            });
+            startup::stop();
+            result.unwrap();
         });
-        startup::stop();
-        UI_LOCK.store(false, Ordering::SeqCst);
-        result.unwrap();
     }
 
     #[test]

@@ -1,3 +1,7 @@
+use std::ptr::addr_of_mut;
+
+use crate::{GlError, GlSingleError};
+
 use super::{get_error_result, Alignment, AlignmentValue, Capability, GlResult, MatrixMode};
 use wowser_gl_sys::*;
 
@@ -46,7 +50,23 @@ pub fn raster_pos_2i(x: i32, y: i32) -> GlResult {
         glRasterPos2i(x, y);
     }
 
-    get_error_result()
+    get_error_result()?;
+
+    if !get_boolean(GL_CURRENT_RASTER_POSITION_VALID) {
+        Err(GlError::Error(vec![GlSingleError::UnknownError(0)]))
+    } else {
+        Ok(())
+    }
+}
+
+fn get_boolean(param: GLenum) -> bool {
+    let mut boolean_val: GLboolean = 0;
+
+    unsafe {
+        glGetBooleanv(param, addr_of_mut!(boolean_val));
+    }
+
+    boolean_val == 1
 }
 
 pub fn pixel_store_i(alignment: Alignment, value: AlignmentValue) {

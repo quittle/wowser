@@ -12,6 +12,8 @@ pub fn draw_pixels(
     pixel_data_type: PixelDataType,
     data: &[u8],
 ) -> GlResult {
+    debug_assert_eq!(data.len(), width * height * format.get_stride() as usize);
+
     let data_ptr = data.as_ptr() as *const c_void;
     unsafe {
         glDrawPixels(

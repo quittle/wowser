@@ -57,7 +57,7 @@ where
                             }
                             Ok(Poll::Ready(result)) => {
                                 result_map.lock().unwrap().insert(task.token, Ok(result));
-                            }
+                            }p
                         }
                     }
                 }
@@ -145,7 +145,8 @@ mod tests {
             })
             .unwrap();
         assert!(executor.get_result(token).is_none());
-        thread::sleep(SLEEP_DURATION * 3);
+        // This needs to be elongated due to the slowness of panic'ing on slow machines (like in GitHub Actions)
+        thread::sleep(SLEEP_DURATION * 5);
         let result = executor.get_result(token);
         assert!(result.is_some());
         assert!(result.unwrap().is_err());

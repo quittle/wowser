@@ -31,7 +31,6 @@ jobs:
             mesa-common-dev \
             pkg-config \
             libssl-dev \
-            libgl1-mesa-dev \
             xvfb
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings

@@ -57,7 +57,7 @@ where
                             }
                             Ok(Poll::Ready(result)) => {
                                 result_map.lock().unwrap().insert(task.token, Ok(result));
-                            }p
+                            }
                         }
                     }
                 }

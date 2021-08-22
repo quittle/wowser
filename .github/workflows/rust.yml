@@ -28,7 +28,6 @@ jobs:
             libxinerama-dev \
             libxcursor-dev \
             libxi-dev \
-            mesa-common-dev \
             pkg-config \
             libssl-dev \
             xvfb

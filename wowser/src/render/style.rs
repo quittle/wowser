@@ -5,7 +5,6 @@ use super::color::Color;
 /// Represents a DOM node after attaching all applicable CSS styles.
 #[derive(Debug, PartialEq)]
 pub struct StyleNode {
-    // pub bounds: Rect,
     pub display: StyleNodeDisplay,
     pub border_width: f32,
     pub border_color: Color,

@@ -5,7 +5,15 @@ pub struct Lexer {
     root_token: Box<dyn Token>,
 }
 
-pub type ParsedToken<'a> = (Box<dyn Token>, &'a str);
+pub type ParsedTokenOffset = usize;
+
+#[derive(Debug)]
+pub struct ParsedToken<'a> {
+    pub token: Box<dyn Token>,
+    pub literal: &'a str,
+    pub offset: ParsedTokenOffset,
+}
+
 pub type ParsedTokens<'a> = Vec<ParsedToken<'a>>;
 
 impl Lexer {
@@ -16,7 +24,7 @@ impl Lexer {
 
     /// Parses a source string into a series of tokens
     pub fn parse<'a>(&self, source: &'a str) -> Option<ParsedTokens<'a>> {
-        self.recursive_parse(source, self.root_token.as_ref())
+        self.recursive_parse(0, source, self.root_token.as_ref())
             .map(|mut v| {
                 v.reverse();
                 v
@@ -25,6 +33,7 @@ impl Lexer {
 
     fn recursive_parse<'a>(
         &self,
+        cur_source_offset: ParsedTokenOffset,
         source: &'a str,
         root_token: &dyn Token,
     ) -> Option<ParsedTokens<'a>> {
@@ -48,8 +57,17 @@ impl Lexer {
                 }
                 let real_capture = real_capture.as_str();
                 let capture = captures.get(0).expect("Match must exist").as_str();
-                if let Some(mut subpath) = self.recursive_parse(&source[capture.len()..], &*token) {
-                    subpath.push((token.clone_box(), real_capture));
+                let capture_offset = capture.len();
+                if let Some(mut subpath) = self.recursive_parse(
+                    cur_source_offset + capture_offset,
+                    &source[capture_offset..],
+                    &*token,
+                ) {
+                    subpath.push(ParsedToken {
+                        token: token.clone_box(),
+                        literal: real_capture,
+                        offset: cur_source_offset,
+                    });
                     return Option::Some(subpath);
                 }
             }

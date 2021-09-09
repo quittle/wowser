@@ -9,6 +9,20 @@ pub struct ASTNode<'a, T: Rule> {
     pub children: Vec<ASTNode<'a, T>>,
 }
 
+impl<'a, T: Rule> ASTNode<'a, T> {
+    /// A very rough approximation of where the current node is located. This may beuseful for
+    /// relative comparisons but may be v6ery far from the actual byte offset
+    pub fn get_first_token(&self) -> Option<&'a ParsedToken<'a>> {
+        if let Some(token) = self.token {
+            Some(token)
+        } else {
+            self.children
+                .iter()
+                .find_map(|child| child.get_first_token())
+        }
+    }
+}
+
 /// The results of interpretting a rule over tokens
 #[derive(Debug)]
 pub struct ParserResult<'a, T: Rule> {
@@ -45,7 +59,7 @@ impl Parser {
             for child_rule_type in root_rule.children()[child_indices[depth]..].iter() {
                 let result = match child_rule_type {
                     RuleType::Token(token) => {
-                        if token.eq(first_token.0.as_ref()) {
+                        if token.eq(first_token.token.as_ref()) {
                             Ok(ParserResult {
                                 node: ASTNode {
                                     rule: root_rule.clone_box(),

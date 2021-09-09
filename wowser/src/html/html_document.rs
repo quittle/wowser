@@ -3,6 +3,8 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use crate::parse::ParsedTokenOffset;
+
 #[derive(Debug)]
 pub struct HtmlDocument {
     pub doctype: DoctypeHtmlNode,
@@ -17,12 +19,13 @@ impl HtmlDocument {
                 matches!(element, ElementContents::Element(ElementHtmlNode{tag_name, ..}) if tag_name == "html")));
         let html = if let Some(ElementContents::Element(element)) = first_html_node {
             ElementHtmlNode::new(
+                0,
                 "html".into(),
                 element.attributes.clone(),
                 document_node.contents,
             )
         } else {
-            ElementHtmlNode::new("html".into(), vec![], document_node.contents)
+            ElementHtmlNode::new(0, "html".into(), vec![], document_node.contents)
         };
 
         HtmlDocument {
@@ -153,6 +156,7 @@ impl Display for DoctypeHtmlNode {
 #[derive(Debug, Default, PartialEq)]
 pub struct ElementHtmlNode {
     id: ElementContentsId,
+    pub document_offset: ParsedTokenOffset,
     pub tag_name: String,
     pub attributes: Vec<TagAttributeHtmlNode>,
     pub children: Vec<ElementContents>,
@@ -160,12 +164,14 @@ pub struct ElementHtmlNode {
 
 impl ElementHtmlNode {
     pub fn new(
+        document_offset: ParsedTokenOffset,
         tag_name: String,
         attributes: Vec<TagAttributeHtmlNode>,
         children: Vec<ElementContents>,
     ) -> ElementHtmlNode {
         ElementHtmlNode {
             id: ELEMENT_CONTENTS_ID_PROVIDER.fetch_add(1, Ordering::Acquire),
+            document_offset,
             tag_name,
             attributes,
             children,
@@ -245,15 +251,18 @@ mod tests {
     #[test]
     fn element_contents_find() {
         let root = ElementContents::Element(ElementHtmlNode::new(
+            0,
             "a".into(),
             vec![],
             vec![
                 ElementContents::Element(ElementHtmlNode::new(
+                    0,
                     "aa".into(),
                     vec![],
                     vec![
                         ElementContents::Text(TextHtmlNode::new("aa-text".into())),
                         ElementContents::Element(ElementHtmlNode::new(
+                            0,
                             "aaa".into(),
                             vec![],
                             vec![],
@@ -261,10 +270,7 @@ mod tests {
                     ],
                 )),
                 ElementContents::Text(TextHtmlNode::new("a-text".into())),
-                ElementContents::Element(ElementHtmlNode {
-                    tag_name: "ab".into(),
-                    ..Default::default()
-                }),
+                ElementContents::Element(ElementHtmlNode::new(0, "ab".into(), vec![], vec![])),
             ],
         ));
 
@@ -325,7 +331,7 @@ mod tests {
 
     #[test]
     fn element_html_node() {
-        let mut node = ElementHtmlNode::new("tag".into(), vec![], vec![]);
+        let mut node = ElementHtmlNode::new(0, "tag".into(), vec![], vec![]);
         assert_eq!("<tag />", node.to_string());
         node.attributes.push(TagAttributeHtmlNode {
             name: "attr1".into(),
@@ -342,6 +348,7 @@ mod tests {
         assert_eq!("<tag>text content</tag>", node.to_string());
         node.children
             .push(ElementContents::Element(ElementHtmlNode::new(
+                0,
                 "nested".into(),
                 vec![],
                 vec![],
@@ -349,7 +356,7 @@ mod tests {
         assert_eq!("<tag>text content<nested /></tag>", node.to_string());
         node.children.insert(
             0,
-            ElementContents::Element(ElementHtmlNode::new("first".into(), vec![], vec![])),
+            ElementContents::Element(ElementHtmlNode::new(0, "first".into(), vec![], vec![])),
         );
         assert_eq!(
             "<tag><first />text content<nested /></tag>",
@@ -379,13 +386,14 @@ mod tests {
         let node = ElementContents::Text(TextHtmlNode::new("text".into()));
         assert_eq!("text", node.to_string());
 
-        let node = ElementContents::Element(ElementHtmlNode::new("tag".into(), vec![], vec![]));
+        let node = ElementContents::Element(ElementHtmlNode::new(0, "tag".into(), vec![], vec![]));
         assert_eq!("<tag />", node.to_string());
     }
 
     #[test]
     fn get_has_attribute() {
         let element = ElementHtmlNode::new(
+            0,
             "tag".into(),
             vec![
                 TagAttributeHtmlNode {

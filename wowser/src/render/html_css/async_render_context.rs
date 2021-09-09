@@ -1,11 +1,15 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
-use crate::net::{HttpResult, Url, NETWORK_RESOURCE_MANAGER};
+use crate::{
+    css::CssDocument,
+    net::{HttpResult, Url, NETWORK_RESOURCE_MANAGER},
+    parse::ParsedTokenOffset,
+};
 
 /// Abstraction for managing async tasks when rendering
 #[derive(Default)]
 pub struct AsyncRenderContext {
-    // TODO: Add support for cheaper tracking and checking if new resources became available
+    pub css_documents: HashMap<String, (ParsedTokenOffset, CssDocument)>,
 }
 
 impl AsyncRenderContext {

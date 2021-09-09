@@ -1,9 +1,9 @@
-use std::{borrow::Borrow, collections::HashMap, rc::Rc};
+use std::borrow::Borrow;
 
 use crate::{
-    css::{parse_css, CssDocument, CssProperty},
+    css::{parse_css, CssDocument},
     font::{BDFFont, CachingFont},
-    html::{parse_html, ElementContentsId, HtmlDocument},
+    html::{parse_html, HtmlDocument},
     render::{self, html_css_to_styles, normalize_style_nodes, style_html, AsyncRenderContext},
     ui::Window,
     util::{Point, Rect},
@@ -21,7 +21,6 @@ fn add_useragent_css(external: &mut CssDocument) {
 pub struct Tab<'w> {
     window: &'w mut Window,
     html: HtmlDocument,
-    css_styling: HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
     async_render_context: AsyncRenderContext,
 }
 
@@ -34,35 +33,41 @@ impl<'w> Tab<'w> {
         // Add useragent stylesheet
         add_useragent_css(&mut css);
 
-        // Associate the CSS properties with individual HTML elements
-        let css_styling = style_html(&html, &css);
-
-        let async_render_context = AsyncRenderContext::default();
+        let mut async_render_context = AsyncRenderContext::default();
+        async_render_context
+            .css_documents
+            .insert("USER-AGENT".to_string(), (0, css));
 
         Tab {
             window,
             html,
-            css_styling,
             async_render_context,
         }
     }
 
     pub fn render(&mut self) {
-        render_once(
-            self.window,
-            &self.html,
-            &self.css_styling,
-            &mut self.async_render_context,
-        );
+        render_once(self.window, &self.html, &mut self.async_render_context);
     }
 }
 
 fn render_once(
     window: &mut Window,
     html: &HtmlDocument,
-    css_styling: &HashMap<ElementContentsId, Vec<Rc<CssProperty>>>,
     async_render_context: &mut AsyncRenderContext,
 ) {
+    let mut sorted_css_documents = async_render_context
+        .css_documents
+        .iter()
+        .collect::<Vec<_>>();
+    sorted_css_documents.sort_by_key(|entry| entry.1 .0);
+    let css_blocks: Vec<_> = sorted_css_documents
+        .iter()
+        .flat_map(|css_document| css_document.1 .1.blocks.clone())
+        .collect();
+    let merged_css_document = CssDocument { blocks: css_blocks };
+
+    let css_styling = &style_html(html, &merged_css_document);
+
     // Convert the HTML+CSS Properties to style nodes, an intermediary representation of styles nodes
     // with all styling, but not layout and placement resolved
     let mut style_root = html_css_to_styles(html, css_styling, async_render_context);

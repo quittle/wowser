@@ -155,7 +155,7 @@ impl CssInterpreter {
         );
         assert_eq!(0, children.len(), "Unexpected children length");
 
-        let parsed_token = token.expect("Missing selector item contents").1;
+        let parsed_token = token.expect("Missing selector item contents").literal;
 
         if let Some(class) = parsed_token.strip_prefix('.') {
             CssSelectorChainItem::Class(class.to_string())
@@ -259,7 +259,7 @@ impl CssInterpreter {
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing property key contents");
-        (*parsed_token).1.trim().to_string()
+        (*parsed_token).literal.trim().to_string()
     }
 
     fn on_property_value(&self, selector: &ASTNode<CssRule>) -> String {
@@ -277,7 +277,7 @@ impl CssInterpreter {
         assert_eq!(0, children.len(), "Unexpected children length");
 
         let parsed_token = token.expect("Missing property value contents");
-        (*parsed_token).1.trim().to_string()
+        (*parsed_token).literal.trim().to_string()
     }
 }
 

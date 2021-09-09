@@ -9,6 +9,7 @@ fn main() {
         let mut window = Window::new().unwrap();
         let html = r#"
             <html>
+                <link rel="stylesheet" href="http://0.0.0.0:8000/wowser/data/example.css" />
                 before
                 <img src="http://www.w3.org/People/mimasa/test/imgformat/img/w3c_home.bmp" />
                 after
@@ -18,27 +19,7 @@ fn main() {
                 </div>
             </html>
         "#;
-        let css = r#"
-            div {
-                background-color: #f00;
-                color: #000;
-            }
-
-            .foo {
-                background-color: #0ff;
-            }
-
-            .wrapper {
-                background-color: #00f;
-                color:#fff;
-            }
-
-            span {
-                background-color: #0f0;
-                border-color: #0ff;
-                border-width: 3px;
-            }
-        "#;
+        let css = "";
 
         let mut tab = Tab::load(&mut window, html, css);
 

@@ -26,8 +26,6 @@ pub fn u8_to_i32(a: u8, b: u8, c: u8, d: u8) -> i32 {
 ///
 /// The returned u8 will never have a value > 15 since it should represent a u4 value.
 pub fn u4_from_u8(byte: u8, start_offset: U4BitOffset) -> u8 {
-    // let bitmask = (8 + 4 + 2 + 1) << (4 - (start_offset as u8));
-    // let masked_byte = bitmask & byte;
     let shifted_byte = byte >> (4 - (start_offset as u8));
     (8 + 4 + 2 + 1) & shifted_byte
 }

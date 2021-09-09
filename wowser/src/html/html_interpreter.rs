@@ -50,6 +50,7 @@ impl HtmlInterpreter {
             rule,
             children,
             token,
+            ..
         } = doctype_contents_string;
 
         self.assert_rule_is(rule, HtmlRule::DoctypeContentsString);
@@ -64,9 +65,15 @@ impl HtmlInterpreter {
         self.assert_rule_is(rule, HtmlRule::NonSelfClosingTag);
         self.assert_children_length(children, 3);
 
-        let (tag_name, attributes) = self.on_opening_tag(&children[0]);
+        let first_child = &children[0];
+        let (tag_name, attributes) = self.on_opening_tag(first_child);
         let children = self.on_tag_contents(&children[1]);
-        ElementHtmlNode::new(tag_name, attributes, children)
+        ElementHtmlNode::new(
+            first_child.get_first_token().unwrap().offset,
+            tag_name,
+            attributes,
+            children,
+        )
     }
 
     fn on_self_closing_tag(&self, self_closing_tag: &ASTNode<HtmlRule>) -> ElementHtmlNode {
@@ -75,8 +82,17 @@ impl HtmlInterpreter {
         self.assert_rule_is(rule, HtmlRule::SelfClosingTag);
         self.assert_children_length(children, 2);
 
-        let (tag_name, attributes) = self.on_opening_tag_prelude(&children[0]);
-        ElementHtmlNode::new(tag_name, attributes, vec![])
+        let first_child = &children[0];
+        let (tag_name, attributes) = self.on_opening_tag_prelude(first_child);
+        ElementHtmlNode::new(
+            first_child
+                .get_first_token()
+                .expect("No child token found")
+                .offset,
+            tag_name,
+            attributes,
+            vec![],
+        )
     }
 
     fn on_opening_tag(
@@ -274,10 +290,10 @@ impl HtmlInterpreter {
         );
     }
 
-    fn extract_token(&self, token: &Option<&(Box<dyn Token>, &str)>) -> String {
+    fn extract_token(&self, token: &Option<&ParsedToken>) -> String {
         (*token)
             .expect("Missing token for required rule")
-            .1
+            .literal
             .to_string()
     }
 }

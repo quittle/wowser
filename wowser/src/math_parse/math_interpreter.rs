@@ -12,6 +12,7 @@ impl Interpreter<'_> for MathInterpreter {
             rule,
             token,
             children,
+            ..
         } = ast;
 
         match **rule {
@@ -39,7 +40,7 @@ impl Interpreter<'_> for MathInterpreter {
                 let v2 = self.on_node(expression);
 
                 let operator: &str = if let Some(token) = operator.token {
-                    token.1
+                    token.literal
                 } else {
                     panic!("Token required")
                 };
@@ -56,12 +57,9 @@ impl Interpreter<'_> for MathInterpreter {
             }
             MathRule::Number => {
                 if let Some(token) = token {
-                    return Some(
-                        token
-                            .1
-                            .parse()
-                            .unwrap_or_else(|_| panic!("Number ({}) cannot be parsed", token.1)),
-                    );
+                    return Some(token.literal.parse().unwrap_or_else(|_| {
+                        panic!("Number ({}) cannot be parsed", token.literal)
+                    }));
                 }
                 panic!("Invalid number")
             }

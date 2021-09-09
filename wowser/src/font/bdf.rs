@@ -312,7 +312,7 @@ fn parse_real_properties(
             "SETWIDTH_NAME" => ret.set_width_name = Some(property_value_literal),
             "FONTNAME_REGISTRY" => ret.font_name_registry = Some(property_value_literal),
             "FONT_DESCENT" => ret.font_descent = Some(property_value_literal.parse::<u32>()?),
-            _ => log!(WARN: "Dropping property", line),
+            _ => log!(WARN["BDF"]: "Dropping property", line),
         }
     }
     Ok(ret)

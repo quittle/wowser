@@ -171,16 +171,21 @@ impl WindowMutator<'_> {
 
         let left_offset = if point.x < 0 { point.x.abs() } else { 0 };
 
-        let draw_height = bounds.height - point.y;
-        let bottom_offset = height as i32 - draw_height;
+        let bottom_offset = if (point.y + height as i32) > bounds.height {
+            point.y + height as i32 - bounds.height
+        } else {
+            0
+        };
 
         let adjusted_x = cmp::max(0, point.x);
         let adjusted_y = point.y + height as i32 - bottom_offset;
 
-        if left_offset > width as i32
-            || adjusted_x > width as i32
-            || bottom_offset > height as i32
-            || adjusted_y > height as i32
+        if left_offset >= width as i32
+            || adjusted_x >= bounds.width as i32
+            || adjusted_x < 0
+            || bottom_offset >= height as i32
+            || adjusted_y > bounds.height as i32
+            || adjusted_y < 0
         {
             return Ok(());
         }

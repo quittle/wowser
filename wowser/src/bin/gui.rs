@@ -24,9 +24,8 @@ fn main() {
                 </div>
             </html>
         "#;
-        let css = "";
 
-        let mut tab = Tab::load(&mut window, html, css);
+        let mut tab = Tab::load(&mut window, html);
 
         loop {
             glfw::poll_events().unwrap();

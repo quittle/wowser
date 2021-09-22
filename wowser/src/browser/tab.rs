@@ -13,9 +13,8 @@ const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../data/gohufont-11.bdf");
 
 const USERAGENT_CSS: &[u8] = include_bytes!("../assets/useragent_stylesheet.css");
 
-fn add_useragent_css(external: &mut CssDocument) {
-    let useragent_css = parse_css(std::str::from_utf8(USERAGENT_CSS).unwrap()).unwrap();
-    external.blocks.splice(0..0, useragent_css.blocks);
+fn get_useragent_css() -> CssDocument {
+    parse_css(std::str::from_utf8(USERAGENT_CSS).unwrap()).unwrap()
 }
 
 pub struct Tab<'w> {
@@ -25,13 +24,12 @@ pub struct Tab<'w> {
 }
 
 impl<'w> Tab<'w> {
-    pub fn load(window: &'w mut Window, html_contents: &str, css_contents: &str) -> Tab<'w> {
+    pub fn load(window: &'w mut Window, html_contents: &str) -> Tab<'w> {
         // Parse the documents
         let html = parse_html(html_contents).unwrap();
-        let mut css = parse_css(css_contents).unwrap();
 
-        // Add useragent stylesheet
-        add_useragent_css(&mut css);
+        // Get useragent stylesheet
+        let css = get_useragent_css();
 
         let mut async_render_context = AsyncRenderContext::default();
         async_render_context
@@ -223,7 +221,7 @@ mod tests {
     fn test_minimal_html() {
         screenshot_test(function_name!(), |window| {
             // Currently buggy because it doesn't render a white background by default
-            Tab::load(window, "", "").render();
+            Tab::load(window, "").render();
         });
     }
 
@@ -261,7 +259,6 @@ mod tests {
                 </div>
             </html>
         "#;
-        let css = "";
         screenshot_test(function_name!(), |window| {
             window
                 .resize(&Rect {
@@ -272,7 +269,7 @@ mod tests {
                 })
                 .unwrap();
 
-            let mut tab = Tab::load(window, html, css);
+            let mut tab = Tab::load(window, html);
             tab.render();
             // Second render adds support for style
             tab.render();

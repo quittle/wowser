@@ -2,6 +2,8 @@ use regex::Regex;
 
 use crate::util::{string_to_bytes, HexConversion};
 
+use super::css_color_name_to_hex;
+
 #[derive(PartialEq, Debug)]
 pub enum CssDisplay {
     Block,
@@ -29,7 +31,12 @@ pub enum CssColor {
 }
 
 impl CssColor {
-    pub fn from_raw_value(value: &str) -> Option<Self> {
+    pub fn from_raw_value(mut value: &str) -> Option<Self> {
+        let lowercase_value = value.to_ascii_lowercase();
+        let converted_color = css_color_name_to_hex(lowercase_value.as_str());
+        if let Some(hex_value) = converted_color {
+            value = hex_value;
+        }
         if Self::rgb3_hex().is_match(value) {
             let chars: Vec<char> = value.chars().collect();
             let r = chars[1].hex_to_byte().ok()?;

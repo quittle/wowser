@@ -233,7 +233,7 @@ mod tests {
                     Content Ignored
                     <style>
                         div {
-                            background-color: #f00;
+                            background-color: red;
                             color: #000;
                         }
 
@@ -242,7 +242,7 @@ mod tests {
                         }
 
                         .wrapper {
-                            background-color: #00f;
+                            background-color: blue;
                             color:#fff;
                         }
 

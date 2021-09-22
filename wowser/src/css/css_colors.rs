@@ -1,6 +1,6 @@
 /// Converts a lowercase CSS color name to its hex equivalent
 ///
-/// Grabbed from the list provided in https://www.w3schools.com/colors/colors_hex.asp
+/// Grabbed from the list provided in <https://www.w3schools.com/colors/colors_hex.asp>
 pub fn css_color_name_to_hex(lowercase_value: &str) -> Option<&'static str> {
     Some(match lowercase_value {
         "aliceblue" => "#f0f8ff",

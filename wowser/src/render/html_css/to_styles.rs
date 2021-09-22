@@ -1,17 +1,12 @@
-use std::{collections::HashMap, rc::Rc, str::from_utf8};
+use std::{collections::HashMap, rc::Rc};
 
 use crate::{
-    css::{self, CssColor, CssDimension, CssDisplay, CssProperty},
-    html::{ElementContents, ElementContentsId, ElementHtmlNode, HtmlDocument, TextHtmlNode},
-    image::Bitmap,
-    net::Url,
-    render::{
-        Color, NativeStyleNode, StyleNode, StyleNodeChild, StyleNodeDisplay, StyleNodeMargin,
-        TextStyleNode,
-    },
+    css::{CssColor, CssDimension, CssDisplay, CssProperty},
+    html::{ElementContents, ElementContentsId, HtmlDocument},
+    render::{Color, StyleNode, StyleNodeChild, StyleNodeDisplay, StyleNodeMargin, TextStyleNode},
 };
 
-use super::AsyncRenderContext;
+use super::{special_elements, AsyncRenderContext};
 
 pub fn html_css_to_styles(
     html_document: &HtmlDocument,
@@ -115,9 +110,9 @@ fn render(
 
     style_node.child = match element {
         ElementContents::Element(element_node) => match element_node.tag_name.as_str() {
-            "img" => on_img_node(element_node, async_render_context),
-            "link" => on_link_node(element_node, async_render_context),
-            "style" => on_style_node(element_node, async_render_context),
+            "img" => special_elements::on_img_node(element_node, async_render_context),
+            "link" => special_elements::on_link_node(element_node, async_render_context),
+            "style" => special_elements::on_style_node(element_node, async_render_context),
             _ => StyleNodeChild::Nodes(
                 element_node
                     .children
@@ -180,91 +175,4 @@ fn get_style_prop<T, F: Fn(&str) -> Option<T>>(
     default_value: T,
 ) -> T {
     get_style_prop_overrides(props, &[property_name], from_raw_value, default_value)
-}
-
-fn on_link_node(
-    element: &ElementHtmlNode,
-    async_render_context: &mut AsyncRenderContext,
-) -> StyleNodeChild {
-    (|| -> Option<StyleNodeChild> {
-        let rel = element.get_attribute("rel")?;
-        if rel != "stylesheet" {
-            return None;
-        }
-        let href = element.get_attribute("href")?;
-        let url = Url::parse(href)?;
-        let http_result = async_render_context.get_resource(&url)?;
-        let response = http_result.as_ref().as_ref().ok()?;
-        if response.status.contains_success_content()
-            && !async_render_context.css_documents.contains_key(href)
-        {
-            let body_string = from_utf8(&response.body).ok()?;
-            let css_document = css::parse_css(body_string).ok()?;
-            async_render_context
-                .css_documents
-                .insert(href.to_string(), (element.document_offset, css_document));
-        }
-        None
-    })();
-
-    StyleNodeChild::Nodes(vec![])
-}
-
-fn on_img_node(
-    element: &ElementHtmlNode,
-    async_render_context: &mut AsyncRenderContext,
-) -> StyleNodeChild {
-    let style_node = (|| -> Option<StyleNodeChild> {
-        let src = element.get_attribute("src")?;
-        let url = Url::parse(src)?;
-        if !url.path.ends_with(".bmp") {
-            // Only bitmaps are supported for now
-            return None;
-        }
-        let http_result = async_render_context.get_resource(&url)?;
-        let response = http_result.as_ref().as_ref().ok()?;
-        if response.status.contains_success_content() {
-            let bitmap = Bitmap::new(&response.body).ok()?;
-            return Some(StyleNodeChild::Native(NativeStyleNode {
-                width: bitmap.width,
-                height: bitmap.height,
-                pixels: bitmap.pixels,
-            }));
-        }
-        None
-    })();
-
-    if let Some(node) = style_node {
-        node
-    } else {
-        StyleNodeChild::Nodes(vec![])
-    }
-}
-
-fn on_style_node(
-    element: &ElementHtmlNode,
-    async_render_context: &mut AsyncRenderContext,
-) -> StyleNodeChild {
-    (|| -> Option<StyleNodeChild> {
-        let type_attribute = element.get_attribute("type").unwrap_or("text/css");
-
-        if type_attribute != "text/css" {
-            return None;
-        }
-
-        if element.children.len() != 1 {
-            return None;
-        }
-
-        if let ElementContents::Text(TextHtmlNode { text, .. }) = &element.children[0] {
-            let css_document = css::parse_css(text).ok()?;
-            async_render_context.css_documents.insert(
-                element.get_id().to_string(),
-                (element.document_offset, css_document),
-            );
-        }
-        None
-    })();
-
-    StyleNodeChild::Nodes(vec![])
 }

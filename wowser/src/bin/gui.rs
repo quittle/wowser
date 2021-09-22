@@ -9,6 +9,11 @@ fn main() {
         let mut window = Window::new().unwrap();
         let html = r#"
             <html>
+                <style>
+                    html {
+                        background-color: #00f;
+                    }
+                </style>
                 <link rel="stylesheet" href="http://0.0.0.0:8000/wowser/data/example.css" />
                 before
                 <img src="http://www.w3.org/People/mimasa/test/imgformat/img/w3c_home.bmp" />

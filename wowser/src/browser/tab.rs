@@ -233,6 +233,27 @@ mod tests {
             <html>
                 <head>
                     Content Ignored
+                    <style>
+                        div {
+                            background-color: #f00;
+                            color: #000;
+                        }
+
+                        .foo {
+                            background-color: #0ff;
+                        }
+
+                        .wrapper {
+                            background-color: #00f;
+                            color:#fff;
+                        }
+
+                        span {
+                            background-color: #0f0;
+                            border-color: #0ff;
+                            border-width: 3px;
+                        }
+                    </style>
                 </head>
                 <div class="wrapper">
                     <div>abc<span>def</span>ghi</div>
@@ -240,27 +261,7 @@ mod tests {
                 </div>
             </html>
         "#;
-        let css = r#"
-            div {
-                background-color: #f00;
-                color: #000;
-            }
-
-            .foo {
-                background-color: #0ff;
-            }
-
-            .wrapper {
-                background-color: #00f;
-                color:#fff;
-            }
-
-            span {
-                background-color: #0f0;
-                border-color: #0ff;
-                border-width: 3px;
-            }
-        "#;
+        let css = "";
         screenshot_test(function_name!(), |window| {
             window
                 .resize(&Rect {
@@ -271,7 +272,10 @@ mod tests {
                 })
                 .unwrap();
 
-            Tab::load(window, html, css).render();
+            let mut tab = Tab::load(window, html, css);
+            tab.render();
+            // Second render adds support for style
+            tab.render();
         });
     }
 }

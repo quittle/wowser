@@ -178,6 +178,10 @@ impl ElementHtmlNode {
         }
     }
 
+    pub fn get_id(&self) -> ElementContentsId {
+        self.id
+    }
+
     pub fn get_attribute(&self, name: &str) -> Option<&str> {
         let lowercase_name = name.to_ascii_lowercase();
         self.attributes

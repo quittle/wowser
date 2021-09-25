@@ -1,12 +1,12 @@
 use super::super::dns::resolve_domain_name_to_ip;
 use super::super::stream::AsyncTcpStream;
-use super::{
-    structures::HttpVerb, HttpHeader, HttpRequestError, HttpResponse, HttpResult, HttpStatus,
-    Result,
-};
+use super::constants::DOUBLE_NEWLINE_BYTES;
+use super::http_header_map::HttpHeaderMap;
+use super::{structures::HttpVerb, HttpRequestError, HttpResponse, HttpResult, HttpStatus, Result};
+use crate::net::http::headers::parse_status_headers;
 use crate::{
     net::{Url, UrlHost},
-    util::{vec_contains, vec_window_split, StringError},
+    util::{vec_contains, StringError},
 };
 use core::result;
 use futures::Future;
@@ -14,57 +14,14 @@ use futures_util::stream::StreamExt;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpStream};
 
-const SINGLE_NEWLINE_BYTES: &[u8] = b"\r\n";
-const DOUBLE_NEWLINE_BYTES: &[u8] = b"\r\n\r\n";
-
 fn contains_end_of_headers(vec: &[u8]) -> bool {
     vec_contains(vec, DOUBLE_NEWLINE_BYTES)
-}
-
-fn parse_headers(vec: &[u8]) -> Option<(HttpStatus, Vec<HttpHeader>, &[u8])> {
-    let headers = vec_window_split(vec, SINGLE_NEWLINE_BYTES);
-    let first_line_bytes = headers.get(0)?;
-    let first_line = std::str::from_utf8(first_line_bytes).ok()?;
-    let mut parts = first_line.splitn(3, ' ');
-    let http_version = parts.next()?.to_owned();
-    let status_code = parts.next()?.parse::<u16>().ok()?;
-    let reason_phrase = parts.next()?.to_owned();
-
-    let status = HttpStatus {
-        http_version,
-        status_code,
-        reason_phrase,
-    };
-
-    let mut offset = first_line_bytes.len() + 2;
-    let headers = headers[1..]
-        .iter()
-        .take_while(|line| !line.is_empty())
-        .map(|vec| {
-            offset += vec.len() + 2;
-            std::str::from_utf8(vec).ok()
-        })
-        .map(|line| -> Option<HttpHeader> {
-            let mut values = line?.splitn(2, ':');
-            let name = values.next()?.to_owned();
-            let value = values.next()?.to_owned();
-            Some(HttpHeader { name, value })
-        });
-
-    let mut ret_headers = vec![];
-    for header in headers {
-        ret_headers.push(header?);
-    }
-
-    offset += SINGLE_NEWLINE_BYTES.len();
-
-    Some((status, ret_headers, &vec[offset..]))
 }
 
 fn determine_content_length(
     verb: &HttpVerb,
     status: &HttpStatus,
-    headers: &[HttpHeader],
+    header_map: &HttpHeaderMap,
 ) -> Result<u32> {
     if *verb == HttpVerb::Head {
         return Ok(0);
@@ -74,18 +31,15 @@ fn determine_content_length(
         100..=199 | 204 | 304 => return Ok(0),
         _ => (),
     };
-
-    for header in headers {
-        if header.name == "Content-Length" {
-            return header
-                .value
+    header_map
+        .get("content-length")
+        .map(|length| {
+            length
                 .trim()
                 .parse::<u32>()
-                .map_err(|e| HttpRequestError::from(Box::new(e)));
-        }
-    }
-
-    Ok(u32::MAX)
+                .map_err(|e| HttpRequestError::from(Box::new(e)))
+        })
+        .unwrap_or(Ok(u32::MAX))
 }
 
 /// Holds the state of an HTTP request
@@ -157,19 +111,19 @@ impl HttpRequest {
         mut stream: AsyncTcpStream,
     ) -> Result<HttpResponse> {
         let mut result = vec![];
-        let mut status: HttpStatus = Default::default();
-        let mut headers: Vec<HttpHeader> = vec![];
+        let mut status = HttpStatus::default();
+        let mut header_map = HttpHeaderMap::default();
         let mut content_length = u32::MAX;
         let mut preamble_length = 0;
         while let Some(bytes) = stream.next().await {
             result.extend(&bytes.map_err(|e| HttpRequestError::from(Box::new(e)))?);
             if preamble_length == 0 && contains_end_of_headers(&result) {
-                let parsed = parse_headers(&result);
-                if let Some((parsed_status, parsed_headers, remainder)) = parsed {
+                let parsed_status_headers = parse_status_headers(&result);
+                if let Some((parsed_status, parsed_headers, remainder)) = parsed_status_headers {
                     status = parsed_status;
-                    headers = parsed_headers;
+                    header_map = HttpHeaderMap::from(parsed_headers);
                     preamble_length = result.len() - remainder.len();
-                    content_length = determine_content_length(&verb, &status, &headers)?;
+                    content_length = determine_content_length(&verb, &status, &header_map)?;
                     result = remainder.to_vec();
 
                     if content_length == 0 {
@@ -184,7 +138,7 @@ impl HttpRequest {
 
         Ok(HttpResponse {
             status,
-            headers,
+            headers: header_map,
             body: result,
         })
     }

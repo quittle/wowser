@@ -15,6 +15,7 @@ This project is built with Rust. To get started, install [`rustup`](https://rust
 Start `XLaunch` with **Native opengl** disabled and **Disable access control** checked.
 
 Run this from a WSL terminal before starting to connect to the Windows X11 server.
+
 ```bash
 export DISPLAY="$(cat /etc/resolv.conf | grep -oE '([0-9]{1,}\.){3}[0-9]{1,}'):0.0"
 ```
@@ -24,6 +25,12 @@ export DISPLAY="$(cat /etc/resolv.conf | grep -oE '([0-9]{1,}\.){3}[0-9]{1,}'):0
 Download and [install Windows C++ build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019). Make sure to install the `Windows*SDK` in addition to the `MSVC C++ build tools`.
 
 ### Ubuntu (Including within a WSL distribution)
+
 ```
 sudo apt install clang cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev pkg-config libssl-dev libgl1-mesa-dev
 ```
+
+## Guidelines for Development
+
+1. When parsing protocols, normalize data as early as possible to minimize the chance of bugs and reduce the cognitive load of keep track of normalizations
+1. When normalizing strings, prefer lowercase over uppercase where possible.

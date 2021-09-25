@@ -10,7 +10,8 @@ pub const NETWORK_BUFFER_SIZE: usize = 512;
 pub use async_net::*;
 pub use dns::{build_resolve_bytes, resolve_domain_name_to_ip};
 pub use http::{
-    HttpHeader, HttpRequest, HttpRequestError, HttpResponse, HttpResult, HttpStatus, Result,
+    HttpHeader, HttpHeaderMap, HttpRequest, HttpRequestError, HttpResponse, HttpResult, HttpStatus,
+    Result,
 };
 pub use network_resource_manager::*;
 pub use stream::AsyncTcpStream;
@@ -48,10 +49,7 @@ mod tests {
         ));
         let response = futures::executor::block_on(request.get()).expect("request failed");
 
-        assert!(response.headers.contains(&HttpHeader {
-            name: "Vary".to_string(),
-            value: " Accept-Encoding".to_string()
-        }));
+        assert_eq!(response.headers.get("vary"), Some("Accept-Encoding".into()));
 
         let content_length = assert_example_com_prelude_ret_content_length(&response);
         assert_eq!(content_length, response.body.len());
@@ -71,26 +69,18 @@ mod tests {
             }
         );
 
-        assert!(response.headers.iter().any(|header| header.name == "Date"));
-        assert!(response
-            .headers
-            .iter()
-            .any(|header| header.name == "Expires"));
-        assert!(response.headers.iter().any(|header| header.name == "Etag"));
-        assert!(response
-            .headers
-            .iter()
-            .any(|header| header.name == "Cache-Control"));
+        assert!(response.headers.get("date").is_some());
+        assert!(response.headers.get("expires").is_some());
+        assert!(response.headers.get("etag").is_some());
+        assert!(response.headers.get("cache-control").is_some());
         let content_length = response
             .headers
-            .iter()
-            .find(|header| header.name == "Content-Length")
+            .get("content-length")
             .expect("Content-Length required");
 
         content_length
-            .value
             .trim()
             .parse::<usize>()
-            .unwrap_or_else(|_| panic!("Invalid content length: {}", content_length.value))
+            .unwrap_or_else(|_| panic!("Invalid content length: {}", content_length))
     }
 }

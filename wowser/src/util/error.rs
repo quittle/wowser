@@ -1,6 +1,32 @@
 use std::error::Error;
 use std::fmt::Display;
 
+/// Helper macro for creating From implementations for errors
+/// ```
+/// # #[macro_use] extern crate wowser;
+///
+/// struct MyError {
+///     err: Box<dyn std::error::Error>
+/// }
+///
+/// from_err!(MyError, std::str::Utf8Error);
+///
+/// fn convert(bytes: &[u8]) -> Result<String, MyError> {
+///     let stringified = std::str::from_utf8(bytes)?;
+///     Ok(String::from(stringified))
+/// }
+/// ```
+#[macro_export]
+macro_rules! from_err {
+    ( $to_type:ty, $from_type:ty  ) => {
+        impl From<$from_type> for $to_type {
+            fn from(err: $from_type) -> Self {
+                Self { err: Box::new(err) }
+            }
+        }
+    };
+}
+
 /// Easily converts a String to an error
 #[derive(Debug)]
 pub struct StringError {

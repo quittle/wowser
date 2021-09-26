@@ -1,14 +1,15 @@
-pub fn vec_contains<T: PartialEq>(haystack: &[T], needle: &[T]) -> bool {
-    if haystack.is_empty() && needle.is_empty() {
-        return true;
+pub fn vec_find_subslice<T: PartialEq>(haystack: &[T], needle: &[T]) -> Option<usize> {
+    if needle.is_empty() {
+        return Some(0);
     }
 
-    for window in haystack.windows(needle.len()) {
-        if window == needle {
-            return true;
-        }
-    }
-    false
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
+}
+
+pub fn vec_contains<T: PartialEq>(haystack: &[T], needle: &[T]) -> bool {
+    vec_find_subslice(haystack, needle).is_some()
 }
 
 pub fn vec_window_split<'a, T: PartialEq>(vec: &'a [T], separator: &[T]) -> Vec<&'a [T]> {
@@ -41,6 +42,26 @@ pub fn vec_window_split<'a, T: PartialEq>(vec: &'a [T], separator: &[T]) -> Vec<
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_vec_find_subslice() {
+        assert_eq!(vec_find_subslice::<u8>(&[], &[]), Some(0));
+        assert_eq!(vec_find_subslice(&[1], &[1]), Some(0));
+
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[1]), Some(0));
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[2]), Some(1));
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[3]), Some(2));
+
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[1, 2]), Some(0));
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[2, 3]), Some(1));
+
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[1, 2, 3]), Some(0));
+
+        assert_eq!(vec_find_subslice(&[], &[1]), None);
+        assert_eq!(vec_find_subslice(&[1], &[2]), None);
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[1, 3]), None);
+        assert_eq!(vec_find_subslice(&[1, 2, 3], &[1, 2, 3, 4]), None);
+    }
 
     #[test]
     fn vec_contains_true() {

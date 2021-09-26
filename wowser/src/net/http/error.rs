@@ -1,6 +1,9 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use crate::from_err;
+use crate::util::StringError;
+
 pub type Result<T> = core::result::Result<T, HttpRequestError>;
 
 /// Represents errors that occur when making an HTTP request
@@ -14,6 +17,11 @@ impl HttpRequestError {
         HttpRequestError { err }
     }
 }
+
+from_err!(HttpRequestError, std::str::Utf8Error);
+from_err!(HttpRequestError, std::io::Error);
+from_err!(HttpRequestError, std::num::ParseIntError);
+from_err!(HttpRequestError, StringError);
 
 impl Error for HttpRequestError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {

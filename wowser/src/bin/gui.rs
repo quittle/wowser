@@ -7,11 +7,11 @@ fn main() {
     startup::start();
     {
         let mut window = Window::new().unwrap();
-        let html = r#"
+        let _link_fancy_html = r#"
             <html>
                 <style>
                     html {
-                        background-color: #00f;
+                        background-color: #05f;
                     }
                 </style>
                 <link rel="stylesheet" href="http://0.0.0.0:8000/wowser/data/example.css" />
@@ -24,6 +24,35 @@ fn main() {
                 </div>
             </html>
         "#;
+
+        let padding_based_html = r#"
+            <html>
+                <style>
+                    html {
+                        background-color: black;
+                    }
+
+                    .a {
+                        background-color: red;
+                        padding: 12px;
+                    }
+                    .b {
+                        background-color: orange;
+                        padding: 3px;
+                        padding-top: 10px;
+                        padding-right: 100px;
+                    }
+                    .c {
+                        background-color: yellow;
+                        padding: 3px;
+                        margin: 3px;
+                    }
+                </style>
+                <div class="a"><div class="b"><div class="c">text</div></div></div>
+            </html>
+        "#;
+
+        let html = padding_based_html;
 
         let mut tab = Tab::load(&mut window, html);
 

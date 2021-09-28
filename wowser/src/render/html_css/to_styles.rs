@@ -97,6 +97,21 @@ fn render(
             bottom: margin_getter("margin-bottom"),
         };
 
+        let padding_getter = |direction: &str| match get_style_prop_overrides(
+            props,
+            &[direction, "padding"],
+            CssDimension::from_raw_value,
+            CssDimension::Px(0.0),
+        ) {
+            CssDimension::Px(px) => px,
+        };
+        style_node.padding = StyleNodeMargin {
+            left: padding_getter("padding-left"),
+            top: padding_getter("padding-top"),
+            right: padding_getter("padding-right"),
+            bottom: padding_getter("padding-bottom"),
+        };
+
         if let Some(text_color) = maybe_get_style_prop(props, "color", CssColor::from_raw_value) {
             cur_inherited_styles.text_color = match text_color {
                 CssColor::Rgba(r, g, b, a) => Color { r, g, b, a },
@@ -131,7 +146,7 @@ fn render(
     style_node
 }
 
-fn find_first_prop(props: &[Rc<CssProperty>], key: &[&str]) -> Option<String> {
+fn find_last_prop(props: &[Rc<CssProperty>], key: &[&str]) -> Option<String> {
     props
         .iter()
         // Last property takes precedence
@@ -153,7 +168,7 @@ fn maybe_get_style_prop_overrides<T, F: Fn(&str) -> Option<T>>(
     property_names: &[&str],
     from_raw_value: F,
 ) -> Option<T> {
-    find_first_prop(props, property_names)
+    find_last_prop(props, property_names)
         .iter()
         .flat_map(|property_value| from_raw_value(property_value))
         .last()

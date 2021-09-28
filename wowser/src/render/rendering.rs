@@ -90,8 +90,8 @@ fn style_to_scene_r(
         bounds: Rect {
             x: root_offset.x,
             y: root_offset.y,
-            width: default_content_width + style_node.padding * 2_f32,
-            height: style_node.padding * 2_f32,
+            width: default_content_width + style_node.padding.horizontal(),
+            height: style_node.padding.vertical(),
         },
         fill: style_node.background_color,
         fill_pixels: vec![],
@@ -101,8 +101,8 @@ fn style_to_scene_r(
 
     let base_child_offset = &root_offset
         + &Point {
-            x: style_node.padding,
-            y: style_node.padding,
+            x: style_node.padding.left,
+            y: style_node.padding.top,
         };
     let mut child_offset = base_child_offset.clone();
 
@@ -154,7 +154,8 @@ fn style_to_scene_r(
             vec![root, child]
         }
         StyleNodeChild::Nodes(nodes) => {
-            let mut max_child_bottom = prev_node_bottom + style_node.margin.top;
+            let mut max_child_bottom =
+                prev_node_bottom + style_node.margin.top + style_node.padding.top;
 
             let mut ret = vec![root];
 
@@ -165,14 +166,16 @@ fn style_to_scene_r(
                         (child_offset.x, my_width)
                     } else {
                         (
-                            parent_left + style_node.margin.left,
-                            parent_width - style_node.margin.horizontal(),
+                            parent_left + style_node.margin.left + style_node.padding.left,
+                            (parent_width - style_node.margin.horizontal())
+                                - style_node.padding.horizontal(),
                         )
                     }
                 } else {
                     (
-                        parent_left + style_node.margin.left,
-                        parent_width - style_node.margin.horizontal(),
+                        parent_left + style_node.margin.left + style_node.padding.left,
+                        (parent_width - style_node.margin.horizontal())
+                            - style_node.padding.horizontal(),
                     )
                 };
 
@@ -190,7 +193,7 @@ fn style_to_scene_r(
                     // If the prev node doesn't take up space, don't worry about wrapping blocks
                     if bounds.area() != 0_f32 {
                         child_offset += Point {
-                            x: bounds.width + node.margin.left + node.margin.right,
+                            x: bounds.width + node.margin.horizontal() + node.padding.horizontal(),
                             y: 0_f32,
                         };
                         max_child_bottom =
@@ -206,7 +209,7 @@ fn style_to_scene_r(
 
             let mut root_bounds = ret.first_mut().unwrap().mut_bounds();
             root_bounds.width += child_offset.x - base_child_offset.x;
-            root_bounds.height = max_child_bottom - root_bounds.top();
+            root_bounds.height = max_child_bottom + style_node.padding.bottom - root_bounds.top();
 
             ret
         }

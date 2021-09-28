@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use std::{
+    cmp::Ordering,
     io::Write,
     sync::{Mutex, MutexGuard, PoisonError},
 };
@@ -7,28 +8,28 @@ use std::{
 #[macro_export]
 macro_rules! log {
     (DEBUG: $($args:expr),+) => {
-        $crate::_internal_log!("DEBUG", None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Debug, None, "", $($args),+);
     };
     (DEBUG[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!("DEBUG", Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Debug, Some($category), "", $($args),+);
     };
     (INFO: $($args:expr),+) => {
-        $crate::_internal_log!("INFO", None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Info, None, "", $($args),+);
     };
     (INFO[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!("INFO", Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Info, Some($category), "", $($args),+);
     };
     (WARN: $($args:expr),+) => {
-        $crate::_internal_log!("WARN", None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Warn, None, "", $($args),+);
     };
     (WARN[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!("WARN", Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Warn, Some($category), "", $($args),+);
     };
     (ERROR: $($args:expr),+) => {
-        $crate::_internal_log!("ERROR", None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Error, None, "", $($args),+);
     };
     (ERROR[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!("ERROR", Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Error, Some($category), "", $($args),+);
     };
 }
 
@@ -61,14 +62,70 @@ impl Write for StdOutWriter {
 
 lazy_static! {
     static ref LOG_OUTPUT: Mutex<Box<dyn Write + Send>> = Mutex::new(Box::new(StdOutWriter));
+    static ref LOG_LEVEL: Mutex<LogLevel> = Mutex::new(LogLevel::Info);
 }
 
 #[allow(unused_must_use)]
-pub fn _log(level: &'static str, category: Option<&'static str>, message: String) {
-    if let Ok(mut writer) = LOG_OUTPUT.lock() {
-        let category_str = category.map(|c| format!("({})", c)).unwrap_or_default();
-        // Ignore failure to write
-        writer.write_fmt(format_args!("{}{}:{}\n", level, category_str, message));
+pub fn _log(level: LogLevel, category: Option<&'static str>, message: String) {
+    if let Ok(log_level) = LOG_LEVEL.lock() {
+        if level < *log_level {
+            return;
+        }
+
+        if let Ok(mut writer) = LOG_OUTPUT.lock() {
+            let category_str = category.map(|c| format!("({})", c)).unwrap_or_default();
+            let level_str: &'static str = level.into();
+            // Ignore failure to write
+            writer.write_fmt(format_args!("{}{}:{}\n", level_str, category_str, message));
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum LogLevel {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+impl From<LogLevel> for &'static str {
+    fn from(level: LogLevel) -> Self {
+        match level {
+            LogLevel::Debug => "DEBUG",
+            LogLevel::Info => "INFO",
+            LogLevel::Warn => "WARN",
+            LogLevel::Error => "ERROR",
+        }
+    }
+}
+
+/// Ordering by severity, that is a higher severity level, such as Warn is greater than the severity
+/// of Info.
+impl From<LogLevel> for u8 {
+    fn from(level: LogLevel) -> Self {
+        match level {
+            LogLevel::Debug => 0,
+            LogLevel::Info => 1,
+            LogLevel::Warn => 2,
+            LogLevel::Error => 3,
+        }
+    }
+}
+
+impl PartialOrd for LogLevel {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let a: u8 = (*self).into();
+        let b: u8 = (*other).into();
+        a.partial_cmp(&b)
+    }
+}
+
+impl Ord for LogLevel {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let a: u8 = (*self).into();
+        let b: u8 = (*other).into();
+        a.cmp(&b)
     }
 }
 
@@ -79,6 +136,15 @@ pub fn set_logger_output(
     let mut output = LOG_OUTPUT.lock()?;
     *output = writer;
     Ok(())
+}
+
+pub fn set_logger_level(
+    level: LogLevel,
+) -> Result<LogLevel, PoisonError<MutexGuard<'static, LogLevel>>> {
+    let mut level_guard = LOG_LEVEL.lock()?;
+    let prev_level = *level_guard;
+    *level_guard = level;
+    Ok(prev_level)
 }
 
 #[cfg(test)]
@@ -123,6 +189,7 @@ mod tests {
 
     fn teardown() {
         set_logger_output(Box::new(StdOutWriter)).unwrap();
+        set_logger_level(LogLevel::Info).unwrap();
     }
 
     fn get_logged_output() -> String {
@@ -157,6 +224,26 @@ mod tests {
             get_logged_output(),
             "INFO(net): \"message\" 123\nINFO: \"No category\" [1, 2, 3]\nERROR: \"single arg\"\n"
         );
+
+        teardown();
+    }
+
+    #[test]
+    fn test_set_log_level() {
+        setup();
+
+        log!(WARN: 123);
+        assert_eq!(get_logged_output(), "WARN: 123\n");
+
+        assert_eq!(LogLevel::Info, set_logger_level(LogLevel::Warn).unwrap());
+        log!(WARN: 456);
+        assert_eq!(get_logged_output(), "WARN: 123\nWARN: 456\n");
+
+        assert_eq!(LogLevel::Warn, set_logger_level(LogLevel::Error).unwrap());
+        log!(WARN: 789);
+        assert_eq!(get_logged_output(), "WARN: 123\nWARN: 456\n");
+
+        assert_eq!(LogLevel::Error, set_logger_level(LogLevel::Error).unwrap());
 
         teardown();
     }

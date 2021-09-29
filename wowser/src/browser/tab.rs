@@ -4,7 +4,10 @@ use crate::{
     css::{parse_css, CssDocument},
     font::{BDFFont, CachingFont},
     html::{parse_html, HtmlDocument},
-    render::{self, html_css_to_styles, normalize_style_nodes, style_html, AsyncRenderContext},
+    render::{
+        self, html_css_to_styles, normalize_style_nodes, style_html, AsyncRenderContext, Color,
+        RectangleSceneNode, SceneNode,
+    },
     ui::Window,
     util::{Point, Rect},
 };
@@ -76,7 +79,12 @@ fn render_once(
 
     // Flatten the hierarchy on nodes to a scene, which incorporates layout, sizing, text wrapping, etc. The
     // output should be pretty much ready to draw at this point
-    let scene_nodes = render::style_to_scene(&style_root, 0_f32, window.get_bounds().width as f32);
+    let mut scene_nodes =
+        render::style_to_scene(&style_root, 0_f32, window.get_bounds().width as f32);
+
+    // Expands the HTML scene node background to be the real background of the window instead of
+    // constrained to the proportions of the actual element.
+    force_html_background(&mut scene_nodes);
 
     // Wowser only supports one font right now. Eventually this may need to be lifted up with character
     // properties used in style_to_scene
@@ -146,6 +154,35 @@ fn render_once(
                 }
             }
         }
+    }
+}
+
+/// Insert a synthetic scene node at the beginning to force the html background color across the
+/// whole window. This matches standard browser behavior.
+fn force_html_background(scene_nodes: &mut Vec<SceneNode>) {
+    // Due to how rendering is done, the first style node should always be the HTML node
+    // There is a chance that this breaks if someone sets the background-color of HTML to
+    // transparent.
+    if let Some(SceneNode::RectangleSceneNode(first_node)) = scene_nodes.first() {
+        let root = SceneNode::RectangleSceneNode(RectangleSceneNode {
+            bounds: render::Rect {
+                x: 0_f32,
+                y: 0_f32,
+                // Due to limitations in OpenGL, rendering at the max width/height possible results
+                // in a polygon that only accounts for the first three corners, cutting a diagonal
+                // line of background. Additionally, Window uses i32's for the dimensions so
+                // f32::MAX is significantly greater than what window uses, and resulting in
+                // i32::MAX after casting. Therefore we need to get a reasonable size based on the
+                // allowable range used by Window.
+                height: (i32::MAX / 2) as f32,
+                width: (i32::MAX / 2) as f32,
+            },
+            fill: first_node.fill,
+            fill_pixels: first_node.fill_pixels.clone(),
+            border_color: Color::TRANSPARENT,
+            border_width: 0_f32,
+        });
+        scene_nodes.insert(0, root);
     }
 }
 

@@ -1,0 +1,16 @@
+name: Dependabot Automatic Approval
+
+on:
+  pull_request_target:
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    if: >
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: hmarr/auto-approve-action@v2.1.0
+        if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]'
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"

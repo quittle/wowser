@@ -1,4 +1,6 @@
-#[derive(Clone, Copy, Default, PartialEq, Debug)]
+use crate::util::u8_to_u32;
+
+#[derive(Clone, Copy, Default, PartialEq, Debug, Hash)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -63,6 +65,20 @@ impl From<&ColorPercent> for Color {
         }
     }
 }
+
+impl From<Color> for u32 {
+    fn from(color: Color) -> u32 {
+        Self::from(&color)
+    }
+}
+
+impl From<&Color> for u32 {
+    fn from(color: &Color) -> u32 {
+        u8_to_u32(color.r, color.g, color.b, color.a)
+    }
+}
+
+impl Eq for Color {}
 
 #[derive(Clone, Copy, Default, PartialEq, Debug)]
 pub struct ColorPercent {

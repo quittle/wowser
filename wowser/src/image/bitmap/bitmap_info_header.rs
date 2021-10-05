@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::util::{u8_arr_to_u16, u8_to_i32, u8_to_u32};
 
 use super::bitmap_compression_method::BitmapCompressionMethod;
@@ -95,5 +97,20 @@ impl BitmapInfoHeader {
                 num_of_important_colors[0],
             ),
         })
+    }
+
+    pub fn write(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        writer.write_all(&self.header_size.to_le_bytes())?;
+        writer.write_all(&self.width.to_le_bytes())?;
+        writer.write_all(&self.height.to_le_bytes())?;
+        writer.write_all(&self.color_planes.to_le_bytes())?;
+        writer.write_all(&self.bits_per_pixel.to_le_bytes())?;
+        writer.write_all(&(Into::<u32>::into(self.compression_method.clone())).to_le_bytes())?;
+        writer.write_all(&self.image_size.to_le_bytes())?;
+        writer.write_all(&self.h_resolution.to_le_bytes())?;
+        writer.write_all(&self.v_resolution.to_le_bytes())?;
+        writer.write_all(&self.num_of_colors.to_le_bytes())?;
+        writer.write_all(&self.num_of_important_colors.to_le_bytes())?;
+        Ok(())
     }
 }

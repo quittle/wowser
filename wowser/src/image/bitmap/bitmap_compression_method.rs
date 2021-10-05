@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BitmapCompressionMethod {
     Rgb,
     Rle8,
@@ -26,6 +26,23 @@ impl BitmapCompressionMethod {
             12 => Some(Self::CmykRle8),
             13 => Some(Self::CmykRle4),
             _ => None,
+        }
+    }
+}
+
+impl From<BitmapCompressionMethod> for u32 {
+    fn from(compression_method: BitmapCompressionMethod) -> u32 {
+        match compression_method {
+            BitmapCompressionMethod::Rgb => 0,
+            BitmapCompressionMethod::Rle8 => 1,
+            BitmapCompressionMethod::Rle4 => 2,
+            BitmapCompressionMethod::BitFields => 3,
+            BitmapCompressionMethod::Jpeg => 4,
+            BitmapCompressionMethod::Png => 5,
+            BitmapCompressionMethod::AlphaBitFields => 6,
+            BitmapCompressionMethod::Cmyk => 11,
+            BitmapCompressionMethod::CmykRle8 => 12,
+            BitmapCompressionMethod::CmykRle4 => 13,
         }
     }
 }

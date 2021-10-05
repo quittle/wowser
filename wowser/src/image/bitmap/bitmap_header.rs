@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::util::u8_to_u32;
 
 use super::bitmap_info_header::BitmapInfoHeader;
@@ -36,5 +38,16 @@ impl BitmapHeader {
             pixel_offset,
             bitmap_info_header,
         })
+    }
+
+    pub fn write(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        writer.write_all(self.id.as_bytes())?;
+        writer.write_all(&self.size.to_le_bytes())?;
+        writer.write_all(&self.reserved_chunk_a)?;
+        writer.write_all(&self.reserved_chunk_b)?;
+        writer.write_all(&self.pixel_offset.to_le_bytes())?;
+        self.bitmap_info_header.write(writer)?;
+
+        Ok(())
     }
 }

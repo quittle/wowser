@@ -1,8 +1,11 @@
 //! See <https://en.wikipedia.org/wiki/BMP_file_format> and
 // <https://www-user.tu-chemnitz.de/~heha/petzold/ch15b.htm> for details on the format
 
+use std::{collections::HashSet, io::Write};
+
 use super::bitmap_compression_method::BitmapCompressionMethod;
 use super::bitmap_header::BitmapHeader;
+use super::bitmap_info_header::BitmapInfoHeader;
 use crate::{
     render::Color,
     util::{get_bit, u4_from_u8, Bit, U4BitOffset},
@@ -78,6 +81,64 @@ impl Bitmap {
         }
 
         Err(format!("Unsupported Bitmap: {:?}", header))
+    }
+
+    pub fn write(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        let pixel_set: HashSet<&Color> = self.pixels.iter().collect();
+
+        // These headers have fixed lengths
+        let bh_size = 14;
+        let bih_size = 40;
+        let pixel_bytes = (self.width * self.height * 3) as u32;
+        // Pixel rows must be multiples of 4 bytes
+        let pixel_shortage = (self.width * 3) % 4;
+        let pixel_padding = (self.height
+            * (if pixel_shortage > 0 {
+                4 - pixel_shortage
+            } else {
+                // If it perfectly lines up, avoid adding an unnecessary padding of 4 bytes
+                0
+            })) as u32;
+        let file_size = bh_size + bih_size + pixel_bytes + pixel_padding;
+
+        let header = BitmapHeader {
+            id: "BM".into(),
+            size: file_size,
+            reserved_chunk_a: vec![0, 0],
+            reserved_chunk_b: vec![0, 0],
+            pixel_offset: bh_size + bih_size,
+            bitmap_info_header: BitmapInfoHeader {
+                header_size: bih_size,
+                width: self.width as i32,
+                height: self.height as i32,
+                color_planes: 1, // Bitmaps only ever have one color plane
+                bits_per_pixel: 24,
+                compression_method: BitmapCompressionMethod::Rgb,
+                image_size: 0, // Can be computed by parser
+                h_resolution: 0,
+                v_resolution: 0,
+                num_of_colors: pixel_set.len() as u32,
+                num_of_important_colors: 0,
+            },
+        };
+
+        header.write(writer)?;
+
+        let mut pixel_offset = 0;
+
+        for pixel in &self.pixels {
+            writer.write_all(&[pixel.b, pixel.g, pixel.r])?;
+            pixel_offset += 3;
+            if pixel_offset == self.width * 3 {
+                let row_offset = (4 - pixel_offset % 4) % 4;
+                if row_offset != 0 {
+                    writer.write_all(&vec![0; row_offset])?;
+                }
+                pixel_offset = 0;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -248,6 +309,24 @@ mod tests {
                 Color::rgb(32, 192, 64),
             ],
             bitmap.pixels
+        );
+    }
+
+    /// If this test fails and this needs to be updates, manually verify the output bitmap
+    /// loads properly in image viewers like MS Paint or VS Code can open it successfully and
+    /// that it looks correct. Ideally use `imagemagick identify -regard-warnings` to verify the
+    /// image is valid.
+    #[test]
+    fn test_read_write() {
+        let mut output_bytes = vec![];
+        Bitmap::new(include_bytes!("test_data/input-marbles.bmp"))
+            .unwrap()
+            .write(&mut output_bytes)
+            .unwrap();
+
+        assert_eq!(
+            &output_bytes,
+            include_bytes!("test_data/output-marbles.bmp")
         );
     }
 }

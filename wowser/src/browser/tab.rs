@@ -188,6 +188,7 @@ fn force_html_background(scene_nodes: &mut Vec<SceneNode>) {
 
 #[cfg(test)]
 mod tests {
+    use crate::image::Bitmap;
     use crate::ui::tests::lock_for_ui_threads;
     use crate::util::get_bool_env;
     use crate::{function_name, startup};
@@ -199,7 +200,7 @@ mod tests {
     use super::*;
 
     fn get_test_file(function_name: &'static str) -> String {
-        format!("src/browser/test_data/{}.rgb", function_name)
+        format!("src/browser/test_data/{}.bmp", function_name)
     }
 
     /// If these tests fail and you have verified the failures were expected, set the
@@ -224,21 +225,40 @@ mod tests {
                     .unwrap();
                 setup(&mut window);
                 let actual_pixels = window.get_pixels_rgb().unwrap();
-                let expected_pixels_file = get_test_file(function_name);
-                let expected_pixels = fs::read(&expected_pixels_file).unwrap_or_default();
-                if actual_pixels != expected_pixels {
+                let bounds = window.get_bounds();
+                let actual_bitmap = Bitmap {
+                    pixels: actual_pixels
+                        .chunks(3)
+                        .map(|rgb| Color {
+                            r: rgb[0],
+                            g: rgb[1],
+                            b: rgb[2],
+                            a: 255,
+                        })
+                        .collect(),
+                    width: bounds.width as usize,
+                    height: bounds.height as usize,
+                };
+                let expected_bitmap_file_path = get_test_file(function_name);
+                let expected_bitmap_bytes =
+                    fs::read(&expected_bitmap_file_path).unwrap_or_default();
+                let expected_bitmap = Bitmap::new(&expected_bitmap_bytes);
+                if expected_bitmap.is_err() || actual_bitmap != expected_bitmap.unwrap() {
                     if should_update_tests {
-                        log!(INFO: "Updating screenshot for", expected_pixels_file);
-                        fs::write(expected_pixels_file, &actual_pixels).unwrap();
+                        log!(INFO: "Updating screenshot for", expected_bitmap_file_path);
+                        let mut expected_bitmap_file =
+                            fs::File::create(expected_bitmap_file_path).unwrap();
+                        actual_bitmap.write(&mut expected_bitmap_file).unwrap();
                     } else {
-                        let actual_pixels_file =
-                            env::temp_dir().join(format!("{}.rgb", function_name));
-                        fs::write(&actual_pixels_file, &actual_pixels).unwrap();
+                        let tmp_bitmap_file_path =
+                            env::temp_dir().join(format!("{}.bmp", function_name));
+                        let mut tmp_bitmap_file = fs::File::create(&tmp_bitmap_file_path).unwrap();
+                        actual_bitmap.write(&mut tmp_bitmap_file).unwrap();
                         panic!(
-                        "Pixels don't line up. Compare expected pixles in {} with actual pixels in {} to see the difference",
-                        &expected_pixels_file,
-                        actual_pixels_file.to_str().unwrap(),
-                    );
+                            "Pixels don't line up. Compare expected pixels in {} with actual pixels in {} to see the difference",
+                            &expected_bitmap_file_path,
+                            tmp_bitmap_file_path.to_str().unwrap(),
+                        );
                     }
                 }
             });

@@ -16,6 +16,9 @@ pub struct BitmapHeader {
 
 impl BitmapHeader {
     pub fn parse(bytes: &[u8]) -> Result<BitmapHeader, String> {
+        if bytes.len() < 54 {
+            return Err("Not enough bytes to parse Bitmap Header".to_string());
+        }
         let id = &bytes[0..2];
         let size = &bytes[2..6];
         let reserved_chunk_a = &bytes[6..8];

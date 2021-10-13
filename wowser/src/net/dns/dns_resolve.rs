@@ -4,9 +4,11 @@ use super::{
 };
 use crate::net::NETWORK_BUFFER_SIZE;
 use crate::util::{
-    get_bit, offset_bit_merge, u4_from_u8, u8_arr_to_u16, u8_to_i32, u8_to_str, Bit, U4BitOffset,
+    get_bit, offset_bit_merge, u4_from_u8, u8_arr_to_u16, u8_to_i32, u8_to_str, Bit, Hashable,
+    U4BitOffset,
 };
 
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
 use std::{borrow::Cow, str};
@@ -112,7 +114,7 @@ fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage,
         offset += 2;
         let rdata_bytes: &[u8] = &message[offset..offset + rdata_len];
         offset += rdata_len;
-        let rdata = parse_rdata(&record_type, rdata_bytes)?;
+        let rdata = parse_rdata(&record_type, rdata_bytes, message, offset)?;
         sections.push(DNSRecord::Answer(DNSAnswer {
             domain_name,
             record_type,
@@ -125,7 +127,12 @@ fn parse_dns_response(message: &[u8; NETWORK_BUFFER_SIZE]) -> Result<DNSMessage,
     Ok(DNSMessage { headers, sections })
 }
 
-fn parse_rdata(record_type: &RecordType, bytes: &[u8]) -> Result<RecordData, String> {
+fn parse_rdata(
+    record_type: &RecordType,
+    bytes: &[u8],
+    message: &[u8],
+    offset: usize,
+) -> Result<RecordData, String> {
     match record_type {
         RecordType::A => {
             if bytes.len() != 4 {
@@ -135,6 +142,10 @@ fn parse_rdata(record_type: &RecordType, bytes: &[u8]) -> Result<RecordData, Str
                     bytes[0], bytes[1], bytes[2], bytes[3],
                 )))
             }
+        }
+        RecordType::CanonicalName => {
+            let (domain, _offset) = compute_domain(message, offset)?;
+            Ok(RecordData::CanonicalName(domain))
         }
         _ => Err(format!("Unsupported record type {:?}", record_type)),
     }
@@ -177,9 +188,22 @@ fn proper_domain_name(domain_name: &str) -> Cow<str> {
     }
 }
 
+#[derive(Debug)]
+enum DnsResult {
+    CanonicalName(String),
+    A(Ipv4Addr),
+    NotFound,
+}
+
 pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> {
-    let proper_domain_name = proper_domain_name(domain_name);
-    let bytes = build_resolve_bytes(domain_name);
+    recurse_resolve_domain_name_to_ip(domain_name, &mut HashMap::new())
+}
+
+fn recurse_resolve_domain_name_to_ip(
+    domain_name: &str,
+    dns_cache: &mut HashMap<String, DnsResult>,
+) -> Result<Ipv4Addr, String> {
+    let bytes = build_resolve_bytes(domain_name, domain_name.hash_u16());
     let socket = find_local_udp_socket().map_err(|e| e.to_string())?;
     let mut response = [0_u8; NETWORK_BUFFER_SIZE];
     let bytes_sent = socket
@@ -190,6 +214,7 @@ pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> 
 
     let response = parse_dns_response(&response)?;
 
+    dns_cache.insert(domain_name.into(), DnsResult::NotFound);
     for section in &response.sections {
         if let DNSRecord::Answer(DNSAnswer {
             domain_name,
@@ -198,23 +223,44 @@ pub fn resolve_domain_name_to_ip(domain_name: &str) -> Result<Ipv4Addr, String> 
             ..
         }) = section
         {
-            if domain_name.as_str() != proper_domain_name {
-                continue;
-            }
-            match rdata {
-                RecordData::A(ip) => return Ok(*ip),
-                RecordData::CanonicalName(_cname) => (), // CNAMEs not supported yet
-                _ => (),
-            }
+            let dns_result = match rdata {
+                RecordData::A(ip) => DnsResult::A(*ip),
+                RecordData::CanonicalName(cname) => DnsResult::CanonicalName(cname.clone()),
+                _ => continue,
+            };
+            dns_cache.insert(domain_name.clone(), dns_result);
         }
     }
-    Err(format!("No valid record found: {:?}", &response))
+
+    resolve_dns(domain_name, dns_cache)
 }
 
-pub fn build_resolve_bytes(domain_name: &str) -> Vec<u8> {
+fn resolve_dns(
+    domain_name: &str,
+    dns_cache: &mut HashMap<String, DnsResult>,
+) -> Result<Ipv4Addr, String> {
+    let cname: String;
+    let proper_domain_name = proper_domain_name(domain_name);
+    match dns_cache.get(&proper_domain_name.to_string()) {
+        Some(DnsResult::A(ip)) => return Ok(*ip),
+        Some(DnsResult::CanonicalName(canonical_name)) => cname = canonical_name.clone(),
+        Some(DnsResult::NotFound) => {
+            return recurse_resolve_domain_name_to_ip(domain_name, dns_cache)
+        }
+        None => {
+            return Err(format!(
+                "No valid record found for {}. Cache: {:?}",
+                domain_name, dns_cache
+            ))
+        }
+    }
+    resolve_dns(&cname, dns_cache)
+}
+
+pub fn build_resolve_bytes(domain_name: &str, transaction_id: u16) -> Vec<u8> {
     let message = DNSMessage {
         headers: DNSHeaders {
-            transaction_id: 56130,
+            transaction_id,
             flags: DNSFlagsHeader {
                 is_reply: false,
                 op_code: OpCode::Query,
@@ -354,15 +400,15 @@ mod tests {
         assert_eq!(128, one << 7);
     }
 
-    /// [Source]https://www2.cs.duke.edu/courses/fall16/compsci356/DNS/DNS-primer.pdf)
+    /// [Source](https://www2.cs.duke.edu/courses/fall16/compsci356/DNS/DNS-primer.pdf)
     #[test]
     fn build_resolve_bytes_northeastern() {
-        let result = build_resolve_bytes("www.northeastern.edu");
+        let result = build_resolve_bytes("www.northeastern.edu", 1234);
         assert_eq!(
             result,
             string_to_bytes(
                 "
-                db42 0100 0001 0000 0000 0000 0377 7777
+                04d2 0100 0001 0000 0000 0000 0377 7777
                 0c6e 6f72 7468 6561 7374 6572 6e03 6564
                 7500 0001 0001
             "
@@ -386,5 +432,27 @@ mod tests {
         byte_arr[..bytes.len()].copy_from_slice(bytes.as_ref());
 
         parse_dns_response(&byte_arr).expect("Must be valid");
+    }
+
+    #[test]
+    fn test_dns_resolve() {
+        let test_resolve = |domain| {
+            let result = resolve_domain_name_to_ip(domain);
+            assert!(
+                result.is_ok(),
+                "Failed to resolve {}: {}",
+                domain,
+                result.unwrap_err()
+            )
+        };
+        test_resolve("example.com");
+        test_resolve("www.example.com");
+        test_resolve("google.com");
+        test_resolve("www.google.com");
+        test_resolve("amazon.com");
+        test_resolve("www.amazon.com");
+        test_resolve("www.northeastern.edu");
+        // api.amazonvideo.com has a complex chain of CNAMEs
+        test_resolve("complex.api.amazonvideo.com");
     }
 }

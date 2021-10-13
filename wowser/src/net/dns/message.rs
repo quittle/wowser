@@ -111,6 +111,7 @@ pub enum RecordClass {
     CsNet,
     Chaos,
     Hesiod,
+    AnyClass,
 }
 
 impl AsRef<u16> for RecordClass {
@@ -120,6 +121,7 @@ impl AsRef<u16> for RecordClass {
             Self::CsNet => &2,
             Self::Chaos => &3,
             Self::Hesiod => &4,
+            Self::AnyClass => &255,
         }
     }
 }
@@ -139,6 +141,7 @@ impl TryFrom<u16> for RecordClass {
             2 => Ok(Self::CsNet),
             3 => Ok(Self::Chaos),
             4 => Ok(Self::Hesiod),
+            255 => Ok(Self::AnyClass),
             _ => Err("Unsupported record class"),
         }
     }
@@ -146,6 +149,7 @@ impl TryFrom<u16> for RecordClass {
 
 #[derive(Debug)]
 pub enum RecordType {
+    Zero,
     A,
     NameServer,
     MailDestination,
@@ -167,6 +171,7 @@ pub enum RecordType {
 impl AsRef<u16> for RecordType {
     fn as_ref(&self) -> &u16 {
         match self {
+            Self::Zero => &0,
             Self::A => &1,
             Self::NameServer => &2,
             Self::MailDestination => &3,
@@ -198,6 +203,7 @@ impl TryFrom<u16> for RecordType {
 
     fn try_from(literal: u16) -> Result<RecordType, &'static str> {
         match literal {
+            0 => Ok(Self::Zero),
             1 => Ok(Self::A),
             2 => Ok(Self::NameServer),
             3 => Ok(Self::MailDestination),

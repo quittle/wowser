@@ -1,3 +1,4 @@
+use wowser::font::Ttf;
 use wowser::startup;
 use wowser::ui::Window;
 use wowser::util::{get_bit, Bit, Point};
@@ -16,7 +17,13 @@ fn main() -> Result<(), FontError> {
     let message = args.get(2).expect("Message to print not provided");
 
     let font_bytes = fs::read(font_file).expect("Unable to read file");
-    let font = BDFFont::load(&font_bytes)?;
+    let font: Box<dyn Font> = if font_file.ends_with(".bdf") {
+        Box::new(BDFFont::load(&font_bytes)?)
+    } else if font_file.ends_with(".ttf") {
+        Box::new(Ttf::load(font_bytes)?)
+    } else {
+        panic!("Unknown font file type");
+    };
 
     let characters = message.chars().map(|c| font.render_character(c));
 

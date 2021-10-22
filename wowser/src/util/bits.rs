@@ -93,6 +93,94 @@ impl From<u8> for Bit {
         }
     }
 }
+/// The index of a bit in a byte, starting from the left
+pub enum U16Bit {
+    Zero,
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Eleven,
+    Twelve,
+    Thirteen,
+    Fourteen,
+    Fifteen,
+}
+
+impl From<&U16Bit> for u8 {
+    fn from(bit: &U16Bit) -> u8 {
+        match bit {
+            U16Bit::Zero => 0,
+            U16Bit::One => 1,
+            U16Bit::Two => 2,
+            U16Bit::Three => 3,
+            U16Bit::Four => 4,
+            U16Bit::Five => 5,
+            U16Bit::Six => 6,
+            U16Bit::Seven => 7,
+            U16Bit::Eight => 8,
+            U16Bit::Nine => 9,
+            U16Bit::Ten => 10,
+            U16Bit::Eleven => 11,
+            U16Bit::Twelve => 12,
+            U16Bit::Thirteen => 13,
+            U16Bit::Fourteen => 14,
+            U16Bit::Fifteen => 15,
+        }
+    }
+}
+
+impl From<u8> for U16Bit {
+    fn from(bit: u8) -> U16Bit {
+        match bit {
+            0 => Self::Zero,
+            1 => Self::One,
+            2 => Self::Two,
+            3 => Self::Three,
+            4 => Self::Four,
+            5 => Self::Five,
+            6 => Self::Six,
+            7 => Self::Seven,
+            8 => Self::Eight,
+            9 => Self::Nine,
+            10 => Self::Ten,
+            11 => Self::Eleven,
+            12 => Self::Twelve,
+            13 => Self::Thirteen,
+            14 => Self::Fourteen,
+            15 => Self::Fifteen,
+            _ => panic!("Invalid bit value: {}", bit),
+        }
+    }
+}
+
+pub trait BitExtractor {
+    type BitIndex;
+
+    fn get_bit(&self, index: Self::BitIndex) -> bool;
+}
+
+impl BitExtractor for u8 {
+    type BitIndex = Bit;
+
+    fn get_bit(&self, index: Self::BitIndex) -> bool {
+        self & (1 << (7 - index as u8)) > 0
+    }
+}
+
+impl BitExtractor for u16 {
+    type BitIndex = U16Bit;
+
+    fn get_bit(&self, index: Self::BitIndex) -> bool {
+        self & (1 << (15 - index as u8)) > 0
+    }
+}
 
 pub fn get_bit(byte: u8, index: Bit) -> bool {
     byte & (1 << (7 - index as u8)) > 0

@@ -3,7 +3,7 @@ extern crate wowser_glfw;
 /// See util::logging::log for more details
 macro_rules! log {
     ($($args:tt)+) => (
-        $crate::log!($($args)+);
+        $crate::log!($($args)+)
     );
 }
 

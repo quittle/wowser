@@ -2,7 +2,7 @@
 name = "wowser-glfw-sys"
 version = "0.0.1"
 authors = ["Dustin Toff <me@dustintoff.com>"]
-edition = "2018"
+edition = "2021"
 links = "glfw3"
 
 [dependencies]

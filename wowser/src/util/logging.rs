@@ -8,22 +8,22 @@ use std::{
 #[macro_export]
 macro_rules! log {
     (DEBUG: $($args:expr),+) => {
-        $crate::_internal_log!($crate::util::logging::LogLevel::Debug, None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Debug, None, "", $($args),+)
     };
     (DEBUG[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!($crate::util::logging::LogLevel::Debug, Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Debug, Some($category), "", $($args),+)
     };
     (INFO: $($args:expr),+) => {
-        $crate::_internal_log!($crate::util::logging::LogLevel::Info, None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Info, None, "", $($args),+)
     };
     (INFO[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!($crate::util::logging::LogLevel::Info, Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Info, Some($category), "", $($args),+)
     };
     (WARN: $($args:expr),+) => {
-        $crate::_internal_log!($crate::util::logging::LogLevel::Warn, None, "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Warn, None, "", $($args),+)
     };
     (WARN[$category:expr]: $($args:expr),+) => {
-        $crate::_internal_log!($crate::util::logging::LogLevel::Warn, Some($category), "", $($args),+);
+        $crate::_internal_log!($crate::util::logging::LogLevel::Warn, Some($category), "", $($args),+)
     };
     (ERROR: $($args:expr),+) => {
         $crate::_internal_log!($crate::util::logging::LogLevel::Error, None, "", $($args),+);
@@ -37,11 +37,11 @@ macro_rules! log {
 macro_rules! _internal_log {
     // Recursively format the arguments
     ($level:expr, $category:expr, $prev_arg:expr, $arg:expr, $($args:expr),+) => (
-        $crate::_internal_log!($level, $category, format!("{} {:?}", $prev_arg, $arg), $($args),+);
+        $crate::_internal_log!($level, $category, format!("{} {:?}", $prev_arg, $arg), $($args),+)
     );
 
     ($level:expr, $category:expr, $prev_arg:expr, $arg:expr) => (
-        $crate::util::logging::_log($level, $category, format!("{} {:?}", $prev_arg, $arg));
+        $crate::util::logging::_log($level, $category, format!("{} {:?}", $prev_arg, $arg))
     );
 }
 

@@ -78,7 +78,7 @@ impl BDFFont {
 }
 
 impl Font for BDFFont {
-    fn render_character(&self, character: char) -> Option<RenderedCharacter> {
+    fn render_character(&self, character: char, _point_size: f32) -> Option<RenderedCharacter> {
         for c in self.characters.as_deref()? {
             if c.encoding == Some(character as u32) {
                 let bounding_box = c

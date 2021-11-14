@@ -234,11 +234,11 @@ fn text_style_to_scene(
     })
 }
 
-fn calculate_text_width(text: &str, _font_size: f32, caching_font: &mut CachingFont) -> f32 {
+fn calculate_text_width(text: &str, font_size: f32, caching_font: &mut CachingFont) -> f32 {
     let mut ret = 0_f32;
     for char in text.chars() {
         ret += caching_font
-            .render_character(char)
+            .render_character(char, font_size)
             .map(|c| c.width)
             .unwrap_or(0_f32);
     }

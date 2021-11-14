@@ -99,7 +99,7 @@ fn render_once(
             render::SceneNode::TextSceneNode(render::TextSceneNode {
                 bounds,
                 text,
-                font_size: _font_size,
+                font_size,
                 text_color,
             }) => {
                 let mut offset = Point {
@@ -107,7 +107,7 @@ fn render_once(
                     y: bounds.y,
                 };
                 for text_char in text.chars() {
-                    if let Some(c) = font.render_character(text_char) {
+                    if let Some(c) = font.render_character(text_char, font_size) {
                         window_mutator
                             .draw_bitmap(
                                 &(offset.borrow() + &c.offset).into(),

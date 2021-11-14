@@ -25,7 +25,7 @@ fn main() -> Result<(), FontError> {
         panic!("Unknown font file type");
     };
 
-    let characters = message.chars().map(|c| font.render_character(c));
+    let characters = message.chars().map(|c| font.render_character(c, 12.0));
 
     // Draw character in GUI
     startup::start();

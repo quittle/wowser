@@ -1,7 +1,7 @@
 use crate::util::Point;
 
 pub trait Font {
-    fn render_character(&self, character: char) -> Option<RenderedCharacter>;
+    fn render_character(&self, character: char, point_size: f32) -> Option<RenderedCharacter>;
 }
 
 #[derive(Debug, Clone)]

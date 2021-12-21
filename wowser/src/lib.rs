@@ -12,6 +12,7 @@ pub mod css;
 pub mod font;
 pub mod html;
 pub mod image;
+pub mod js;
 pub mod math_parse;
 pub mod net;
 pub mod parse;

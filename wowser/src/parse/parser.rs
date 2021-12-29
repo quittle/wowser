@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::lexer::ParsedToken;
 use super::rule::{Rule, RuleType};
 use super::Token;
@@ -42,7 +44,7 @@ impl Parser {
         rule: &R,
     ) -> Result<ParserResult<'a, R, T>, &str> {
         let mut child_indices: Vec<usize> = vec![0];
-        self._parse(tokens, rule, &mut child_indices, 0)
+        self._parse(tokens, rule, &mut child_indices, 0, &mut HashMap::new())
     }
 
     fn _parse<'a, 'b, R: Rule<T>, T: Token>(
@@ -51,17 +53,35 @@ impl Parser {
         root_rule: &'b R,
         child_indices: &mut Vec<usize>,
         depth: usize,
+        has_seen: &mut HashMap<R, usize>,
     ) -> Result<ParserResult<'a, R, T>, &str> {
         if depth >= 100 {
+            println!("Too complex");
             return Err("Code too complex");
         }
+        println!("{:?} ({:?})", root_rule, tokens);
+        // if let Some(&tokens_len) = has_seen.get(root_rule) {
+        //     println!("seen rule before");
+        //     if tokens_len == tokens.len() {
+        //         //  == root_rule
+        //         println!("seen before");
+        //         return Err("Seen before");
+        //     }
+        // }
+        // has_seen.insert(root_rule.clone(), tokens.len());
 
         if child_indices.len() == depth {
             child_indices.push(0);
         }
 
         if let Some(first_token) = tokens.get(0) {
-            for child_rule_type in root_rule.children().iter() {
+            // Rotate so prevent unnecessary recursion when parsing complex rules. This is just as
+            // complex in the worst case but for most real code, this will work as expected.
+            let mut root_rule_children = root_rule.children();
+            root_rule_children.rotate_right(depth % root_rule.children().len());
+            root_rule_children = root_rule.children();
+
+            for child_rule_type in root_rule_children.iter() {
                 let result = match child_rule_type {
                     RuleType::Token(token) => {
                         if token.eq(&first_token.token) {
@@ -78,7 +98,7 @@ impl Parser {
                         }
                     }
                     RuleType::Rule(rule) => {
-                        match self._parse(tokens, rule, child_indices, depth + 1) {
+                        match self._parse(tokens, rule, child_indices, depth + 1, has_seen) {
                             Ok(result) => Ok(ParserResult {
                                 node: ASTNode {
                                     rule: *root_rule,
@@ -94,7 +114,7 @@ impl Parser {
                         let mut children = vec![];
                         let mut cur_tokens = tokens;
                         while let Ok(result) =
-                            self._parse(cur_tokens, rule, child_indices, depth + 1)
+                            self._parse(cur_tokens, rule, child_indices, depth + 1, has_seen)
                         {
                             children.push(result.node);
                             cur_tokens = result.remaining_tokens;
@@ -115,7 +135,7 @@ impl Parser {
                         let mut failed = false;
                         for rule in rules {
                             if let Ok(child) =
-                                self._parse(cur_tokens, rule, child_indices, depth + 1)
+                                self._parse(cur_tokens, rule, child_indices, depth + 1, has_seen)
                             {
                                 children.push(child.node);
                                 cur_tokens = child.remaining_tokens;

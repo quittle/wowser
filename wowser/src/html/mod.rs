@@ -11,7 +11,7 @@ pub use html_token::HtmlToken;
 use crate::parse::*;
 
 pub fn parse_html(document: &str) -> Result<HtmlDocument, String> {
-    let lexer = Lexer::new(Box::new(HtmlToken::Document));
+    let lexer = Lexer::new(HtmlToken::Document);
     let tokens = lexer.parse(document).ok_or("Failed to lex HTML")?;
     let ast = Parser {}.parse(&tokens, &HtmlRule::Document)?;
     let document_html_node = HtmlInterpreter {}

@@ -1,13 +1,14 @@
 use super::super::parse::*;
 use super::math_rule::MathRule;
+use super::MathToken;
 
 pub struct MathInterpreter {}
 
-impl Interpreter<'_> for MathInterpreter {
-    type RuleType = MathRule;
+impl Interpreter<'_, MathRule, MathToken> for MathInterpreter {
+    // type RuleType = MathRule;
     type Result = f32;
 
-    fn on_node(&self, ast: &ASTNode<MathRule>) -> Option<f32> {
+    fn on_node(&self, ast: &ASTNode<MathRule, MathToken>) -> Option<f32> {
         let ASTNode {
             rule,
             token,
@@ -15,7 +16,7 @@ impl Interpreter<'_> for MathInterpreter {
             ..
         } = ast;
 
-        match **rule {
+        match rule {
             MathRule::Document => self.on_node(&children[0]),
             MathRule::DocumentBody => {
                 let mut result = None;

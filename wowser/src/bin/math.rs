@@ -9,7 +9,7 @@ fn main() {
     let arg_1 = args.get(1).expect("Document not passed in");
 
     let document = fs::read_to_string(arg_1).expect("Unable to read file");
-    let lexer = Lexer::new(Box::new(MathToken::Document));
+    let lexer = Lexer::new(MathToken::Document);
     let tokens = lexer.parse(document.as_str());
     log!(INFO: "Tokens:", tokens);
     if let Some(tokens) = tokens {

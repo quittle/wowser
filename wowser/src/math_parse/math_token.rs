@@ -1,7 +1,7 @@
 use super::super::parse::*;
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
+#[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq)]
 pub enum MathToken {
     Document,
     Number,
@@ -24,28 +24,30 @@ impl Token for MathToken {
     }
 
     #[rustfmt::skip]
-    fn next_tokens(&self) -> Vec<Box<dyn Token>> {
+    fn next_tokens(&self) -> Vec<MathToken> {
         match self {
             MathToken::Document => vec![
-                Box::new(MathToken::Whitespace),
-                Box::new(MathToken::Number),
-                Box::new(MathToken::Terminator),
+                MathToken::Whitespace,
+                MathToken::Number,
+                MathToken::Terminator,
             ],
             MathToken::Number => vec![
-                Box::new(MathToken::Plus),
-                Box::new(MathToken::Semicolon),
-                Box::new(MathToken::Whitespace),
+                MathToken::Plus,
+                MathToken::Semicolon,
+                MathToken::Whitespace,
             ],
-            MathToken::Plus => vec![Box::new(MathToken::Number)],
+            MathToken::Plus => vec![
+                MathToken::Number
+            ],
             MathToken::Whitespace => vec![
-                Box::new(MathToken::Whitespace),
-                Box::new(MathToken::Terminator)
+                MathToken::Whitespace,
+                MathToken::Terminator,
             ],
             MathToken::Semicolon => vec![
-                Box::new(MathToken::Number),
-                Box::new(MathToken::Whitespace),
-                Box::new(MathToken::Semicolon),
-                Box::new(MathToken::Terminator),
+                MathToken::Number,
+                MathToken::Whitespace,
+                MathToken::Semicolon,
+                MathToken::Terminator,
             ],
             MathToken::Terminator => vec![],
         }

@@ -1,7 +1,7 @@
 use super::super::parse::*;
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
+#[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq)]
 pub enum CssToken {
     Document,
     SelectorSeparator,
@@ -32,41 +32,41 @@ impl Token for CssToken {
     }
 
     #[rustfmt::skip]
-    fn next_tokens(&self) -> Vec<Box<dyn Token>> {
+    fn next_tokens(&self) -> Vec<CssToken> {
         match self {
             Self::Document => vec![
-                Box::new(Self::Selector),
-                Box::new(Self::Terminator),
+                Self::Selector,
+                Self::Terminator,
             ],
             Self::Selector => vec![
-                Box::new(Self::Selector),
-                Box::new(Self::SelectorSeparator),
-                Box::new(Self::OpenBrace),
+                Self::Selector,
+                Self::SelectorSeparator,
+                Self::OpenBrace,
             ],
             Self::SelectorSeparator => vec![
-                Box::new(Self::Selector),
+                Self::Selector,
             ],
             Self::OpenBrace => vec![
-                Box::new(Self::PropertyKey),
-                Box::new(Self::CloseBrace),
+                Self::PropertyKey,
+                Self::CloseBrace,
             ],
             Self::PropertyKey => vec![
-                Box::new(Self::PropertySeparator),
+                Self::PropertySeparator,
             ],
             Self::PropertySeparator => vec![
-                Box::new(Self::PropertyValue),
+                Self::PropertyValue,
             ],
             Self::PropertyValue => vec![
-                Box::new(Self::PropertyTerminator),
-                Box::new(Self::CloseBrace),
+                Self::PropertyTerminator,
+                Self::CloseBrace,
             ],
             Self::PropertyTerminator => vec![
-                Box::new(Self::PropertyKey),
-                Box::new(Self::CloseBrace),
+                Self::PropertyKey,
+                Self::CloseBrace,
             ],
             Self::CloseBrace => vec![
-                Box::new(Self::Selector),
-                Box::new(Self::Terminator),
+                Self::Selector,
+                Self::Terminator,
             ],
             Self::Terminator => vec![],
         }

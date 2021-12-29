@@ -1,7 +1,7 @@
 use super::{super::parse::*, js_token::JsToken};
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
+#[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq, Eq, Hash)]
 pub enum JsRule {
     Document,
     Statements,
@@ -16,41 +16,41 @@ pub enum JsRule {
 
 impl JsRule {}
 
-impl Rule for JsRule {
+impl Rule<JsToken> for JsRule {
     #[rustfmt::skip]
-    fn children(&self) -> Vec<RuleType<Self>> {
+    fn children(&self) -> Vec<RuleType<Self, JsToken>> {
         match self {
             Self::Document => vec![
-                RuleType::Sequence(vec![Self::Statements.b(), Self::Expression.b(), Self::Terminator.b()]),
-                RuleType::Sequence(vec![Self::Statements.b(), Self::Terminator.b()]),
-                RuleType::Rule(Self::Terminator.b()),
+                RuleType::Sequence(vec![Self::Statements, Self::Expression, Self::Terminator]),
+                RuleType::Sequence(vec![Self::Statements, Self::Terminator]),
+                RuleType::Rule(Self::Terminator),
             ],
             Self::Statements => vec![
-                RuleType::RepeatableRule(Self::Statement.b()),
+                RuleType::RepeatableRule(Self::Statement),
             ],
             Self::Statement => vec![
-                RuleType::Sequence(vec![Self::Expression.b(), Self::Semicolon.b()]),
-                RuleType::Sequence(vec![Self::Semicolon.b()]),
+                RuleType::Sequence(vec![Self::Expression, Self::Semicolon]),
+                RuleType::Sequence(vec![Self::Semicolon]),
             ],
             Self::Expression => vec![
-                RuleType::Rule(Self::ExpressionAdd.b()),
-                RuleType::Rule(Self::Number.b()),
+                RuleType::Rule(Self::ExpressionAdd),
+                RuleType::Rule(Self::Number),
             ],
             Self::ExpressionAdd => vec![
-                RuleType::Sequence(vec![Self::Number.b(), Self::OperationAdd.b(), Self::Expression.b()]),
-                RuleType::Sequence(vec![Self::OperationAdd.b(), Self::Number.b()]),
+                RuleType::Sequence(vec![Self::Expression, Self::OperationAdd, Self::Expression]),
+                RuleType::Sequence(vec![Self::OperationAdd, Self::Number]),
             ],
             Self::OperationAdd => vec![
-                RuleType::Token(JsToken::OperatorAdd.b()),
+                RuleType::Token(JsToken::OperatorAdd),
             ],
             Self::Number => vec![
-                RuleType::Token(JsToken::Number.b()),
+                RuleType::Token(JsToken::Number),
             ],
             Self::Semicolon => vec![
-                RuleType::Token(JsToken::Semicolon.b()),
+                RuleType::Token(JsToken::Semicolon),
             ],
             Self::Terminator => vec![
-                RuleType::Token(JsToken::Terminator.b())
+                RuleType::Token(JsToken::Terminator)
             ],
         }
     }

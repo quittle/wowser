@@ -1,7 +1,7 @@
 use super::super::parse::*;
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
+#[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq)]
 pub enum JsToken {
     Document,
     Number,
@@ -22,27 +22,27 @@ impl Token for JsToken {
     }
 
     #[rustfmt::skip]
-    fn next_tokens(&self) -> Vec<Box<dyn Token>> {
+    fn next_tokens(&self) -> Vec<Self> {
         match self {
             Self::Document => vec![
-                Box::new(Self::Number),
-                Box::new(Self::OperatorAdd),
-                Box::new(Self::Semicolon),
-                Box::new(Self::Terminator),
+                Self::Number,
+                Self::OperatorAdd,
+                Self::Semicolon,
+                Self::Terminator,
             ],
             Self::Number => vec![
-                Box::new(Self::OperatorAdd),
-                Box::new(Self::Semicolon),
-                Box::new(Self::Terminator),
+                Self::OperatorAdd,
+                Self::Semicolon,
+                Self::Terminator,
             ],
             Self::OperatorAdd => vec![
-                Box::new(Self::Number),
+                Self::Number,
             ],
             Self::Semicolon => vec![
-                Box::new(Self::Number),
-                Box::new(Self::OperatorAdd),
-                Box::new(Self::Semicolon),
-                Box::new(Self::Terminator),
+                Self::Number,
+                Self::OperatorAdd,
+                Self::Semicolon,
+                Self::Terminator,
             ],
             Self::Terminator => vec![],
         }

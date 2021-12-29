@@ -1,10 +1,12 @@
-use super::{html_document::*, html_rule::HtmlRule};
+use super::{html_document::*, html_rule::HtmlRule, HtmlToken};
 use crate::parse::*;
+
+type HtmlASTNode<'a> = ASTNode<'a, HtmlRule, HtmlToken>;
 
 pub struct HtmlInterpreter {}
 
 impl HtmlInterpreter {
-    fn on_document(&self, document: &ASTNode<HtmlRule>) -> DocumentHtmlNode {
+    fn on_document(&self, document: &HtmlASTNode) -> DocumentHtmlNode {
         let ASTNode { rule, children, .. } = document;
 
         self.assert_rule_is(rule, HtmlRule::Document);
@@ -12,7 +14,7 @@ impl HtmlInterpreter {
         let mut doctype = DoctypeHtmlNode::default();
         let mut contents = vec![];
         for child in children {
-            let rule = &*child.rule;
+            let rule = &child.rule;
             match rule {
                 HtmlRule::Doctype => doctype = self.on_doctype(child),
                 HtmlRule::TagContents => contents = self.on_tag_contents(child),
@@ -23,7 +25,7 @@ impl HtmlInterpreter {
         DocumentHtmlNode { doctype, contents }
     }
 
-    fn on_doctype(&self, doctype: &ASTNode<HtmlRule>) -> DoctypeHtmlNode {
+    fn on_doctype(&self, doctype: &HtmlASTNode) -> DoctypeHtmlNode {
         let ASTNode { rule, children, .. } = doctype;
 
         self.assert_rule_is(rule, HtmlRule::Doctype);
@@ -34,7 +36,7 @@ impl HtmlInterpreter {
         }
     }
 
-    fn on_doctype_contents(&self, doctype_contents: &ASTNode<HtmlRule>) -> Vec<String> {
+    fn on_doctype_contents(&self, doctype_contents: &HtmlASTNode) -> Vec<String> {
         let ASTNode { rule, children, .. } = doctype_contents;
 
         self.assert_rule_is(rule, HtmlRule::DoctypeContents);
@@ -45,7 +47,7 @@ impl HtmlInterpreter {
             .collect()
     }
 
-    fn on_doctype_contents_string(&self, doctype_contents_string: &ASTNode<HtmlRule>) -> String {
+    fn on_doctype_contents_string(&self, doctype_contents_string: &HtmlASTNode) -> String {
         let ASTNode {
             rule,
             children,
@@ -59,7 +61,7 @@ impl HtmlInterpreter {
         self.extract_token(token)
     }
 
-    fn on_non_self_closing_tag(&self, non_self_closing_tag: &ASTNode<HtmlRule>) -> ElementHtmlNode {
+    fn on_non_self_closing_tag(&self, non_self_closing_tag: &HtmlASTNode) -> ElementHtmlNode {
         let ASTNode { rule, children, .. } = non_self_closing_tag;
 
         self.assert_rule_is(rule, HtmlRule::NonSelfClosingTag);
@@ -76,7 +78,7 @@ impl HtmlInterpreter {
         )
     }
 
-    fn on_self_closing_tag(&self, self_closing_tag: &ASTNode<HtmlRule>) -> ElementHtmlNode {
+    fn on_self_closing_tag(&self, self_closing_tag: &HtmlASTNode) -> ElementHtmlNode {
         let ASTNode { rule, children, .. } = self_closing_tag;
 
         self.assert_rule_is(rule, HtmlRule::SelfClosingTag);
@@ -95,10 +97,7 @@ impl HtmlInterpreter {
         )
     }
 
-    fn on_opening_tag(
-        &self,
-        opening_tag: &ASTNode<HtmlRule>,
-    ) -> (String, Vec<TagAttributeHtmlNode>) {
+    fn on_opening_tag(&self, opening_tag: &HtmlASTNode) -> (String, Vec<TagAttributeHtmlNode>) {
         let ASTNode { rule, children, .. } = opening_tag;
 
         self.assert_rule_is(rule, HtmlRule::OpeningTag);
@@ -109,7 +108,7 @@ impl HtmlInterpreter {
 
     fn on_opening_tag_prelude(
         &self,
-        opening_tag_prelude: &ASTNode<HtmlRule>,
+        opening_tag_prelude: &HtmlASTNode,
     ) -> (String, Vec<TagAttributeHtmlNode>) {
         let ASTNode { rule, children, .. } = opening_tag_prelude;
 
@@ -122,7 +121,7 @@ impl HtmlInterpreter {
         (tag_name, attributes)
     }
 
-    fn on_opening_tag_name(&self, opening_tag_name: &ASTNode<HtmlRule>) -> String {
+    fn on_opening_tag_name(&self, opening_tag_name: &HtmlASTNode) -> String {
         let ASTNode {
             rule,
             children,
@@ -137,7 +136,7 @@ impl HtmlInterpreter {
 
     fn on_opening_tag_attributes(
         &self,
-        opening_tag_attributes: &ASTNode<HtmlRule>,
+        opening_tag_attributes: &HtmlASTNode,
     ) -> Vec<TagAttributeHtmlNode> {
         let ASTNode { rule, children, .. } = opening_tag_attributes;
 
@@ -149,7 +148,7 @@ impl HtmlInterpreter {
             .collect()
     }
 
-    fn on_tag_attribute(&self, tag_attribute: &ASTNode<HtmlRule>) -> TagAttributeHtmlNode {
+    fn on_tag_attribute(&self, tag_attribute: &HtmlASTNode) -> TagAttributeHtmlNode {
         let ASTNode { rule, children, .. } = tag_attribute;
 
         self.assert_rule_is(rule, HtmlRule::TagAttribute);
@@ -166,7 +165,7 @@ impl HtmlInterpreter {
         TagAttributeHtmlNode { name, value }
     }
 
-    fn on_attribute_name(&self, attribute_name: &ASTNode<HtmlRule>) -> String {
+    fn on_attribute_name(&self, attribute_name: &HtmlASTNode) -> String {
         let ASTNode {
             rule,
             children,
@@ -179,7 +178,7 @@ impl HtmlInterpreter {
         self.extract_token(token)
     }
 
-    fn on_attribute_value(&self, attribute_name: &ASTNode<HtmlRule>) -> String {
+    fn on_attribute_value(&self, attribute_name: &HtmlASTNode) -> String {
         let ASTNode {
             rule,
             children,
@@ -192,14 +191,14 @@ impl HtmlInterpreter {
         self.extract_token(token)
     }
 
-    fn on_tag_contents(&self, tag_contents: &ASTNode<HtmlRule>) -> Vec<ElementContents> {
+    fn on_tag_contents(&self, tag_contents: &HtmlASTNode) -> Vec<ElementContents> {
         let ASTNode { rule, children, .. } = tag_contents;
 
         self.assert_rule_is(rule, HtmlRule::TagContents);
         self.assert_children_length_one_of(children, vec![1, 2]);
 
         let first_child = &children[0];
-        let mut initial_contents = match *(first_child.rule) {
+        let mut initial_contents = match first_child.rule {
             HtmlRule::Text => vec![ElementContents::Text(self.on_text(first_child))],
             HtmlRule::TagsAndText => self.on_tags_and_text(first_child),
             _ => panic!("Unsupported child type: {:?}", first_child.rule),
@@ -212,7 +211,7 @@ impl HtmlInterpreter {
         initial_contents
     }
 
-    fn on_tags_and_text(&self, tags_and_text: &ASTNode<HtmlRule>) -> Vec<ElementContents> {
+    fn on_tags_and_text(&self, tags_and_text: &HtmlASTNode) -> Vec<ElementContents> {
         let ASTNode { rule, children, .. } = tags_and_text;
 
         self.assert_rule_is(rule, HtmlRule::TagsAndText);
@@ -223,7 +222,7 @@ impl HtmlInterpreter {
             .collect()
     }
 
-    fn on_tag_and_text(&self, tag_and_text: &ASTNode<HtmlRule>) -> Vec<ElementContents> {
+    fn on_tag_and_text(&self, tag_and_text: &HtmlASTNode) -> Vec<ElementContents> {
         let ASTNode { rule, children, .. } = tag_and_text;
 
         self.assert_rule_is(rule, HtmlRule::TagAndText);
@@ -238,21 +237,21 @@ impl HtmlInterpreter {
         }
     }
 
-    fn on_tag(&self, tag: &ASTNode<HtmlRule>) -> ElementHtmlNode {
+    fn on_tag(&self, tag: &HtmlASTNode) -> ElementHtmlNode {
         let ASTNode { rule, children, .. } = tag;
 
         self.assert_rule_is(rule, HtmlRule::Tag);
         self.assert_children_length(children, 1);
 
         let child = &children[0];
-        match *child.rule {
+        match child.rule {
             HtmlRule::SelfClosingTag => self.on_self_closing_tag(child),
             HtmlRule::NonSelfClosingTag => self.on_non_self_closing_tag(child),
             _ => panic!("Unsupported child type {:?}", child.rule),
         }
     }
 
-    fn on_text(&self, text_node: &ASTNode<HtmlRule>) -> TextHtmlNode {
+    fn on_text(&self, text_node: &HtmlASTNode) -> TextHtmlNode {
         let ASTNode {
             rule,
             children,
@@ -269,11 +268,11 @@ impl HtmlInterpreter {
         assert_eq!(*rule, expected_rule, "Unexpected child type: {:?}", rule);
     }
 
-    fn assert_children_length(&self, children: &[ASTNode<HtmlRule>], length: usize) {
+    fn assert_children_length(&self, children: &[HtmlASTNode], length: usize) {
         assert_eq!(children.len(), length, "Unexpected number of children");
     }
 
-    fn assert_children_length_one_of(&self, children: &[ASTNode<HtmlRule>], lengths: Vec<usize>) {
+    fn assert_children_length_one_of(&self, children: &[HtmlASTNode], lengths: Vec<usize>) {
         let children_len = children.len();
         assert!(
             lengths.iter().any(|length| &children_len == length),
@@ -282,7 +281,7 @@ impl HtmlInterpreter {
         );
     }
 
-    fn assert_no_children(&self, children: &[ASTNode<HtmlRule>]) {
+    fn assert_no_children(&self, children: &[HtmlASTNode]) {
         assert!(
             children.is_empty(),
             "Expected no children but found {}",
@@ -290,7 +289,7 @@ impl HtmlInterpreter {
         );
     }
 
-    fn extract_token(&self, token: &Option<&ParsedToken>) -> String {
+    fn extract_token(&self, token: &Option<&ParsedToken<HtmlToken>>) -> String {
         (*token)
             .expect("Missing token for required rule")
             .literal
@@ -298,11 +297,10 @@ impl HtmlInterpreter {
     }
 }
 
-impl Interpreter<'_> for HtmlInterpreter {
-    type RuleType = HtmlRule;
+impl Interpreter<'_, HtmlRule, HtmlToken> for HtmlInterpreter {
     type Result = DocumentHtmlNode;
 
-    fn on_node(&self, ast: &ASTNode<HtmlRule>) -> Option<DocumentHtmlNode> {
+    fn on_node(&self, ast: &HtmlASTNode) -> Option<DocumentHtmlNode> {
         Some(self.on_document(ast))
     }
 }

@@ -1,30 +1,30 @@
 use super::token::Token;
 
 /// Converts text into tokens
-pub struct Lexer {
-    root_token: Box<dyn Token>,
+pub struct Lexer<T: Token> {
+    root_token: T,
 }
 
 pub type ParsedTokenOffset = usize;
 
 #[derive(Debug)]
-pub struct ParsedToken<'a> {
-    pub token: Box<dyn Token>,
+pub struct ParsedToken<'a, T: Token> {
+    pub token: T,
     pub literal: &'a str,
     pub offset: ParsedTokenOffset,
 }
 
-pub type ParsedTokens<'a> = Vec<ParsedToken<'a>>;
+pub type ParsedTokens<'a, T> = Vec<ParsedToken<'a, T>>;
 
-impl Lexer {
+impl<T: Token> Lexer<T> {
     /// Constructs a new Lexer
-    pub fn new(root_token: Box<dyn Token>) -> Lexer {
+    pub fn new(root_token: T) -> Lexer<T> {
         Lexer { root_token }
     }
 
     /// Parses a source string into a series of tokens
-    pub fn parse<'a>(&self, source: &'a str) -> Option<ParsedTokens<'a>> {
-        self.recursive_parse(0, source, self.root_token.as_ref())
+    pub fn parse<'a>(&self, source: &'a str) -> Option<ParsedTokens<'a, T>> {
+        self.recursive_parse(0, source, &self.root_token)
             .map(|mut v| {
                 v.reverse();
                 v
@@ -35,10 +35,10 @@ impl Lexer {
         &self,
         cur_source_offset: ParsedTokenOffset,
         source: &'a str,
-        root_token: &dyn Token,
-    ) -> Option<ParsedTokens<'a>> {
+        root_token: &T,
+    ) -> Option<ParsedTokens<'a, T>> {
         if root_token.is_terminator() {
-            let vec: ParsedTokens<'a> = Vec::new();
+            let vec: ParsedTokens<'a, T> = Vec::new();
             return Option::Some(vec);
         }
 
@@ -61,10 +61,10 @@ impl Lexer {
                 if let Some(mut subpath) = self.recursive_parse(
                     cur_source_offset + capture_offset,
                     &source[capture_offset..],
-                    &*token,
+                    &token,
                 ) {
                     subpath.push(ParsedToken {
-                        token: token.clone_box(),
+                        token,
                         literal: real_capture,
                         offset: cur_source_offset,
                     });

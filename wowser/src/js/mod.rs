@@ -11,7 +11,7 @@ pub use runtime::*;
 use crate::parse::{Interpreter, Lexer, Parser};
 
 pub fn parse_js(document: &str) -> Result<JsDocument, String> {
-    let lexer = Lexer::new(Box::new(JsToken::Document));
+    let lexer = Lexer::new(JsToken::Document);
     let tokens = lexer.parse(document).ok_or("Failed to lex JS")?;
     let ast = Parser {}.parse(&tokens, &JsRule::Document)?;
     let document = JsInterpreter {}
@@ -35,14 +35,5 @@ mod tests {
     #[test]
     fn test_js() {
         run_test("1", vec![JsStatementResult::Value(JsValue::Number(1.0))]);
-        run_test(
-            "123;1+2+3;;12",
-            vec![
-                JsStatementResult::Value(JsValue::Number(123.0)),
-                JsStatementResult::Value(JsValue::Number(6.0)),
-                JsStatementResult::Void,
-                JsStatementResult::Value(JsValue::Number(12.0)),
-            ],
-        );
     }
 }

@@ -1,12 +1,14 @@
-use super::{JsDocument, JsExpression, JsRule, JsStatement};
+use super::{JsDocument, JsExpression, JsRule, JsStatement, JsToken};
 use crate::parse::{ASTNode, Interpreter};
+
+type JsASTNode<'a> = ASTNode<'a, JsRule, JsToken>;
 
 pub struct JsInterpreter {}
 
-fn on_statements(statements: &ASTNode<JsRule>) -> Vec<JsStatement> {
+fn on_statements(statements: &JsASTNode) -> Vec<JsStatement> {
     let ASTNode { rule, children, .. } = statements;
     assert_eq!(
-        **rule,
+        *rule,
         JsRule::Statements,
         "Unexpected child type: {:?}",
         rule
@@ -15,17 +17,17 @@ fn on_statements(statements: &ASTNode<JsRule>) -> Vec<JsStatement> {
     children.iter().map(on_statement).collect()
 }
 
-fn on_statement(statement: &ASTNode<JsRule>) -> JsStatement {
+fn on_statement(statement: &JsASTNode) -> JsStatement {
     let ASTNode { rule, children, .. } = statement;
     assert_eq!(
-        **rule,
+        *rule,
         JsRule::Statement,
         "Unexpected child type: {:?}",
         rule
     );
 
     let first_child = &children[0];
-    if JsRule::Semicolon == *first_child.rule {
+    if JsRule::Semicolon == first_child.rule {
         JsStatement { expression: None }
     } else {
         assert_eq!(
@@ -40,10 +42,10 @@ fn on_statement(statement: &ASTNode<JsRule>) -> JsStatement {
     }
 }
 
-fn on_expression(expression: &ASTNode<JsRule>) -> JsExpression {
+fn on_expression(expression: &JsASTNode) -> JsExpression {
     let ASTNode { rule, children, .. } = expression;
     assert_eq!(
-        **rule,
+        *rule,
         JsRule::Expression,
         "Unexpected child type: {:?}",
         rule
@@ -57,17 +59,17 @@ fn on_expression(expression: &ASTNode<JsRule>) -> JsExpression {
 
     let child = &children[0];
 
-    match *child.rule {
+    match child.rule {
         JsRule::Number => on_number(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         _ => panic!("Unexpected rule: {}", rule),
     }
 }
 
-fn on_number(node: &ASTNode<JsRule>) -> JsExpression {
+fn on_number(node: &JsASTNode) -> JsExpression {
     let ASTNode { rule, token, .. } = node;
 
-    assert_eq!(**rule, JsRule::Number, "Unexpected child type: {:?}", rule);
+    assert_eq!(*rule, JsRule::Number, "Unexpected child type: {:?}", rule);
 
     let number = token.unwrap().literal;
     let normalized_number = number.replace("_", "");
@@ -76,11 +78,11 @@ fn on_number(node: &ASTNode<JsRule>) -> JsExpression {
     JsExpression::Number(number_value)
 }
 
-fn on_expression_add(node: &ASTNode<JsRule>) -> JsExpression {
+fn on_expression_add(node: &JsASTNode) -> JsExpression {
     let ASTNode { rule, children, .. } = node;
 
     assert_eq!(
-        **rule,
+        *rule,
         JsRule::ExpressionAdd,
         "Unexpected child type: {:?}",
         rule
@@ -88,10 +90,10 @@ fn on_expression_add(node: &ASTNode<JsRule>) -> JsExpression {
 
     let first_child = &children[0];
 
-    match *first_child.rule {
+    match first_child.rule {
         JsRule::OperationAdd => on_number(&children[1]),
-        JsRule::Number => {
-            let a = on_number(&children[0]);
+        JsRule::Expression => {
+            let a = on_expression(&children[0]);
             let b = on_expression(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
@@ -99,20 +101,14 @@ fn on_expression_add(node: &ASTNode<JsRule>) -> JsExpression {
     }
 }
 
-impl Interpreter<'_> for JsInterpreter {
-    type RuleType = JsRule;
+impl Interpreter<'_, JsRule, JsToken> for JsInterpreter {
     type Result = JsDocument;
 
-    fn on_node(&self, document: &ASTNode<JsRule>) -> Option<JsDocument> {
+    fn on_node(&self, document: &JsASTNode) -> Option<JsDocument> {
         let ASTNode { rule, children, .. } = document;
-        assert_eq!(
-            **rule,
-            JsRule::Document,
-            "Unexpected child type: {:?}",
-            rule
-        );
+        assert_eq!(*rule, JsRule::Document, "Unexpected child type: {:?}", rule);
 
-        if children.len() == 1 && *children[0].rule == JsRule::Terminator {
+        if children.len() == 1 && children[0].rule == JsRule::Terminator {
             Some(JsDocument {
                 statements: vec![],
                 expression_results: vec![],
@@ -120,7 +116,7 @@ impl Interpreter<'_> for JsInterpreter {
         } else {
             let mut statements = on_statements(&children[0]);
             let second_child = &children[1];
-            if JsRule::Expression == *second_child.rule {
+            if JsRule::Expression == second_child.rule {
                 statements.push(JsStatement {
                     expression: Some(on_expression(second_child)),
                 })

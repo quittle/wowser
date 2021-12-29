@@ -1,7 +1,7 @@
 use super::super::parse::*;
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug, PartialEq)]
+#[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq)]
 pub enum HtmlToken {
     Document,
     DoctypeOpen,
@@ -40,82 +40,82 @@ impl Token for HtmlToken {
     }
 
     #[rustfmt::skip]
-    fn next_tokens(&self) -> Vec<Box<dyn Token>> {
+    fn next_tokens(&self) -> Vec<HtmlToken> {
         match self {
             HtmlToken::Document => vec![
-                Box::new(HtmlToken::DoctypeOpen),
-                Box::new(HtmlToken::TagStart),
-                Box::new(HtmlToken::Text),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::DoctypeOpen,
+                HtmlToken::TagStart,
+                HtmlToken::Text,
+                HtmlToken::Terminator,
             ],
             HtmlToken::DoctypeOpen => vec![
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::DoctypeUnquotedString),
-                Box::new(HtmlToken::DoctypeQuotedString),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagEnd,
+                HtmlToken::DoctypeUnquotedString,
+                HtmlToken::DoctypeQuotedString,
+                HtmlToken::Terminator,
             ],
             HtmlToken::DoctypeUnquotedString => vec![
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::DoctypeUnquotedString),
-                Box::new(HtmlToken::DoctypeQuotedString),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagEnd,
+                HtmlToken::DoctypeUnquotedString,
+                HtmlToken::DoctypeQuotedString,
+                HtmlToken::Terminator,
             ],
             HtmlToken::DoctypeQuotedString => vec![
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::DoctypeUnquotedString),
-                Box::new(HtmlToken::DoctypeQuotedString),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagEnd,
+                HtmlToken::DoctypeUnquotedString,
+                HtmlToken::DoctypeQuotedString,
+                HtmlToken::Terminator,
             ],
             HtmlToken::TagStart => vec![
-                Box::new(HtmlToken::AttributeName),
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::TagSelfClosingEnd),
+                HtmlToken::AttributeName,
+                HtmlToken::TagEnd,
+                HtmlToken::TagSelfClosingEnd,
             ],
             HtmlToken::AttributeName => vec![
-                Box::new(HtmlToken::Equals),
-                Box::new(HtmlToken::AttributeName),
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::TagSelfClosingEnd),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::Equals,
+                HtmlToken::AttributeName,
+                HtmlToken::TagEnd,
+                HtmlToken::TagSelfClosingEnd,
+                HtmlToken::Terminator,
             ],
             HtmlToken::Equals => vec![
-                Box::new(HtmlToken::QuotedString),
-                Box::new(HtmlToken::UnquotedString),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::QuotedString,
+                HtmlToken::UnquotedString,
+                HtmlToken::Terminator,
             ],
             HtmlToken::QuotedString => vec![
-                Box::new(HtmlToken::AttributeName),
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::TagSelfClosingEnd),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::AttributeName,
+                HtmlToken::TagEnd,
+                HtmlToken::TagSelfClosingEnd,
+                HtmlToken::Terminator,
             ],
             HtmlToken::UnquotedString => vec![
-                Box::new(HtmlToken::AttributeName),
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::TagSelfClosingEnd),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::AttributeName,
+                HtmlToken::TagEnd,
+                HtmlToken::TagSelfClosingEnd,
+                HtmlToken::Terminator,
             ],
             HtmlToken::TagSelfClosingEnd => vec![
-                Box::new(HtmlToken::TagStart),
-                Box::new(HtmlToken::ClosingTagStart),
-                Box::new(HtmlToken::Text),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagStart,
+                HtmlToken::ClosingTagStart,
+                HtmlToken::Text,
+                HtmlToken::Terminator,
             ],
             HtmlToken::TagEnd => vec![
-                Box::new(HtmlToken::TagStart),
-                Box::new(HtmlToken::ClosingTagStart),
-                Box::new(HtmlToken::Text),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagStart,
+                HtmlToken::ClosingTagStart,
+                HtmlToken::Text,
+                HtmlToken::Terminator,
             ],
             HtmlToken::Text => vec![
-                Box::new(HtmlToken::TagStart),
-                Box::new(HtmlToken::ClosingTagStart),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagStart,
+                HtmlToken::ClosingTagStart,
+                HtmlToken::Terminator,
             ],
             HtmlToken::ClosingTagStart => vec![
-                Box::new(HtmlToken::TagEnd),
-                Box::new(HtmlToken::Text),
-                Box::new(HtmlToken::Terminator),
+                HtmlToken::TagEnd,
+                HtmlToken::Text,
+                HtmlToken::Terminator,
             ],
             HtmlToken::Terminator => vec![],
         }

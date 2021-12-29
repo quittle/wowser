@@ -12,7 +12,7 @@ mod tests {
     use crate::parse::*;
 
     fn parse(document: &str) -> Option<f32> {
-        let lexer = Lexer::new(Box::new(MathToken::Document));
+        let lexer = Lexer::new(MathToken::Document);
         let tokens = lexer.parse(document).expect("Failed to lex");
         let ast = Parser {}
             .parse(&tokens, &MathRule::Document)

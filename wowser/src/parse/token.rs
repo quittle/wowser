@@ -1,31 +1,12 @@
 use regex::Regex;
 use std::fmt;
 
-pub trait TokenClone {
-    fn clone_box(&self) -> Box<dyn Token>;
-    fn b(self) -> Box<dyn Token>;
-}
-
-impl<T: 'static + Token + Clone> TokenClone for T {
-    fn clone_box(&self) -> Box<dyn Token> {
-        Box::new(self.clone())
-    }
-
-    fn b(self) -> Box<dyn Token> {
-        Box::new(self)
-    }
-}
-
-pub trait Token: TokenClone + fmt::Debug + fmt::Display {
+pub trait Token: fmt::Debug + fmt::Display + Copy + PartialEq {
     fn built_regex(&self) -> Regex {
         Regex::new(format!("^{}", self.regex()).as_str()).expect("valid regex")
     }
 
-    fn eq(&self, other: &dyn Token) -> bool {
-        format!("{:?}", self) == format!("{:?}", other)
-    }
-
     fn regex(&self) -> &str;
-    fn next_tokens(&self) -> Vec<Box<dyn Token>>;
+    fn next_tokens(&self) -> Vec<Self>;
     fn is_terminator(&self) -> bool;
 }

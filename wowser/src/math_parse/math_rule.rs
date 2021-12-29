@@ -2,7 +2,7 @@ use super::super::parse::*;
 use super::math_token::MathToken;
 use wowser_macros::DisplayFromDebug;
 
-#[derive(Clone, Debug, DisplayFromDebug)]
+#[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq, Eq, Hash)]
 pub enum MathRule {
     Document,
     DocumentBody,
@@ -17,32 +17,32 @@ pub enum MathRule {
 
 impl MathRule {}
 
-impl Rule for MathRule {
+impl Rule<MathToken> for MathRule {
     #[rustfmt::skip]
-    fn children(&self) -> Vec<RuleType<MathRule>> {
+    fn children(&self) -> Vec<RuleType<MathRule, MathToken>> {
         match self {
             MathRule::Document => vec![RuleType::Sequence(vec![
-                MathRule::DocumentBody.b(),
-                MathRule::Terminator.b(),
+                MathRule::DocumentBody,
+                MathRule::Terminator,
             ])],
-            MathRule::DocumentBody => vec![RuleType::RepeatableRule(MathRule::Statement.b())],
+            MathRule::DocumentBody => vec![RuleType::RepeatableRule(MathRule::Statement)],
             MathRule::Statement => vec![RuleType::Sequence(vec![
-                MathRule::Expression.b(),
-                MathRule::Semicolon.b(),
+                MathRule::Expression,
+                MathRule::Semicolon,
             ])],
             MathRule::Expression => vec![
-                RuleType::Rule(MathRule::BinaryExpression.b()),
-                RuleType::Rule(MathRule::Number.b()),
+                RuleType::Rule(MathRule::BinaryExpression),
+                RuleType::Rule(MathRule::Number),
             ],
             MathRule::BinaryExpression => vec![RuleType::Sequence(vec![
-                MathRule::Number.b(),
-                MathRule::BinaryOperator.b(),
-                MathRule::Expression.b(),
+                MathRule::Number,
+                MathRule::BinaryOperator,
+                MathRule::Expression,
             ])],
-            MathRule::BinaryOperator => vec![RuleType::Token(MathToken::Plus.b())],
-            MathRule::Semicolon => vec![RuleType::Token(MathToken::Semicolon.b())],
-            MathRule::Number => vec![RuleType::Token(MathToken::Number.b())],
-            MathRule::Terminator => vec![RuleType::Token(MathToken::Terminator.b())],
+            MathRule::BinaryOperator => vec![RuleType::Token(MathToken::Plus)],
+            MathRule::Semicolon => vec![RuleType::Token(MathToken::Semicolon)],
+            MathRule::Number => vec![RuleType::Token(MathToken::Number)],
+            MathRule::Terminator => vec![RuleType::Token(MathToken::Terminator)],
         }
     }
 }

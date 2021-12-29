@@ -13,7 +13,7 @@ pub use properties::*;
 use crate::parse::*;
 
 pub fn parse_css(document: &str) -> Result<CssDocument, String> {
-    let lexer = Lexer::new(Box::new(CssToken::Document));
+    let lexer = Lexer::new(CssToken::Document);
     let tokens = lexer.parse(document).ok_or("Failed to lex CSS")?;
     let ast = Parser {}.parse(&tokens, &CssRule::Document)?;
     let document = CssInterpreter {}

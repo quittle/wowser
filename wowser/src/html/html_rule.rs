@@ -33,9 +33,11 @@ pub enum HtmlRule {
 
 impl HtmlRule {}
 
-impl Rule<HtmlToken> for HtmlRule {
+impl Rule for HtmlRule {
+    type Token = HtmlToken;
+
     #[rustfmt::skip]
-    fn children(&self) -> Vec<RuleType<HtmlRule, HtmlToken>> {
+    fn children(&self) -> Vec<RuleType<HtmlRule>> {
         match self {
             HtmlRule::Document => vec![
                 RuleType::Sequence(vec![

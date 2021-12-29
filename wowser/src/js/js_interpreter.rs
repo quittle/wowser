@@ -1,7 +1,7 @@
-use super::{JsDocument, JsExpression, JsRule, JsStatement, JsToken};
+use super::{JsDocument, JsExpression, JsRule, JsStatement};
 use crate::parse::{ASTNode, Interpreter};
 
-type JsASTNode<'a> = ASTNode<'a, JsRule, JsToken>;
+type JsASTNode<'a> = ASTNode<'a, JsRule>;
 
 pub struct JsInterpreter {}
 
@@ -101,7 +101,7 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
     }
 }
 
-impl Interpreter<'_, JsRule, JsToken> for JsInterpreter {
+impl Interpreter<'_, JsRule> for JsInterpreter {
     type Result = JsDocument;
 
     fn on_node(&self, document: &JsASTNode) -> Option<JsDocument> {

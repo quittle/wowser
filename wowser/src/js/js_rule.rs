@@ -16,9 +16,11 @@ pub enum JsRule {
 
 impl JsRule {}
 
-impl Rule<JsToken> for JsRule {
+impl Rule for JsRule {
+    type Token = JsToken;
+
     #[rustfmt::skip]
-    fn children(&self) -> Vec<RuleType<Self, JsToken>> {
+    fn children(&self) -> Vec<RuleType<Self>> {
         match self {
             Self::Document => vec![
                 RuleType::Sequence(vec![Self::Statements, Self::Expression, Self::Terminator]),

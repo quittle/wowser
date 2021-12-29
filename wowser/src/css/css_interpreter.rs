@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{CssRule, CssToken};
+use super::CssRule;
 use crate::parse::*;
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ impl CssProperty {
     }
 }
 
-type CssASTNode<'a> = ASTNode<'a, CssRule, CssToken>;
+type CssASTNode<'a> = ASTNode<'a, CssRule>;
 
 pub struct CssInterpreter {}
 
@@ -279,10 +279,10 @@ impl CssInterpreter {
     }
 }
 
-impl Interpreter<'_, CssRule, CssToken> for CssInterpreter {
+impl Interpreter<'_, CssRule> for CssInterpreter {
     type Result = CssDocument;
 
-    fn on_node(&self, document: &ASTNode<CssRule, CssToken>) -> Option<CssDocument> {
+    fn on_node(&self, document: &ASTNode<CssRule>) -> Option<CssDocument> {
         let ASTNode { rule, children, .. } = document;
         assert_eq!(
             *rule,

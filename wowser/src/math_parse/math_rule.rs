@@ -17,9 +17,11 @@ pub enum MathRule {
 
 impl MathRule {}
 
-impl Rule<MathToken> for MathRule {
+impl Rule for MathRule {
+    type Token = MathToken;
+
     #[rustfmt::skip]
-    fn children(&self) -> Vec<RuleType<MathRule, MathToken>> {
+    fn children(&self) -> Vec<RuleType<MathRule>> {
         match self {
             MathRule::Document => vec![RuleType::Sequence(vec![
                 MathRule::DocumentBody,

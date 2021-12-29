@@ -1,7 +1,7 @@
 use super::{html_document::*, html_rule::HtmlRule, HtmlToken};
 use crate::parse::*;
 
-type HtmlASTNode<'a> = ASTNode<'a, HtmlRule, HtmlToken>;
+type HtmlASTNode<'a> = ASTNode<'a, HtmlRule>;
 
 pub struct HtmlInterpreter {}
 
@@ -297,7 +297,7 @@ impl HtmlInterpreter {
     }
 }
 
-impl Interpreter<'_, HtmlRule, HtmlToken> for HtmlInterpreter {
+impl Interpreter<'_, HtmlRule> for HtmlInterpreter {
     type Result = DocumentHtmlNode;
 
     fn on_node(&self, ast: &HtmlASTNode) -> Option<DocumentHtmlNode> {

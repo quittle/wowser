@@ -27,9 +27,11 @@ pub enum CssRule {
 
 impl CssRule {}
 
-impl Rule<CssToken> for CssRule {
+impl Rule for CssRule {
+    type Token = CssToken;
+
     #[rustfmt::skip]
-    fn children(&self) -> Vec<RuleType<CssRule, CssToken>> {
+    fn children(&self) -> Vec<RuleType<CssRule>> {
         match self {
             Self::Document => vec![
                 RuleType::Sequence(vec![Self::Blocks, Self::Terminator]),

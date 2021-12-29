@@ -2,20 +2,19 @@ use std::collections::HashMap;
 
 use super::lexer::ParsedToken;
 use super::rule::{Rule, RuleType};
-use super::Token;
 
 /// Represents a node in an AST representation of a language
 #[derive(Debug)]
-pub struct ASTNode<'a, R: Rule<T>, T: Token> {
+pub struct ASTNode<'a, R: Rule> {
     pub rule: R,
-    pub token: Option<&'a ParsedToken<'a, T>>,
-    pub children: Vec<ASTNode<'a, R, T>>,
+    pub token: Option<&'a ParsedToken<'a, R::Token>>,
+    pub children: Vec<ASTNode<'a, R>>,
 }
 
-impl<'a, R: Rule<T>, T: Token> ASTNode<'a, R, T> {
+impl<'a, R: Rule> ASTNode<'a, R> {
     /// A very rough approximation of where the current node is located. This may beuseful for
     /// relative comparisons but may be v6ery far from the actual byte offset
-    pub fn get_first_token(&self) -> Option<&'a ParsedToken<'a, T>> {
+    pub fn get_first_token(&self) -> Option<&'a ParsedToken<'a, R::Token>> {
         if let Some(token) = self.token {
             Some(token)
         } else {
@@ -28,9 +27,9 @@ impl<'a, R: Rule<T>, T: Token> ASTNode<'a, R, T> {
 
 /// The results of interpretting a rule over tokens
 #[derive(Debug)]
-pub struct ParserResult<'a, R: Rule<T>, T: Token> {
-    pub node: ASTNode<'a, R, T>,
-    remaining_tokens: &'a [ParsedToken<'a, T>],
+pub struct ParserResult<'a, R: Rule> {
+    pub node: ASTNode<'a, R>,
+    remaining_tokens: &'a [ParsedToken<'a, R::Token>],
 }
 
 /// Parses tokens into an AST representation
@@ -38,28 +37,27 @@ pub struct Parser {}
 
 impl Parser {
     /// Performs the parsing
-    pub fn parse<'a, R: Rule<T>, T: Token>(
+    pub fn parse<'a, R: Rule>(
         &self,
-        tokens: &'a [ParsedToken<'a, T>],
+        tokens: &'a [ParsedToken<'a, R::Token>],
         rule: &R,
-    ) -> Result<ParserResult<'a, R, T>, &str> {
+    ) -> Result<ParserResult<'a, R>, &str> {
         let mut child_indices: Vec<usize> = vec![0];
         self._parse(tokens, rule, &mut child_indices, 0, &mut HashMap::new())
     }
 
-    fn _parse<'a, 'b, R: Rule<T>, T: Token>(
+    fn _parse<'a, 'b, R: Rule>(
         &self,
-        tokens: &'a [ParsedToken<'a, T>],
+        tokens: &'a [ParsedToken<'a, R::Token>],
         root_rule: &'b R,
         child_indices: &mut Vec<usize>,
         depth: usize,
         has_seen: &mut HashMap<R, usize>,
-    ) -> Result<ParserResult<'a, R, T>, &str> {
+    ) -> Result<ParserResult<'a, R>, &str> {
         if depth >= 100 {
-            println!("Too complex");
             return Err("Code too complex");
         }
-        println!("{:?} ({:?})", root_rule, tokens);
+        // println!("{:?} ({:?})", root_rule, tokens);
         // if let Some(&tokens_len) = has_seen.get(root_rule) {
         //     println!("seen rule before");
         //     if tokens_len == tokens.len() {
@@ -131,7 +129,7 @@ impl Parser {
                     }
                     RuleType::Sequence(rules) => {
                         let mut children = vec![];
-                        let mut cur_tokens: &[ParsedToken<'a, T>] = tokens;
+                        let mut cur_tokens: &[ParsedToken<'a, R::Token>] = tokens;
                         let mut failed = false;
                         for rule in rules {
                             if let Ok(child) =

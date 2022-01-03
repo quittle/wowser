@@ -63,7 +63,9 @@ pub struct BDFRealProperties {
 #[derive(Debug)]
 pub struct BDFPropertySize {
     point_size: u32,
+    #[allow(dead_code)]
     x_resolution: u32,
+    #[allow(dead_code)]
     y_resolution: u32,
 }
 
@@ -191,10 +193,11 @@ fn parse_char(
 ) -> Result<BDFCharacter, FontError> {
     let mut character = BDFCharacter::default();
     let name = first_line
-        .splitn(2, ' ')
-        .nth(1)
-        .ok_or("Missing character name")?;
-    character.name = Some(name.to_string());
+        .split_once(' ')
+        .ok_or("Missing character name")?
+        .1
+        .to_string();
+    character.name = Some(name);
     while let Some(line) = next_line(lines)? {
         if line == "ENDCHAR" {
             break;

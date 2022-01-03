@@ -1,6 +1,6 @@
 use super::HttpHeader;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct HttpHeaderMap {
     headers: Vec<HttpHeader>,
 }
@@ -8,12 +8,6 @@ pub struct HttpHeaderMap {
 impl From<Vec<HttpHeader>> for HttpHeaderMap {
     fn from(headers: Vec<HttpHeader>) -> Self {
         Self { headers }
-    }
-}
-
-impl Default for HttpHeaderMap {
-    fn default() -> Self {
-        Self { headers: vec![] }
     }
 }
 

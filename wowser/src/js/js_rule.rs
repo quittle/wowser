@@ -39,7 +39,7 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::Number),
             ],
             Self::ExpressionAdd => vec![
-                RuleType::Sequence(vec![Self::Expression, Self::OperationAdd, Self::Expression]),
+                RuleType::Sequence(vec![Self::Number, Self::OperationAdd, Self::Expression]),
                 RuleType::Sequence(vec![Self::OperationAdd, Self::Number]),
             ],
             Self::OperationAdd => vec![

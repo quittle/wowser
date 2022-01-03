@@ -92,8 +92,8 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
 
     match first_child.rule {
         JsRule::OperationAdd => on_number(&children[1]),
-        JsRule::Expression => {
-            let a = on_expression(&children[0]);
+        JsRule::Number => {
+            let a = on_number(&children[0]);
             let b = on_expression(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
@@ -108,13 +108,22 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
         let ASTNode { rule, children, .. } = document;
         assert_eq!(*rule, JsRule::Document, "Unexpected child type: {:?}", rule);
 
-        if children.len() == 1 && children[0].rule == JsRule::Terminator {
+        let first_child = &children[0];
+
+        if children.len() == 1 && first_child.rule == JsRule::Terminator {
             Some(JsDocument {
                 statements: vec![],
                 expression_results: vec![],
             })
+        } else if first_child.rule == JsRule::Expression {
+            Some(JsDocument {
+                statements: vec![JsStatement {
+                    expression: Some(on_expression(first_child)),
+                }],
+                expression_results: vec![],
+            })
         } else {
-            let mut statements = on_statements(&children[0]);
+            let mut statements = on_statements(first_child);
             let second_child = &children[1];
             if JsRule::Expression == second_child.rule {
                 statements.push(JsStatement {

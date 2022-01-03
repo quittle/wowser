@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::token::Token;
 
 /// Converts text into tokens
@@ -7,11 +9,16 @@ pub struct Lexer<T: Token> {
 
 pub type ParsedTokenOffset = usize;
 
-#[derive(Debug)]
 pub struct ParsedToken<'a, T: Token> {
     pub token: T,
     pub literal: &'a str,
     pub offset: ParsedTokenOffset,
+}
+
+impl<T: Token> fmt::Debug for ParsedToken<'_, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}({}):{}", self.token, self.literal, self.offset)
+    }
 }
 
 pub type ParsedTokens<'a, T> = Vec<ParsedToken<'a, T>>;

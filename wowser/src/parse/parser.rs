@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use super::lexer::ParsedToken;
 use super::rule::{Rule, RuleType};
 
@@ -42,82 +40,78 @@ impl Parser {
         tokens: &'a [ParsedToken<'a, R::Token>],
         rule: &R,
     ) -> Result<ParserResult<'a, R>, &str> {
-        let mut child_indices: Vec<usize> = vec![0];
-        self._parse(tokens, rule, &mut child_indices, 0, &mut HashMap::new())
+        self._parse(tokens, rule)
     }
 
     fn _parse<'a, 'b, R: Rule>(
         &self,
         tokens: &'a [ParsedToken<'a, R::Token>],
         root_rule: &'b R,
-        child_indices: &mut Vec<usize>,
-        depth: usize,
-        has_seen: &mut HashMap<R, usize>,
     ) -> Result<ParserResult<'a, R>, &str> {
-        if depth >= 100 {
-            return Err("Code too complex");
-        }
-        // println!("{:?} ({:?})", root_rule, tokens);
-        // if let Some(&tokens_len) = has_seen.get(root_rule) {
-        //     println!("seen rule before");
-        //     if tokens_len == tokens.len() {
-        //         //  == root_rule
-        //         println!("seen before");
-        //         return Err("Seen before");
-        //     }
-        // }
-        // has_seen.insert(root_rule.clone(), tokens.len());
+        let first_token = tokens.get(0).ok_or("No tokens left")?;
 
-        if child_indices.len() == depth {
-            child_indices.push(0);
-        }
+        for child_rule_type in root_rule.children().iter() {
+            let result = match child_rule_type {
+                RuleType::Token(token) => {
+                    if token.eq(&first_token.token) {
+                        Ok(ParserResult {
+                            node: ASTNode {
+                                rule: *root_rule,
+                                token: Some(first_token),
+                                children: vec![],
+                            },
+                            remaining_tokens: &tokens[1..],
+                        })
+                    } else {
+                        Err("Not a match")
+                    }
+                }
+                RuleType::Rule(rule) => match self._parse(tokens, rule) {
+                    Ok(result) => Ok(ParserResult {
+                        node: ASTNode {
+                            rule: *root_rule,
+                            token: None,
+                            children: vec![result.node],
+                        },
+                        remaining_tokens: result.remaining_tokens,
+                    }),
+                    err => err,
+                },
+                RuleType::RepeatableRule(rule) => {
+                    let mut children = vec![];
+                    let mut cur_tokens = tokens;
+                    while let Ok(result) = self._parse(cur_tokens, rule) {
+                        children.push(result.node);
+                        cur_tokens = result.remaining_tokens;
+                    }
 
-        if let Some(first_token) = tokens.get(0) {
-            // Rotate so prevent unnecessary recursion when parsing complex rules. This is just as
-            // complex in the worst case but for most real code, this will work as expected.
-            let mut root_rule_children = root_rule.children();
-            root_rule_children.rotate_right(depth % root_rule.children().len());
-            root_rule_children = root_rule.children();
+                    Ok(ParserResult {
+                        node: ASTNode {
+                            rule: *root_rule,
+                            token: None,
+                            children,
+                        },
+                        remaining_tokens: cur_tokens,
+                    })
+                }
+                RuleType::Sequence(rules) => {
+                    let mut children = vec![];
+                    let mut cur_tokens: &[ParsedToken<'a, R::Token>] = tokens;
+                    let mut failed = false;
 
-            for child_rule_type in root_rule_children.iter() {
-                let result = match child_rule_type {
-                    RuleType::Token(token) => {
-                        if token.eq(&first_token.token) {
-                            Ok(ParserResult {
-                                node: ASTNode {
-                                    rule: *root_rule,
-                                    token: Some(first_token),
-                                    children: vec![],
-                                },
-                                remaining_tokens: &tokens[1..],
-                            })
+                    for rule in rules {
+                        if let Ok(child) = self._parse(cur_tokens, rule) {
+                            children.push(child.node);
+                            cur_tokens = child.remaining_tokens;
                         } else {
-                            Err("Not a match")
+                            failed = true;
+                            break;
                         }
                     }
-                    RuleType::Rule(rule) => {
-                        match self._parse(tokens, rule, child_indices, depth + 1, has_seen) {
-                            Ok(result) => Ok(ParserResult {
-                                node: ASTNode {
-                                    rule: *root_rule,
-                                    token: None,
-                                    children: vec![result.node],
-                                },
-                                remaining_tokens: result.remaining_tokens,
-                            }),
-                            err => err,
-                        }
-                    }
-                    RuleType::RepeatableRule(rule) => {
-                        let mut children = vec![];
-                        let mut cur_tokens = tokens;
-                        while let Ok(result) =
-                            self._parse(cur_tokens, rule, child_indices, depth + 1, has_seen)
-                        {
-                            children.push(result.node);
-                            cur_tokens = result.remaining_tokens;
-                        }
 
+                    if failed {
+                        Err("Failed to parse sequence")
+                    } else {
                         Ok(ParserResult {
                             node: ASTNode {
                                 rule: *root_rule,
@@ -127,42 +121,12 @@ impl Parser {
                             remaining_tokens: cur_tokens,
                         })
                     }
-                    RuleType::Sequence(rules) => {
-                        let mut children = vec![];
-                        let mut cur_tokens: &[ParsedToken<'a, R::Token>] = tokens;
-                        let mut failed = false;
-                        for rule in rules {
-                            if let Ok(child) =
-                                self._parse(cur_tokens, rule, child_indices, depth + 1, has_seen)
-                            {
-                                children.push(child.node);
-                                cur_tokens = child.remaining_tokens;
-                            } else {
-                                failed = true;
-                                break;
-                            }
-                        }
-                        if failed {
-                            Err("Failed to parse sequence")
-                        } else {
-                            Ok(ParserResult {
-                                node: ASTNode {
-                                    rule: *root_rule,
-                                    token: None,
-                                    children,
-                                },
-                                remaining_tokens: cur_tokens,
-                            })
-                        }
-                    }
-                };
-
-                if result.is_ok() {
-                    return result;
                 }
+            };
+
+            if result.is_ok() {
+                return result;
             }
-        } else {
-            return Err("No tokens left");
         }
 
         Err("Unable to match any child rules")

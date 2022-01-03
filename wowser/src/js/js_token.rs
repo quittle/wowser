@@ -37,6 +37,7 @@ impl Token for JsToken {
             ],
             Self::OperatorAdd => vec![
                 Self::Number,
+                Self::OperatorAdd
             ],
             Self::Semicolon => vec![
                 Self::Number,

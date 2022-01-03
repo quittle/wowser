@@ -53,4 +53,9 @@ mod tests {
             vec![JsStatementResult::Value(JsValue::Number(6.0))],
         );
     }
+
+    #[test]
+    fn test_plus_plus() {
+        run_test("1++2", vec![JsStatementResult::Value(JsValue::Number(3.0))]);
+    }
 }

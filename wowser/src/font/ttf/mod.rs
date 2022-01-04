@@ -6,6 +6,7 @@ mod scalar_type;
 mod table_loca;
 mod table_maxp;
 mod ttf_table;
+mod math;
 mod types;
 
 pub use font::*;

@@ -70,4 +70,16 @@ mod tests {
             vec![JsStatementResult::Value(JsValue::Number(26.0))],
         );
     }
+
+    #[test]
+    fn test_var() {
+        run_test("var a", vec![JsStatementResult::Void]);
+        run_test(
+            "1; var abc123 ;",
+            vec![
+                JsStatementResult::Value(JsValue::Number(1.0)),
+                JsStatementResult::Void,
+            ],
+        );
+    }
 }

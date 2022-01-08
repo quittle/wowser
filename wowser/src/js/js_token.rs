@@ -4,6 +4,8 @@ use wowser_macros::DisplayFromDebug;
 #[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq)]
 pub enum JsToken {
     Document,
+    VarKeyword,
+    VariableName,
     Number,
     OperatorAdd,
     OperatorMultiply,
@@ -15,6 +17,8 @@ impl Token for JsToken {
     fn regex(&self) -> &str {
         match self {
             Self::Document => "",
+            Self::VarKeyword => r"\s*(var\s)\s*",
+            Self::VariableName => r"\s*((?!(var))[a-zA-Z_][\w\d]*)\s*",
             Self::Number => r"\s*([\d_]+)\s*",
             Self::OperatorAdd => r"\s*(\+)\s*",
             Self::OperatorMultiply => r"\s*(\*)\s*",
@@ -27,8 +31,16 @@ impl Token for JsToken {
     fn next_tokens(&self) -> Vec<Self> {
         match self {
             Self::Document => vec![
+                Self::VarKeyword,
                 Self::Number,
                 Self::OperatorAdd,
+                Self::Semicolon,
+                Self::Terminator,
+            ],
+            Self::VarKeyword => vec![
+                Self::VariableName,
+            ],
+            Self::VariableName => vec![
                 Self::Semicolon,
                 Self::Terminator,
             ],
@@ -47,6 +59,7 @@ impl Token for JsToken {
                 Self::OperatorAdd
             ],
             Self::Semicolon => vec![
+                Self::VarKeyword,
                 Self::Number,
                 Self::OperatorAdd,
                 Self::Semicolon,

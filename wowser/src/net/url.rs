@@ -1,7 +1,7 @@
 use std::fmt;
 use std::net::IpAddr;
 
-use regex::Regex;
+use fancy_regex::Regex;
 
 /// Represents protocols supported by wowser. Future additions to include HTTPS, FTP, FILE, etc.
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
@@ -114,7 +114,7 @@ impl Url {
             r"(\w+)://([a-zA-Z\d]+([\w\d\-\.]*[a-zA-Z\d]+)?)(:(\d+))?(/[^\?]*)?(\?([^#]*))?(#(.*))?",
         )
         .unwrap();
-        let captures = url_regex.captures(url)?;
+        let captures = url_regex.captures(url).ok()??;
         // If it failed to match the full string, bail out early
         if captures.get(0)?.range().len() != url.len() {
             return None;

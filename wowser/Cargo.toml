@@ -12,7 +12,7 @@ wowser-gl = { path = "../wowser-gl" }
 wowser-gl-sys = { path = "../wowser-gl-sys" }
 wowser-glfw = { path = "../wowser-glfw" }
 wowser-glfw-sys = { path = "../wowser-glfw-sys" }
-regex = "*"
+fancy-regex = "*"
 futures = "*"
 futures-util = "*"
 libc = "*"

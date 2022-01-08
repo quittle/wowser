@@ -1,5 +1,8 @@
 use super::{JsDocument, JsExpression, JsRule, JsStatement};
-use crate::parse::{ASTNode, Interpreter};
+use crate::{
+    js::JsReference,
+    parse::{ASTNode, Interpreter},
+};
 
 type JsASTNode<'a> = ASTNode<'a, JsRule>;
 
@@ -27,18 +30,33 @@ fn on_statement(statement: &JsASTNode) -> JsStatement {
     );
 
     let first_child = &children[0];
-    if JsRule::Semicolon == first_child.rule {
-        JsStatement { expression: None }
-    } else {
-        assert_eq!(
-            children.len(),
-            2,
-            "Unexpected number of children for JsStatement"
-        );
+    match first_child.rule {
+        JsRule::Semicolon => JsStatement::Empty,
+        JsRule::Expression => JsStatement::Expression(on_expression(first_child)),
+        JsRule::VarDeclaration => JsStatement::VarDeclaration(on_var_declaration(first_child)),
+        rule => panic!("Unexpected child of Statement: {}", rule),
+    }
+}
 
-        JsStatement {
-            expression: Some(on_expression(first_child)),
-        }
+fn on_var_declaration(expression: &JsASTNode) -> JsReference {
+    let ASTNode { rule, children, .. } = expression;
+    assert_eq!(
+        *rule,
+        JsRule::VarDeclaration,
+        "Unexpected child type: {:?}",
+        rule
+    );
+
+    assert_eq!(
+        children.len(),
+        2,
+        "Unexpected number of children for VarDeclaration"
+    );
+
+    let variable_name = &children[1];
+
+    JsReference {
+        name: variable_name.token.unwrap().literal.into(),
     }
 }
 
@@ -149,30 +167,32 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
 
         let first_child = &children[0];
 
-        if children.len() == 1 && first_child.rule == JsRule::Terminator {
-            Some(JsDocument {
-                statements: vec![],
-                expression_results: vec![],
-            })
-        } else if first_child.rule == JsRule::Expression {
-            Some(JsDocument {
-                statements: vec![JsStatement {
-                    expression: Some(on_expression(first_child)),
-                }],
-                expression_results: vec![],
-            })
-        } else {
-            let mut statements = on_statements(first_child);
-            let second_child = &children[1];
-            if JsRule::Expression == second_child.rule {
-                statements.push(JsStatement {
-                    expression: Some(on_expression(second_child)),
-                })
+        let statements = match first_child.rule {
+            JsRule::Terminator => vec![],
+            JsRule::Expression => vec![JsStatement::Expression(on_expression(first_child))],
+            JsRule::VarDeclaration => {
+                vec![JsStatement::VarDeclaration(on_var_declaration(first_child))]
             }
-            Some(JsDocument {
-                statements,
-                expression_results: vec![],
-            })
-        }
+            JsRule::Statements => {
+                let mut statements = on_statements(first_child);
+                let second_child = &children[1];
+                match second_child.rule {
+                    JsRule::Expression => {
+                        statements.push(JsStatement::Expression(on_expression(second_child)))
+                    }
+                    JsRule::VarDeclaration => statements.push(JsStatement::VarDeclaration(
+                        on_var_declaration(second_child),
+                    )),
+                    _ => {}
+                };
+                statements
+            }
+            rule => panic!("Unspported first rule: {}", rule),
+        };
+
+        Some(JsDocument {
+            statements,
+            expression_results: vec![],
+        })
     }
 }

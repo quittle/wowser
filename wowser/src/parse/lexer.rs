@@ -51,7 +51,7 @@ impl<T: Token> Lexer<T> {
 
         let tokens = root_token.next_tokens();
         for token in tokens.into_iter() {
-            if let Some(captures) = token.built_regex().captures(source) {
+            if let Some(captures) = token.built_regex().captures(source).ok()? {
                 let real_capture;
                 if let Some(capture) = captures.name("token") {
                     real_capture = capture;

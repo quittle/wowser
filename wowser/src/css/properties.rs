@@ -1,4 +1,4 @@
-use regex::Regex;
+use fancy_regex::Regex;
 
 use crate::util::{string_to_bytes, HexConversion};
 
@@ -37,13 +37,13 @@ impl CssColor {
         if let Some(hex_value) = converted_color {
             value = hex_value;
         }
-        if Self::rgb3_hex().is_match(value) {
+        if Self::rgb3_hex().is_match(value).unwrap_or(false) {
             let chars: Vec<char> = value.chars().collect();
             let r = chars[1].hex_to_byte().ok()?;
             let g = chars[2].hex_to_byte().ok()?;
             let b = chars[3].hex_to_byte().ok()?;
             Some(Self::Rgba((r << 4) + r, (g << 4) + g, (b << 4) + b, 255))
-        } else if Self::rgb6_hex().is_match(value) {
+        } else if Self::rgb6_hex().is_match(value).unwrap_or(false) {
             let rgb = string_to_bytes(&value[1..]).ok()?;
             Some(Self::Rgba(rgb[0], rgb[1], rgb[2], 255))
         } else {
@@ -69,6 +69,7 @@ impl CssDimension {
     pub fn from_raw_value(value: &str) -> Option<Self> {
         Self::px()
             .captures(value)
+            .ok()?
             .map(|captures| Self::Px(captures[1].parse().unwrap()))
     }
 

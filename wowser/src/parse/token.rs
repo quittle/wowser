@@ -1,4 +1,4 @@
-use regex::Regex;
+use fancy_regex::Regex;
 use std::fmt;
 
 pub trait Token: fmt::Debug + fmt::Display + Copy + PartialEq {

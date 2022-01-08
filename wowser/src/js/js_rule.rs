@@ -6,6 +6,9 @@ pub enum JsRule {
     Document,
     Statements,
     Statement,
+    VarDeclaration,
+    VarKeyword,
+    VariableName,
     Expression,
     ExpressionAdd,
     ExpressionMultiply,
@@ -26,6 +29,7 @@ impl Rule for JsRule {
     fn children(&self) -> Vec<RuleType<Self>> {
         match self {
             Self::Document => vec![
+                RuleType::Sequence(vec![Self::Statements, Self::VarDeclaration, Self::Terminator]),
                 RuleType::Sequence(vec![Self::Statements, Self::Expression, Self::Terminator]),
                 RuleType::Sequence(vec![Self::Statements, Self::Terminator]),
                 RuleType::Rule(Self::Terminator),
@@ -34,8 +38,18 @@ impl Rule for JsRule {
                 RuleType::RepeatableRule(Self::Statement),
             ],
             Self::Statement => vec![
+                RuleType::Sequence(vec![Self::VarDeclaration, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Expression, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Semicolon]),
+            ],
+            Self::VarDeclaration => vec![
+                RuleType::Sequence(vec![Self::VarKeyword, Self::VariableName]),
+            ],
+            Self::VarKeyword => vec![
+                RuleType::Token(JsToken::VarKeyword),
+            ],
+            Self::VariableName => vec![
+                RuleType::Token(JsToken::VariableName),
             ],
             Self::Expression => vec![
                 RuleType::Rule(Self::ExpressionAdd),

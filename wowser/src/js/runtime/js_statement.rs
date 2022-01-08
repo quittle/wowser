@@ -1,16 +1,18 @@
-use super::{JsExpression, JsStatementResult};
+use super::{JsExpression, JsReference, JsStatementResult};
 
 #[derive(Debug)]
-pub struct JsStatement {
-    pub expression: Option<JsExpression>,
+pub enum JsStatement {
+    Empty,
+    Expression(JsExpression),
+    VarDeclaration(JsReference),
 }
 
 impl JsStatement {
     pub fn run(&self) -> JsStatementResult {
-        if let Some(expression) = &self.expression {
-            JsStatementResult::Value(expression.run())
-        } else {
-            JsStatementResult::Void
+        match self {
+            Self::Empty => JsStatementResult::Void,
+            Self::Expression(expression) => JsStatementResult::Value(expression.run()),
+            Self::VarDeclaration(_reference) => JsStatementResult::Void,
         }
     }
 }

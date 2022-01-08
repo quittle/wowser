@@ -12,7 +12,7 @@ mod parser;
 mod rule;
 mod token;
 
-pub use interpreter::Interpreter;
+pub use interpreter::*;
 pub use lexer::{Lexer, ParsedToken, ParsedTokenOffset, ParsedTokens};
 pub use parser::{ASTNode, Parser, ParserResult};
 pub use rule::{Rule, RuleType};

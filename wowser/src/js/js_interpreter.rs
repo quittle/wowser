@@ -62,6 +62,7 @@ fn on_expression(expression: &JsASTNode) -> JsExpression {
     match child.rule {
         JsRule::Number => on_number(child),
         JsRule::ExpressionAdd => on_expression_add(child),
+        JsRule::ExpressionMultiply => on_expression_multiply(child),
         _ => panic!("Unexpected rule: {}", rule),
     }
 }
@@ -91,13 +92,51 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
     let first_child = &children[0];
 
     match first_child.rule {
-        JsRule::OperationAdd => on_number(&children[1]),
+        JsRule::ExpressionMultiply => {
+            let a = on_expression_multiply(&children[0]);
+            let b = on_expression(&children[2]);
+            JsExpression::Add(Box::new(a), Box::new(b))
+        }
+        JsRule::OperatorAdd => on_number(&children[1]),
         JsRule::Number => {
             let a = on_number(&children[0]);
             let b = on_expression(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
         _ => panic!("Invalid first type type"),
+    }
+}
+
+fn on_expression_multiply(node: &JsASTNode) -> JsExpression {
+    let ASTNode { rule, children, .. } = node;
+
+    assert_eq!(
+        *rule,
+        JsRule::ExpressionMultiply,
+        "Unexpected child type: {:?}",
+        rule
+    );
+
+    let a = on_number(&children[0]);
+    let b = on_expression_sub_multiply(&children[2]);
+    JsExpression::Multiply(Box::new(a), Box::new(b))
+}
+
+fn on_expression_sub_multiply(node: &JsASTNode) -> JsExpression {
+    let ASTNode { rule, children, .. } = node;
+
+    assert_eq!(
+        *rule,
+        JsRule::ExpressionSubMultiply,
+        "Unexpected child type: {:?}",
+        rule
+    );
+
+    let first_child = &children[0];
+    match first_child.rule {
+        JsRule::ExpressionMultiply => on_expression_multiply(first_child),
+        JsRule::Number => on_number(first_child),
+        rule => panic!("Invalid child type {}", rule),
     }
 }
 

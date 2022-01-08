@@ -8,7 +8,10 @@ pub enum JsRule {
     Statement,
     Expression,
     ExpressionAdd,
-    OperationAdd,
+    ExpressionMultiply,
+    ExpressionSubMultiply,
+    OperatorAdd,
+    OperatorMultiply,
     Number,
     Semicolon,
     Terminator,
@@ -36,14 +39,26 @@ impl Rule for JsRule {
             ],
             Self::Expression => vec![
                 RuleType::Rule(Self::ExpressionAdd),
+                RuleType::Rule(Self::ExpressionMultiply),
                 RuleType::Rule(Self::Number),
             ],
             Self::ExpressionAdd => vec![
-                RuleType::Sequence(vec![Self::Number, Self::OperationAdd, Self::Expression]),
-                RuleType::Sequence(vec![Self::OperationAdd, Self::Number]),
+                RuleType::Sequence(vec![Self::ExpressionMultiply, Self::OperatorAdd, Self::Expression]),
+                RuleType::Sequence(vec![Self::Number, Self::OperatorAdd, Self::Expression]),
+                RuleType::Sequence(vec![Self::OperatorAdd, Self::Number]),
             ],
-            Self::OperationAdd => vec![
+            Self::ExpressionMultiply => vec![
+                RuleType::Sequence(vec![Self::Number, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
+            ],
+            Self::ExpressionSubMultiply => vec![
+                RuleType::Rule(Self::ExpressionMultiply),
+                RuleType::Rule(Self::Number),
+            ],
+            Self::OperatorAdd => vec![
                 RuleType::Token(JsToken::OperatorAdd),
+            ],
+            Self::OperatorMultiply => vec![
+                RuleType::Token(JsToken::OperatorMultiply),
             ],
             Self::Number => vec![
                 RuleType::Token(JsToken::Number),

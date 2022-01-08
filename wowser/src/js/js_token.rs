@@ -6,6 +6,7 @@ pub enum JsToken {
     Document,
     Number,
     OperatorAdd,
+    OperatorMultiply,
     Semicolon,
     Terminator,
 }
@@ -16,6 +17,7 @@ impl Token for JsToken {
             Self::Document => "",
             Self::Number => r"\s*([\d_]+)\s*",
             Self::OperatorAdd => r"\s*(\+)\s*",
+            Self::OperatorMultiply => r"\s*(\*)\s*",
             Self::Semicolon => r"\s*(;)\s*",
             Self::Terminator => r"\s*$",
         }
@@ -32,10 +34,15 @@ impl Token for JsToken {
             ],
             Self::Number => vec![
                 Self::OperatorAdd,
+                Self::OperatorMultiply,
                 Self::Semicolon,
                 Self::Terminator,
             ],
             Self::OperatorAdd => vec![
+                Self::Number,
+                Self::OperatorAdd
+            ],
+            Self::OperatorMultiply => vec![
                 Self::Number,
                 Self::OperatorAdd
             ],

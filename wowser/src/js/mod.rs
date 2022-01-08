@@ -58,4 +58,16 @@ mod tests {
     fn test_plus_plus() {
         run_test("1++2", vec![JsStatementResult::Value(JsValue::Number(3.0))]);
     }
+
+    #[test]
+    fn test_multiply() {
+        run_test(
+            "1 * 2",
+            vec![JsStatementResult::Value(JsValue::Number(2.0))],
+        );
+        run_test(
+            "1 * 2 * 3 + 4 * 5",
+            vec![JsStatementResult::Value(JsValue::Number(26.0))],
+        );
+    }
 }

@@ -4,6 +4,7 @@ use super::JsValue;
 pub enum JsExpression {
     Number(f64),
     Add(Box<JsExpression>, Box<JsExpression>),
+    Multiply(Box<JsExpression>, Box<JsExpression>),
 }
 
 impl JsExpression {
@@ -16,6 +17,15 @@ impl JsExpression {
                 match a_value {
                     JsValue::Number(num_a) => match b_value {
                         JsValue::Number(num_b) => JsValue::Number(num_a + num_b),
+                    },
+                }
+            }
+            Self::Multiply(a, b) => {
+                let a_value = a.run();
+                let b_value = b.run();
+                match a_value {
+                    JsValue::Number(num_a) => match b_value {
+                        JsValue::Number(num_b) => JsValue::Number(num_a * num_b),
                     },
                 }
             }

@@ -9,12 +9,15 @@ pub enum JsRule {
     VarDeclaration,
     VarKeyword,
     VariableName,
+    VariableAssignment,
     Expression,
     ExpressionAdd,
+    ExpressionSubAdd,
     ExpressionMultiply,
     ExpressionSubMultiply,
     OperatorAdd,
     OperatorMultiply,
+    OperatorEquals,
     Number,
     Semicolon,
     Terminator,
@@ -31,6 +34,7 @@ impl Rule for JsRule {
             Self::Document => vec![
                 RuleType::Sequence(vec![Self::Statements, Self::VarDeclaration, Self::Terminator]),
                 RuleType::Sequence(vec![Self::Statements, Self::Expression, Self::Terminator]),
+                RuleType::Sequence(vec![Self::Statements, Self::VariableAssignment, Self::Terminator]),
                 RuleType::Sequence(vec![Self::Statements, Self::Terminator]),
                 RuleType::Rule(Self::Terminator),
             ],
@@ -40,9 +44,11 @@ impl Rule for JsRule {
             Self::Statement => vec![
                 RuleType::Sequence(vec![Self::VarDeclaration, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Expression, Self::Semicolon]),
+                RuleType::Sequence(vec![Self::VariableAssignment, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Semicolon]),
             ],
             Self::VarDeclaration => vec![
+                RuleType::Sequence(vec![Self::VarKeyword, Self::VariableName, Self::OperatorEquals, Self::Expression]),
                 RuleType::Sequence(vec![Self::VarKeyword, Self::VariableName]),
             ],
             Self::VarKeyword => vec![
@@ -51,21 +57,34 @@ impl Rule for JsRule {
             Self::VariableName => vec![
                 RuleType::Token(JsToken::VariableName),
             ],
+            Self::VariableAssignment => vec![
+                RuleType::Sequence(vec![Self::VariableName, Self::OperatorEquals, Self::Expression]),
+            ],
             Self::Expression => vec![
                 RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::ExpressionMultiply),
+                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::Number),
+            ],
+            Self::ExpressionSubAdd => vec![
+                RuleType::Rule(Self::ExpressionMultiply),
+                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::Number),
             ],
             Self::ExpressionAdd => vec![
-                RuleType::Sequence(vec![Self::ExpressionMultiply, Self::OperatorAdd, Self::Expression]),
-                RuleType::Sequence(vec![Self::Number, Self::OperatorAdd, Self::Expression]),
+                RuleType::Sequence(vec![Self::ExpressionMultiply, Self::OperatorAdd, Self::ExpressionSubAdd]),
+                RuleType::Sequence(vec![Self::VariableName, Self::OperatorAdd, Self::ExpressionSubAdd]),
+                RuleType::Sequence(vec![Self::Number, Self::OperatorAdd, Self::ExpressionSubAdd]),
                 RuleType::Sequence(vec![Self::OperatorAdd, Self::Number]),
             ],
             Self::ExpressionMultiply => vec![
+                RuleType::Sequence(vec![Self::VariableName, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
                 RuleType::Sequence(vec![Self::Number, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
             ],
             Self::ExpressionSubMultiply => vec![
                 RuleType::Rule(Self::ExpressionMultiply),
+                RuleType::Rule(Self::VariableName),
                 RuleType::Rule(Self::Number),
             ],
             Self::OperatorAdd => vec![
@@ -73,6 +92,9 @@ impl Rule for JsRule {
             ],
             Self::OperatorMultiply => vec![
                 RuleType::Token(JsToken::OperatorMultiply),
+            ],
+            Self::OperatorEquals => vec![
+                RuleType::Token(JsToken::OperatorEquals),
             ],
             Self::Number => vec![
                 RuleType::Token(JsToken::Number),

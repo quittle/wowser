@@ -9,6 +9,7 @@ pub enum JsToken {
     Number,
     OperatorAdd,
     OperatorMultiply,
+    OperatorEquals,
     Semicolon,
     Terminator,
 }
@@ -22,6 +23,7 @@ impl Token for JsToken {
             Self::Number => r"\s*([\d_]+)\s*",
             Self::OperatorAdd => r"\s*(\+)\s*",
             Self::OperatorMultiply => r"\s*(\*)\s*",
+            Self::OperatorEquals => r"\s*(=)\s*",
             Self::Semicolon => r"\s*(;)\s*",
             Self::Terminator => r"\s*$",
         }
@@ -32,6 +34,7 @@ impl Token for JsToken {
         match self {
             Self::Document => vec![
                 Self::VarKeyword,
+                Self::VariableName,
                 Self::Number,
                 Self::OperatorAdd,
                 Self::Semicolon,
@@ -41,6 +44,9 @@ impl Token for JsToken {
                 Self::VariableName,
             ],
             Self::VariableName => vec![
+                Self::OperatorEquals,
+                Self::OperatorAdd,
+                Self::OperatorMultiply,
                 Self::Semicolon,
                 Self::Terminator,
             ],
@@ -51,15 +57,22 @@ impl Token for JsToken {
                 Self::Terminator,
             ],
             Self::OperatorAdd => vec![
+                Self::VariableName,
                 Self::Number,
                 Self::OperatorAdd
             ],
             Self::OperatorMultiply => vec![
+                Self::VariableName,
                 Self::Number,
                 Self::OperatorAdd
             ],
+            Self::OperatorEquals => vec![
+                Self::Number,
+                Self::VariableName,
+            ],
             Self::Semicolon => vec![
                 Self::VarKeyword,
+                Self::VariableName,
                 Self::Number,
                 Self::OperatorAdd,
                 Self::Semicolon,

@@ -26,60 +26,99 @@ mod tests {
 
     use super::{parse_js, JsStatementResult};
 
-    fn run_test(script: &str, expected_results: Vec<JsStatementResult>) {
+    fn run_js(script: &str) -> Vec<JsStatementResult> {
         let mut js_document = parse_js(script).unwrap();
         js_document.run();
-        assert_eq!(expected_results, js_document.expression_results);
+        js_document.expression_results
+    }
+
+    fn run_test(script: &str, expected_results: Vec<JsStatementResult>) {
+        let results = run_js(script);
+        assert_eq!(expected_results, results);
+    }
+
+    fn result_as_number(result: &JsStatementResult) -> f64 {
+        match result {
+            JsStatementResult::Value(JsValue::Number(n)) => *n,
+            _ => panic!("Required JS value of type number but received {:?}", result),
+        }
     }
 
     #[test]
     fn test_js() {
-        run_test("1", vec![JsStatementResult::Value(JsValue::Number(1.0))]);
+        run_test("1", vec![JsStatementResult::number(1.0)]);
         run_test(
             "123;;12",
             vec![
-                JsStatementResult::Value(JsValue::Number(123.0)),
+                JsStatementResult::number(123.0),
                 JsStatementResult::Void,
-                JsStatementResult::Value(JsValue::Number(12.0)),
+                JsStatementResult::number(12.0),
             ],
         );
-        run_test("1+2", vec![JsStatementResult::Value(JsValue::Number(3.0))]);
     }
 
     #[test]
-    fn test_multi_number_sum() {
-        run_test(
-            "1+2+3",
-            vec![JsStatementResult::Value(JsValue::Number(6.0))],
-        );
+    fn test_sum() {
+        run_test("1+2", vec![JsStatementResult::number(3.0)]);
+        run_test("1+2+3", vec![JsStatementResult::number(6.0)]);
     }
 
     #[test]
     fn test_plus_plus() {
-        run_test("1++2", vec![JsStatementResult::Value(JsValue::Number(3.0))]);
+        run_test("1 + +2", vec![JsStatementResult::number(3.0)]);
     }
 
     #[test]
     fn test_multiply() {
-        run_test(
-            "1 * 2",
-            vec![JsStatementResult::Value(JsValue::Number(2.0))],
-        );
-        run_test(
-            "1 * 2 * 3 + 4 * 5",
-            vec![JsStatementResult::Value(JsValue::Number(26.0))],
-        );
+        run_test("1 * 2", vec![JsStatementResult::number(2.0)]);
+        run_test("1 * 2 * 3 + 4 * 5", vec![JsStatementResult::number(26.0)]);
     }
 
     #[test]
     fn test_var() {
-        run_test("var a", vec![JsStatementResult::Void]);
+        run_test("var a", vec![JsStatementResult::UNDEFINED]);
         run_test(
             "1; var abc123 ;",
+            vec![JsStatementResult::number(1.0), JsStatementResult::UNDEFINED],
+        );
+        run_test(
+            "a = 1; a",
             vec![
-                JsStatementResult::Value(JsValue::Number(1.0)),
-                JsStatementResult::Void,
+                JsStatementResult::number(1.0),
+                JsStatementResult::number(1.0),
             ],
         );
+        run_test(
+            "var a = 1; a",
+            vec![
+                JsStatementResult::number(1.0),
+                JsStatementResult::number(1.0),
+            ],
+        );
+    }
+
+    #[test]
+    fn test_var_assigment() {
+        run_test(
+            "var a = 1; a = 2; a",
+            vec![
+                JsStatementResult::number(1.0),
+                JsStatementResult::number(2.0),
+                JsStatementResult::number(2.0),
+            ],
+        );
+        run_test(
+            "var a; var b = 2; a = 1; b = a + b; b",
+            vec![
+                JsStatementResult::UNDEFINED,
+                JsStatementResult::number(2.0),
+                JsStatementResult::number(1.0),
+                JsStatementResult::number(3.0),
+                JsStatementResult::number(3.0),
+            ],
+        );
+        let results = run_js("var a; 2 * a + 1");
+        assert_eq!(results[0], JsStatementResult::UNDEFINED);
+        assert!(result_as_number(&results[1]).is_nan());
     }
 }

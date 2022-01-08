@@ -41,6 +41,7 @@ pub fn extract_interpreter_n_children<'a, R: Rule>(
     );
     children
 }
+
 pub fn extract_interpreter_token<'a, R: Rule>(
     node: &'a ASTNode<'a, R>,
     expected_rule: R,

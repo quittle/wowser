@@ -1,4 +1,4 @@
-use super::{JsDocument, JsExpression, JsRule, JsStatement};
+use super::{JsDocument, JsExpression, JsRule, JsStatement, JsValue};
 use crate::{
     js::JsReference,
     parse::{
@@ -24,21 +24,45 @@ fn on_statement(statement: &JsASTNode) -> JsStatement {
     match first_child.rule {
         JsRule::Semicolon => JsStatement::Empty,
         JsRule::Expression => JsStatement::Expression(on_expression(first_child)),
-        JsRule::VarDeclaration => JsStatement::VarDeclaration(on_var_declaration(first_child)),
+        JsRule::VarDeclaration => on_var_declaration(first_child),
+        JsRule::VariableAssignment => on_variable_assignment(first_child),
         rule => panic!("Unexpected child of Statement: {}", rule),
     }
 }
 
-fn on_var_declaration(var_declaration: &JsASTNode) -> JsReference {
-    let children = extract_interpreter_n_children(var_declaration, JsRule::VarDeclaration, 2);
+fn on_var_declaration(var_declaration: &JsASTNode) -> JsStatement {
+    let children = extract_interpreter_children(var_declaration, JsRule::VarDeclaration);
 
-    JsReference {
+    let reference = JsReference {
         name: on_variable_name(&children[1]),
+        value: JsValue::Undefined,
+    };
+    if children.len() == 4 {
+        JsStatement::VariableAssignment(reference, on_expression(&children[3]))
+    } else {
+        JsStatement::VarDeclaration(reference)
     }
+}
+
+fn on_variable_name_reference(variable_name: &JsASTNode) -> JsExpression {
+    JsExpression::Reference(on_variable_name(variable_name))
 }
 
 fn on_variable_name(variable_name: &JsASTNode) -> String {
     extract_interpreter_token(variable_name, JsRule::VariableName)
+}
+
+fn on_variable_assignment(variable_assignment: &JsASTNode) -> JsStatement {
+    let children =
+        extract_interpreter_n_children(variable_assignment, JsRule::VariableAssignment, 3);
+
+    JsStatement::VariableAssignment(
+        JsReference {
+            name: on_variable_name(&children[0]),
+            value: JsValue::Undefined,
+        },
+        on_expression(&children[2]),
+    )
 }
 
 fn on_expression(expression: &JsASTNode) -> JsExpression {
@@ -47,6 +71,7 @@ fn on_expression(expression: &JsASTNode) -> JsExpression {
     let child = &children[0];
 
     match child.rule {
+        JsRule::VariableName => on_variable_name_reference(child),
         JsRule::Number => on_number(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         JsRule::ExpressionMultiply => on_expression_multiply(child),
@@ -69,23 +94,47 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
     match first_child.rule {
         JsRule::ExpressionMultiply => {
             let a = on_expression_multiply(&children[0]);
-            let b = on_expression(&children[2]);
+            let b = on_expression_sub_add(&children[2]);
+            JsExpression::Add(Box::new(a), Box::new(b))
+        }
+        JsRule::VariableName => {
+            let a = on_variable_name_reference(&children[0]);
+            let b = on_expression_sub_add(&children[2]);
+            JsExpression::Add(Box::new(a), Box::new(b))
+        }
+        JsRule::Number => {
+            let a = on_number(&children[0]);
+            let b = on_expression_sub_add(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
         JsRule::OperatorAdd => on_number(&children[1]),
-        JsRule::Number => {
-            let a = on_number(&children[0]);
-            let b = on_expression(&children[2]);
-            JsExpression::Add(Box::new(a), Box::new(b))
-        }
         _ => panic!("Invalid first type type"),
+    }
+}
+
+fn on_expression_sub_add(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ExpressionSubAdd, 1);
+
+    let first_child = &children[0];
+
+    match first_child.rule {
+        JsRule::ExpressionMultiply => on_expression_multiply(first_child),
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::Number => on_number(first_child),
+        JsRule::ExpressionAdd => on_expression_add(first_child),
+        rule => panic!("Invalid first child rule: {}", rule),
     }
 }
 
 fn on_expression_multiply(node: &JsASTNode) -> JsExpression {
     let children = extract_interpreter_n_children(node, JsRule::ExpressionMultiply, 3);
 
-    let a = on_number(&children[0]);
+    let first_child = &children[0];
+    let a = match first_child.rule {
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::Number => on_number(first_child),
+        rule => panic!("Invalid first child rule: {}", rule),
+    };
     let b = on_expression_sub_multiply(&children[2]);
     JsExpression::Multiply(Box::new(a), Box::new(b))
 }
@@ -97,6 +146,7 @@ fn on_expression_sub_multiply(node: &JsASTNode) -> JsExpression {
     match first_child.rule {
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
         JsRule::Number => on_number(first_child),
+        JsRule::VariableName => on_variable_name_reference(first_child),
         rule => panic!("Invalid child type {}", rule),
     }
 }
@@ -113,8 +163,9 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
             JsRule::Terminator => vec![],
             JsRule::Expression => vec![JsStatement::Expression(on_expression(first_child))],
             JsRule::VarDeclaration => {
-                vec![JsStatement::VarDeclaration(on_var_declaration(first_child))]
+                vec![on_var_declaration(first_child)]
             }
+            JsRule::VariableAssignment => vec![on_variable_assignment(first_child)],
             JsRule::Statements => {
                 let mut statements = on_statements(first_child);
                 let second_child = &children[1];
@@ -122,9 +173,10 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
                     JsRule::Expression => {
                         statements.push(JsStatement::Expression(on_expression(second_child)))
                     }
-                    JsRule::VarDeclaration => statements.push(JsStatement::VarDeclaration(
-                        on_var_declaration(second_child),
-                    )),
+                    JsRule::VarDeclaration => statements.push(on_var_declaration(second_child)),
+                    JsRule::VariableAssignment => {
+                        statements.push(on_variable_assignment(second_child))
+                    }
                     _ => {}
                 };
                 statements
@@ -132,9 +184,6 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
             rule => panic!("Unspported first rule: {}", rule),
         };
 
-        Some(JsDocument {
-            statements,
-            expression_results: vec![],
-        })
+        Some(JsDocument::new(statements))
     }
 }

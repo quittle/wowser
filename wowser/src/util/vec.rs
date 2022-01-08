@@ -39,6 +39,27 @@ pub fn vec_window_split<'a, T: PartialEq>(vec: &'a [T], separator: &[T]) -> Vec<
     ret
 }
 
+/// Searches a vec for a value, inserting a new value if not present. Returns a mutable reference to
+/// the member of the vec.
+///
+/// Only necessary due to limitations of borrow checker: <https://stackoverflow.com/a/58250510/1554990>
+pub fn mut_vec_find_or_insert<T, Predicate, BuildDefault>(
+    vec: &mut Vec<T>,
+    predicate: Predicate,
+    default_value: BuildDefault,
+) -> &mut T
+where
+    Predicate: Fn(&T) -> bool,
+    BuildDefault: FnOnce() -> T,
+{
+    if let Some(i) = (0..vec.len()).find(|&i| predicate(&vec[i])) {
+        &mut vec[i]
+    } else {
+        vec.push(default_value());
+        vec.last_mut().unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +128,33 @@ mod tests {
         );
         assert_eq!(v2(&[], &[1]), vec_window_split(&[1, 1, 1], &[1, 1]));
         assert_eq!(v3(&[1], &[1], &[1]), vec_window_split(&[1, 1, 1], &[]));
+    }
+
+    #[test]
+    fn test_mut_vec_find_or_insert() {
+        #[derive(Debug, PartialEq)]
+        struct Holder {
+            value: u8,
+        }
+        impl Holder {
+            fn new(value: u8) -> Self {
+                Self { value }
+            }
+        }
+
+        let mut v: Vec<Holder> = vec![];
+        {
+            let holder = mut_vec_find_or_insert(&mut v, |h| h.value == 1, || Holder::new(1));
+            assert_eq!(holder.value, 1);
+            holder.value = 123;
+        }
+        assert_eq!(vec![Holder::new(123)], v, "New value inserted and modified");
+
+        {
+            let holder = mut_vec_find_or_insert(&mut v, |h| h.value == 123, || Holder::new(255));
+            assert_eq!(holder.value, 123, "Found matched value");
+        }
+        assert_eq!(vec![Holder::new(123)], v, "Default value not inserted");
     }
 
     // These are helper functions for building vectors.

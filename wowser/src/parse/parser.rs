@@ -35,6 +35,11 @@ pub struct Parser {}
 
 impl Parser {
     /// Performs the parsing
+    ///
+    /// Tips for debugging "Unable to match any child rules"
+    /// 1. When rules have multiple children, sort the longest, most complex ones first. A rule will only use the first matched child.
+    /// 2. If a rule is invalid due to parent rule's precence, split it so there are two: one for the default state, and one for child rules.
+    /// 3. Stack overflows occur when a rule is defined recursively and the recursive match is not the last value.
     pub fn parse<'a, R: Rule>(
         &self,
         tokens: &'a [ParsedToken<'a, R::Token>],

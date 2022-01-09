@@ -72,9 +72,21 @@ fn on_expression(expression: &JsASTNode) -> JsExpression {
 
     match child.rule {
         JsRule::VariableName => on_variable_name_reference(child),
-        JsRule::Number => on_number(child),
+        JsRule::LiteralValue => on_literal_value(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         JsRule::ExpressionMultiply => on_expression_multiply(child),
+        rule => panic!("Unexpected rule: {}", rule),
+    }
+}
+
+fn on_literal_value(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::LiteralValue, 1);
+
+    let child = &children[0];
+
+    match child.rule {
+        JsRule::Number => on_number(child),
+        JsRule::String => on_string(child),
         rule => panic!("Unexpected rule: {}", rule),
     }
 }
@@ -84,6 +96,12 @@ fn on_number(node: &JsASTNode) -> JsExpression {
     let normalized_number = token.replace("_", "");
     let number_value = normalized_number.parse::<f64>().unwrap();
     JsExpression::Number(number_value)
+}
+
+fn on_string(node: &JsASTNode) -> JsExpression {
+    let token = extract_interpreter_token(node, JsRule::String);
+    let quote_stripped = token[1..token.len() - 1].to_string();
+    JsExpression::String(quote_stripped)
 }
 
 fn on_expression_add(node: &JsASTNode) -> JsExpression {
@@ -102,12 +120,15 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
             let b = on_expression_sub_add(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
-        JsRule::Number => {
-            let a = on_number(&children[0]);
+        JsRule::LiteralValue => {
+            let a = on_literal_value(&children[0]);
             let b = on_expression_sub_add(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
-        JsRule::OperatorAdd => on_number(&children[1]),
+        JsRule::OperatorAdd => {
+            let literal_value_expression = on_literal_value(&children[1]);
+            JsExpression::CastToNumber(Box::new(literal_value_expression))
+        }
         _ => panic!("Invalid first type type"),
     }
 }
@@ -120,7 +141,7 @@ fn on_expression_sub_add(node: &JsASTNode) -> JsExpression {
     match first_child.rule {
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),
-        JsRule::Number => on_number(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
         JsRule::ExpressionAdd => on_expression_add(first_child),
         rule => panic!("Invalid first child rule: {}", rule),
     }
@@ -132,7 +153,7 @@ fn on_expression_multiply(node: &JsASTNode) -> JsExpression {
     let first_child = &children[0];
     let a = match first_child.rule {
         JsRule::VariableName => on_variable_name_reference(first_child),
-        JsRule::Number => on_number(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
         rule => panic!("Invalid first child rule: {}", rule),
     };
     let b = on_expression_sub_multiply(&children[2]);
@@ -145,7 +166,7 @@ fn on_expression_sub_multiply(node: &JsASTNode) -> JsExpression {
     let first_child = &children[0];
     match first_child.rule {
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
-        JsRule::Number => on_number(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),
         rule => panic!("Invalid child type {}", rule),
     }

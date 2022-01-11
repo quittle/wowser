@@ -76,6 +76,7 @@ mod tests {
         run_test("1 + +2", vec![JsStatementResult::number(3.0)]);
         assert!(run_js("+'a'")[0].is_nan());
         run_test("+'12'", vec![JsStatementResult::number(12.0)]);
+        run_test("var a = +'1'", vec![JsStatementResult::number(1.0)]);
     }
 
     #[test]
@@ -181,5 +182,14 @@ mod tests {
         assert!(run_js(r#"var a; '123' * a"#)[1].is_nan());
         run_test(r#"'2 ' * ' 3 '"#, vec![JsStatementResult::number(6.0)]);
         run_test(r#"'2 ' * 3"#, vec![JsStatementResult::number(6.0)]);
+    }
+
+    #[test]
+    pub fn test_global_function() {
+        run_test(r#"reverse('abc')"#, vec![JsStatementResult::string("cba")]);
+        run_test(
+            r#"reverse(reverse('a' + 'b') + 'c')"#,
+            vec![JsStatementResult::string("cab")],
+        );
     }
 }

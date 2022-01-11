@@ -1,8 +1,11 @@
+use super::JsFunction;
+
 /// Represents any type
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsValue {
     Number(f64),
     String(String),
+    Function(JsFunction),
     Undefined,
 }
 
@@ -20,6 +23,9 @@ impl ToString for JsValue {
             Self::Number(v) => v.to_string(),
             Self::String(v) => v.clone(),
             Self::Undefined => "undefined".to_string(),
+            Self::Function(function) => {
+                format!("function {}() {{ [native code] }}", function.get_name())
+            }
         }
     }
 }
@@ -38,13 +44,14 @@ impl From<JsValue> for f64 {
                 }
             }
             JsValue::Undefined => f64::NAN,
+            JsValue::Function(_) => f64::NAN,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::JsValue;
+    use super::*;
 
     #[test]
     fn test_nan() {
@@ -62,6 +69,12 @@ mod tests {
         assert_eq!(JsValue::Number(-1.2).to_string(), "-1.2");
         assert_eq!(JsValue::str("").to_string(), "");
         assert_eq!(JsValue::str("abc").to_string(), "abc");
+        assert_eq!(JsValue::Undefined.to_string(), "undefined");
+        assert_eq!(
+            JsValue::Function(JsFunction::Native("abc".to_string(), Default::default()))
+                .to_string(),
+            "function abc() { [native code] }"
+        );
     }
 
     #[test]
@@ -78,5 +91,11 @@ mod tests {
         assert_eq!(f64::from(JsValue::str("-1.2")), (-1.2));
 
         assert!(f64::from(JsValue::Undefined).is_nan());
+
+        assert!(f64::from(JsValue::Function(JsFunction::Native(
+            "abc".to_string(),
+            Default::default()
+        )))
+        .is_nan());
     }
 }

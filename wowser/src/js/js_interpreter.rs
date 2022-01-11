@@ -65,18 +65,44 @@ fn on_variable_assignment(variable_assignment: &JsASTNode) -> JsStatement {
     )
 }
 
-fn on_expression(expression: &JsASTNode) -> JsExpression {
-    let children = extract_interpreter_n_children(expression, JsRule::Expression, 1);
+fn on_expression(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::Expression, 1);
 
     let child = &children[0];
 
     match child.rule {
+        JsRule::FunctionInvoke => on_function_invoke(child),
         JsRule::VariableName => on_variable_name_reference(child),
         JsRule::LiteralValue => on_literal_value(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         JsRule::ExpressionMultiply => on_expression_multiply(child),
         rule => panic!("Unexpected rule: {}", rule),
     }
+}
+
+fn on_function_invoke(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::FunctionInvoke, 4);
+
+    let reference_to_invoke = on_variable_name_reference(&children[0]);
+    let arguments = on_function_arguments(&children[2]);
+
+    JsExpression::InvokeFunction(Box::new(reference_to_invoke), arguments)
+}
+
+fn on_function_arguments(node: &JsASTNode) -> Vec<JsExpression> {
+    let children = extract_interpreter_children(node, JsRule::FunctionArguments);
+
+    let mut ret = vec![];
+
+    if !children.is_empty() {
+        ret.push(on_expression(&children[0]));
+    }
+
+    if children.len() == 3 {
+        ret.extend(on_function_arguments(&children[2]))
+    }
+
+    ret
 }
 
 fn on_literal_value(node: &JsASTNode) -> JsExpression {
@@ -110,6 +136,11 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
     let first_child = &children[0];
 
     match first_child.rule {
+        JsRule::FunctionInvoke => {
+            let a = on_function_invoke(&children[0]);
+            let b = on_expression_sub_add(&children[2]);
+            JsExpression::Add(Box::new(a), Box::new(b))
+        }
         JsRule::ExpressionMultiply => {
             let a = on_expression_multiply(&children[0]);
             let b = on_expression_sub_add(&children[2]);

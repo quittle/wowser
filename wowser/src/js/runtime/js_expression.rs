@@ -8,6 +8,7 @@ pub enum JsExpression {
     Multiply(Box<JsExpression>, Box<JsExpression>),
     Reference(String),
     CastToNumber(Box<JsExpression>),
+    InvokeFunction(Box<JsExpression>, Vec<JsExpression>),
 }
 
 impl JsExpression {
@@ -30,8 +31,14 @@ impl JsExpression {
                     (JsValue::Number(_), JsValue::Undefined) => JsValue::NAN,
                     (JsValue::Undefined, JsValue::Number(_)) => JsValue::NAN,
                     (JsValue::Undefined, JsValue::Undefined) => JsValue::NAN,
-                    (JsValue::String(str_a), b) => JsValue::String(str_a + &b.to_string()),
-                    (a, JsValue::String(str_b)) => JsValue::String(a.to_string() + &str_b),
+                    (a @ JsValue::String(_), b) => JsValue::String(a.to_string() + &b.to_string()),
+                    (a, b @ JsValue::String(_)) => JsValue::String(a.to_string() + &b.to_string()),
+                    (a @ JsValue::Function(_), b) => {
+                        JsValue::String(a.to_string() + &b.to_string())
+                    }
+                    (a, b @ JsValue::Function(_)) => {
+                        JsValue::String(a.to_string() + &b.to_string())
+                    }
                 }
             }
             Self::Multiply(a, b) => {
@@ -42,6 +49,17 @@ impl JsExpression {
             Self::CastToNumber(expression) => {
                 let value = expression.run(global_references);
                 JsValue::Number(f64::from(value))
+            }
+            Self::InvokeFunction(reference_to_invoke, args) => {
+                let value = reference_to_invoke.run(global_references);
+                match value {
+                    JsValue::Function(function) => {
+                        let evaluated_args: Vec<JsValue> =
+                            args.iter().map(|arg| arg.run(global_references)).collect();
+                        function.run(&evaluated_args)
+                    }
+                    _ => JsValue::Undefined, // TODO: This should be a TypeError when they exist
+                }
             }
         }
     }

@@ -1,4 +1,5 @@
 mod async_executor;
+mod base64;
 mod bits;
 mod container;
 mod env;
@@ -14,6 +15,7 @@ mod vec;
 mod vec_dequeue_ext;
 
 pub use async_executor::*;
+pub use base64::*;
 pub use bits::*;
 pub use env::*;
 pub use error::*;

@@ -76,18 +76,21 @@ fn base64_encode(data: &[u8]) -> String {
 
 fn base64_decode(data: &str) -> Option<Vec<u8>> {
     let data_len = data.len();
-    if data_len % 4 != 0 {
-        return None;
-    }
-    let padding_len = data_len - data.trim_end_matches('=').len();
-    let result_len = data_len * 3 / 4 - padding_len;
+
+    let padding_extension = (4 - (data_len % 4)) % 4;
+    let padded_data_len = data_len + padding_extension;
+    let padding_len = padded_data_len - data.trim_end_matches('=').len();
+    let result_len = (padded_data_len) * 3 / 4 - padding_len;
 
     let mut result = Vec::with_capacity(result_len);
     for chunk in data.as_bytes().chunks(4) {
-        let a = base64_decode_6bit_byte(chunk[0])?;
-        let b = base64_decode_6bit_byte(chunk[1])?;
-        let c = base64_decode_6bit_byte(chunk[2])?;
-        let d = base64_decode_6bit_byte(chunk[3])?;
+        // It's valid to pass in string without padding. In that case, extract it as if it were padding
+        let get_byte = |index| *chunk.get(index).unwrap_or(&b'=');
+
+        let a = base64_decode_6bit_byte(get_byte(0))?;
+        let b = base64_decode_6bit_byte(get_byte(1))?;
+        let c = base64_decode_6bit_byte(get_byte(2))?;
+        let d = base64_decode_6bit_byte(get_byte(3))?;
 
         let byte1 = (a << 2) | ((b & 0b00110000) >> 4);
         let byte2 = ((b & 0b00001111) << 4) | ((c & 0b00111100) >> 2);
@@ -106,9 +109,9 @@ fn base64_decode(data: &str) -> Option<Vec<u8>> {
 
 fn base64_encode_6bit_byte(byte: u8) -> char {
     (match byte {
-        0..=25 => 65 + byte,                                   // A..
-        26..=51 => 97 + byte - 26,                             // a..
-        52..=61 => 48 + byte - 52,                             // 0..
+        0..=25 => 65 + byte,                                   // A..Z
+        26..=51 => 97 + byte - 26,                             // a..z
+        52..=61 => 48 + byte - 52,                             // 0..9
         62 => 43,                                              // +
         63 => 47,                                              // /
         _ => unreachable!("Invalid byte passed in: {}", byte), // This should never happen due to how base64_encode shifts bits
@@ -156,12 +159,17 @@ mod tests {
 
     #[test]
     fn test_base64_decode() {
-        assert_eq!("abc".base64_decode(), None, "Not divisible by 4");
         assert_eq!("abc-".base64_decode(), None, "Invalid character");
 
         assert_eq!("".base64_decode(), Some(vec![]));
         assert_eq!("YWJj".base64_decode(), Some(b"abc".to_vec()));
         assert_eq!("MTIzNA==".base64_decode(), Some(b"1234".to_vec()));
+        assert_eq!(
+            "MTIzNA".base64_decode(),
+            Some(b"1234".to_vec()),
+            "Decode support without padding"
+        );
+        assert_eq!("YWJjdef".base64_decode(), Some(vec![97, 98, 99, 117, 231]));
         assert_eq!(ALL_BYTES_ENCODED.base64_decode(), Some(all_bytes()));
     }
 }

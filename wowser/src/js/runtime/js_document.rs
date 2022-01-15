@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use crate::util::Base64;
+
 use super::{
     JsClosure, JsFunction, JsFunctionImplementation, JsStatement, JsStatementResult, JsValue,
 };
@@ -32,14 +34,8 @@ impl JsDocument {
 
 fn add_globals(global_closure: &mut JsClosure) {
     // TODO: Implement real functions
-    add_global_function(global_closure, "reverse", Rc::new(js_reverse));
-}
-
-fn js_reverse(args: &[JsValue]) -> JsValue {
-    match args.get(0) {
-        Some(JsValue::String(arg)) => JsValue::String(arg.chars().rev().collect()),
-        _ => JsValue::Undefined,
-    }
+    add_global_function(global_closure, "atob", Rc::new(js_atob));
+    add_global_function(global_closure, "btoa", Rc::new(js_btoa));
 }
 
 fn add_global_function(
@@ -52,4 +48,28 @@ fn add_global_function(
         name.to_string(),
         JsFunctionImplementation { func },
     ));
+}
+
+fn js_atob(args: &[JsValue]) -> JsValue {
+    match args.get(0) {
+        Some(value) => {
+            println!("decoding: {}", value.to_string());
+            if let Some(decoded) = value.to_string().base64_decode() {
+                println!("Decoded: {:?}", decoded);
+                if let Ok(decoded_string) = std::str::from_utf8(&decoded) {
+                    println!("utf8: {:?}", decoded_string);
+                    return JsValue::str(decoded_string);
+                }
+            }
+            JsValue::Undefined // TODO: This should be a TypeError or DOMException when supported
+        }
+        _ => JsValue::Undefined, // TODO: This should be a TypeError when supported
+    }
+}
+
+fn js_btoa(args: &[JsValue]) -> JsValue {
+    match args.get(0) {
+        Some(value) => JsValue::String(value.to_string().base64_encode()),
+        _ => JsValue::Undefined, // TODO: This should be a TypeError when supported
+    }
 }

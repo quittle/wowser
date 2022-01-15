@@ -34,7 +34,7 @@ mod tests {
 
     fn run_test(script: &str, expected_results: Vec<JsStatementResult>) {
         let results = run_js(script);
-        assert_eq!(expected_results, results);
+        assert_eq!(results, expected_results);
     }
 
     fn result_as_number(result: &JsStatementResult) -> f64 {
@@ -148,48 +148,44 @@ mod tests {
 
     #[test]
     pub fn test_string_addition() {
+        run_test("'abc' + 'def'", vec![JsStatementResult::string("abcdef")]);
+        run_test("'abc' + 123", vec![JsStatementResult::string("abc123")]);
+        run_test("123 + 'abc'", vec![JsStatementResult::string("123abc")]);
+        run_test("1.23 + ''", vec![JsStatementResult::string("1.23")]);
         run_test(
-            r#"'abc' + 'def'"#,
-            vec![JsStatementResult::string("abcdef")],
-        );
-        run_test(r#"'abc' + 123"#, vec![JsStatementResult::string("abc123")]);
-        run_test(r#"123 + 'abc'"#, vec![JsStatementResult::string("123abc")]);
-        run_test(r#"1.23 + ''"#, vec![JsStatementResult::string("1.23")]);
-        run_test(
-            r#"var a; 'oops: ' + a"#,
+            "var a; 'oops: ' + a",
             vec![
                 JsStatementResult::UNDEFINED,
                 JsStatementResult::string("oops: undefined"),
             ],
         );
         run_test(
-            r#"var a; a + ' <- oops'"#,
+            "var a; a + ' <- oops'",
             vec![
                 JsStatementResult::UNDEFINED,
                 JsStatementResult::string("undefined <- oops"),
             ],
         );
-        run_test(r#"'1' + '2'"#, vec![JsStatementResult::string("12")]);
+        run_test("'1' + '2'", vec![JsStatementResult::string("12")]);
     }
 
     #[test]
     pub fn test_string_multiplication() {
-        assert!(run_js(r#"'abc' * 'def'"#)[0].is_nan());
-        assert!(run_js(r#"'abc' * 123"#)[0].is_nan());
-        assert!(run_js(r#"123 * 'abc'"#)[0].is_nan());
-        run_test(r#"1.23 * ''"#, vec![JsStatementResult::number(0.0)]);
-        assert!(run_js(r#"var a; 'abc' * a"#)[1].is_nan());
-        assert!(run_js(r#"var a; '123' * a"#)[1].is_nan());
-        run_test(r#"'2 ' * ' 3 '"#, vec![JsStatementResult::number(6.0)]);
-        run_test(r#"'2 ' * 3"#, vec![JsStatementResult::number(6.0)]);
+        assert!(run_js("'abc' * 'def'")[0].is_nan());
+        assert!(run_js("'abc' * 123")[0].is_nan());
+        assert!(run_js("123 * 'abc'")[0].is_nan());
+        run_test("1.23 * ''", vec![JsStatementResult::number(0.0)]);
+        assert!(run_js("var a; 'abc' * a")[1].is_nan());
+        assert!(run_js("var a; '123' * a")[1].is_nan());
+        run_test("'2 ' * ' 3 '", vec![JsStatementResult::number(6.0)]);
+        run_test("'2 ' * 3", vec![JsStatementResult::number(6.0)]);
     }
 
     #[test]
     pub fn test_global_function() {
-        run_test(r#"reverse('abc')"#, vec![JsStatementResult::string("cba")]);
         run_test(
-            r#"reverse(reverse('a' + 'b') + 'c')"#,
-            vec![JsStatementResult::string("cab")],
+            "atob(btoa('a' + 'b' + 'c') + 'de')",
+            vec![JsStatementResult::string("abcu")],
         );
     }
 }

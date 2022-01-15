@@ -1,3 +1,4 @@
+mod globals;
 mod js_closure;
 mod js_document;
 mod js_expression;

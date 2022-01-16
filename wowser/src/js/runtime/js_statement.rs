@@ -1,11 +1,12 @@
 use super::{JsClosure, JsExpression, JsReference, JsStatementResult};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum JsStatement {
     Empty,
     Expression(JsExpression),
     VarDeclaration(JsReference),
     VariableAssignment(JsReference, JsExpression),
+    FunctionDeclaration(JsReference),
 }
 
 impl JsStatement {
@@ -21,6 +22,9 @@ impl JsStatement {
                 let value = expression.run(closure);
                 let reference = closure.get_or_declare_reference_mut(&reference.name);
                 reference.value = value;
+                JsStatementResult::Value(reference.value.clone())
+            }
+            Self::FunctionDeclaration(reference) => {
                 JsStatementResult::Value(reference.value.clone())
             }
         }

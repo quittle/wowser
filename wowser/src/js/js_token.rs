@@ -5,6 +5,7 @@ use wowser_macros::DisplayFromDebug;
 pub enum JsToken {
     Document,
     VarKeyword,
+    FunctionKeyword,
     VariableName,
     Number,
     String,
@@ -13,10 +14,18 @@ pub enum JsToken {
     OperatorEquals,
     OpenParen,
     CloseParen,
+    OpenCurlyBrace,
+    CloseCurlyBrace,
     Comma,
     Semicolon,
     Terminator,
 }
+
+const STATEMENT_START: &[JsToken] = &[
+    JsToken::VarKeyword,
+    JsToken::FunctionKeyword,
+    JsToken::Semicolon,
+];
 
 const EXPRESSION_START: &[JsToken] = &[
     JsToken::VariableName,
@@ -30,7 +39,8 @@ impl Token for JsToken {
         match self {
             Self::Document => "",
             Self::VarKeyword => r"\s*(var\s)\s*",
-            Self::VariableName => r"\s*((?!(var))[a-zA-Z_][\w\d]*)\s*",
+            Self::FunctionKeyword => r"\s*(function\s)\s*",
+            Self::VariableName => r"\s*((?!(var|function))[a-zA-Z_][\w\d]*)\s*",
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
             Self::OperatorAdd => r"\s*(\+)\s*",
@@ -38,6 +48,8 @@ impl Token for JsToken {
             Self::OperatorEquals => r"\s*(=)\s*",
             Self::OpenParen => r"\s*(\()\s*",
             Self::CloseParen => r"\s*(\))\s*",
+            Self::OpenCurlyBrace => r"\s*({)\s*",
+            Self::CloseCurlyBrace => r"\s*(})\s*",
             Self::Comma => r"\s*(,)\s*",
             Self::Semicolon => r"\s*(;)\s*",
             Self::Terminator => r"\s*$",
@@ -49,13 +61,15 @@ impl Token for JsToken {
         match self {
             Self::Document => [
                 &[
-                    Self::VarKeyword,
-                    Self::Semicolon,
                     Self::Terminator,
                 ],
-                EXPRESSION_START
+                EXPRESSION_START,
+                STATEMENT_START,
             ].concat(),
             Self::VarKeyword => vec![
+                Self::VariableName,
+            ],
+            Self::FunctionKeyword => vec![
                 Self::VariableName,
             ],
             Self::VariableName => vec![
@@ -101,11 +115,22 @@ impl Token for JsToken {
             ].concat(),
             Self::CloseParen => vec![
                 Self::CloseParen,
+                Self::OpenCurlyBrace,
                 Self::OperatorMultiply,
                 Self::OperatorAdd,
                 Self::Comma,
                 Self::Terminator,
             ],
+            Self::OpenCurlyBrace => [
+                EXPRESSION_START,
+                STATEMENT_START,
+            ].concat(),
+            Self::CloseCurlyBrace => [
+                &[
+                    Self::Terminator,
+                ],
+                EXPRESSION_START,
+            ].concat(),
             Self::Comma => [
                 &[
                     Self::CloseParen,
@@ -114,11 +139,11 @@ impl Token for JsToken {
             ].concat(),
             Self::Semicolon => [
                 &[
-                    Self::VarKeyword,
-                    Self::Semicolon,
+                    Self::CloseCurlyBrace,
                     Self::Terminator,
                 ],
                 EXPRESSION_START,
+                STATEMENT_START,
             ].concat(),
             Self::Terminator => vec![],
         }

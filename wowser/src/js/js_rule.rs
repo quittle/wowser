@@ -8,6 +8,9 @@ pub enum JsRule {
     Statement,
     VarDeclaration,
     VarKeyword,
+    FunctionDeclaration,
+    FunctionKeyword,
+    FunctionParams,
     VariableName,
     VariableAssignment,
     Expression,
@@ -22,6 +25,8 @@ pub enum JsRule {
     OperatorEquals,
     OpenParen,
     CloseParen,
+    OpenCurlyBrace,
+    CloseCurlyBrace,
     Comma,
     LiteralValue,
     Number,
@@ -49,6 +54,7 @@ impl Rule for JsRule {
                 RuleType::RepeatableRule(Self::Statement),
             ],
             Self::Statement => vec![
+                RuleType::Rule(Self::FunctionDeclaration),
                 RuleType::Sequence(vec![Self::VarDeclaration, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Expression, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::VariableAssignment, Self::Semicolon]),
@@ -60,6 +66,26 @@ impl Rule for JsRule {
             ],
             Self::VarKeyword => vec![
                 RuleType::Token(JsToken::VarKeyword),
+            ],
+            Self::FunctionDeclaration => vec![
+                RuleType::Sequence(vec![
+                    Self::FunctionKeyword,
+                    Self::VariableName,
+                    Self::OpenParen,
+                    Self::FunctionParams,
+                    Self::CloseParen,
+                    Self::OpenCurlyBrace,
+                    Self::Statements,
+                    Self::CloseCurlyBrace
+                ]),
+            ],
+            Self::FunctionKeyword => vec![
+                RuleType::Token(JsToken::FunctionKeyword),
+            ],
+            Self::FunctionParams => vec![
+                RuleType::Sequence(vec![Self::VariableName, Self::Comma, Self::FunctionParams]),
+                RuleType::Sequence(vec![Self::VariableName, Self::Comma]),
+                RuleType::Rule(Self::VariableName),
             ],
             Self::VariableName => vec![
                 RuleType::Token(JsToken::VariableName),
@@ -126,6 +152,12 @@ impl Rule for JsRule {
             ],
             Self::CloseParen => vec![
                 RuleType::Token(JsToken::CloseParen),
+            ],
+            Self::OpenCurlyBrace => vec![
+                RuleType::Token(JsToken::OpenCurlyBrace),
+            ],
+            Self::CloseCurlyBrace => vec![
+                RuleType::Token(JsToken::CloseCurlyBrace),
             ],
             Self::Comma => vec![
                 RuleType::Token(JsToken::Comma),

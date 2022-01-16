@@ -10,32 +10,32 @@ pub fn add_globals(global_closure: &mut JsClosure) {
 fn add_global_function(
     global_closure: &mut JsClosure,
     name: &str,
-    func: Rc<dyn Fn(&[JsValue]) -> JsValue>,
+    func: Rc<dyn Fn(&[Rc<JsValue>]) -> Rc<JsValue>>,
 ) {
     let reference = global_closure.get_or_declare_reference_mut(name);
-    reference.value = JsValue::Function(JsFunction::Native(
+    reference.value = Rc::new(JsValue::Function(JsFunction::Native(
         name.to_string(),
         JsFunctionImplementation { func },
-    ));
+    )));
 }
 
-fn js_atob(args: &[JsValue]) -> JsValue {
+fn js_atob(args: &[Rc<JsValue>]) -> Rc<JsValue> {
     match args.get(0) {
         Some(value) => {
             if let Some(decoded) = value.to_string().base64_decode() {
                 if let Ok(decoded_string) = std::str::from_utf8(&decoded) {
-                    return JsValue::str(decoded_string);
+                    return JsValue::str_rc(decoded_string);
                 }
             }
-            JsValue::Undefined // TODO: This should be a TypeError or DOMException when supported
+            JsValue::undefined_rc() // TODO: This should be a TypeError or DOMException when supported
         }
-        _ => JsValue::Undefined, // TODO: This should be a TypeError when supported
+        _ => JsValue::undefined_rc(), // TODO: This should be a TypeError when supported
     }
 }
 
-fn js_btoa(args: &[JsValue]) -> JsValue {
+fn js_btoa(args: &[Rc<JsValue>]) -> Rc<JsValue> {
     match args.get(0) {
-        Some(value) => JsValue::String(value.to_string().base64_encode()),
-        _ => JsValue::Undefined, // TODO: This should be a TypeError when supported
+        Some(value) => JsValue::string_rc(value.to_string().base64_encode()),
+        _ => JsValue::undefined_rc(), // TODO: This should be a TypeError when supported
     }
 }

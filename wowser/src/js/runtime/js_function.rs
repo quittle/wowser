@@ -1,16 +1,16 @@
 use std::rc::Rc;
 
-use super::JsValue;
+use super::{JsStatement, JsValue};
 
 #[derive(Clone)]
 pub struct JsFunctionImplementation {
-    pub func: Rc<dyn Fn(&[JsValue]) -> JsValue>,
+    pub func: Rc<dyn Fn(&[Rc<JsValue>]) -> Rc<JsValue>>,
 }
 
 impl Default for JsFunctionImplementation {
     fn default() -> Self {
         Self {
-            func: Rc::new(|_| JsValue::Undefined),
+            func: Rc::new(|_| JsValue::undefined_rc()),
         }
     }
 }
@@ -30,21 +30,31 @@ impl std::cmp::PartialEq for JsFunctionImplementation {
 }
 
 // Functions cannot be compared and are always considered unequal
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub enum JsFunction {
     Native(String, JsFunctionImplementation),
+    UserDefined(
+        // Name
+        String,
+        // Params
+        Vec<String>,
+        // Implementation
+        Vec<JsStatement>,
+    ),
 }
 
 impl JsFunction {
     pub fn get_name(&self) -> &str {
         match self {
             Self::Native(name, _) => name,
+            Self::UserDefined(name, _params, _implementation) => name,
         }
     }
 
-    pub fn run(&self, args: &[JsValue]) -> JsValue {
+    pub fn run(&self, args: &[Rc<JsValue>]) -> Rc<JsValue> {
         match self {
             Self::Native(_, implementation) => implementation.func.as_ref()(args),
+            Self::UserDefined(_name, _params, _implementation) => JsValue::undefined_rc(), // TODO: implement running
         }
     }
 }

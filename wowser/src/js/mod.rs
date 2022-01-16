@@ -22,9 +22,11 @@ pub fn parse_js(document: &str) -> Result<JsDocument, String> {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use crate::js::JsValue;
 
-    use super::{parse_js, JsStatementResult};
+    use super::{parse_js, JsExpression, JsFunction, JsStatement, JsStatementResult};
 
     fn run_js(script: &str) -> Vec<JsStatementResult> {
         let mut js_document = parse_js(script).unwrap();
@@ -39,7 +41,10 @@ mod tests {
 
     fn result_as_number(result: &JsStatementResult) -> f64 {
         match result {
-            JsStatementResult::Value(JsValue::Number(n)) => *n,
+            JsStatementResult::Value(v) => match v.as_ref() {
+                JsValue::Number(n) => *n,
+                v => panic!("Invalid value type: {:?}", v),
+            },
             _ => panic!("Required JS value of type number but received {:?}", result),
         }
     }
@@ -87,10 +92,13 @@ mod tests {
 
     #[test]
     fn test_var() {
-        run_test("var a", vec![JsStatementResult::UNDEFINED]);
+        run_test("var a", vec![JsStatementResult::undefined()]);
         run_test(
             "1; var abc123 ;",
-            vec![JsStatementResult::number(1.0), JsStatementResult::UNDEFINED],
+            vec![
+                JsStatementResult::number(1.0),
+                JsStatementResult::undefined(),
+            ],
         );
         run_test(
             "a = 1; a",
@@ -121,7 +129,7 @@ mod tests {
         run_test(
             "var a; var b = 2; a = 1; b = a + b; b",
             vec![
-                JsStatementResult::UNDEFINED,
+                JsStatementResult::undefined(),
                 JsStatementResult::number(2.0),
                 JsStatementResult::number(1.0),
                 JsStatementResult::number(3.0),
@@ -129,7 +137,7 @@ mod tests {
             ],
         );
         let results = run_js("var a; 2 * a + 1");
-        assert_eq!(results[0], JsStatementResult::UNDEFINED);
+        assert_eq!(results[0], JsStatementResult::undefined());
         assert!(result_as_number(&results[1]).is_nan());
     }
 
@@ -155,14 +163,14 @@ mod tests {
         run_test(
             "var a; 'oops: ' + a",
             vec![
-                JsStatementResult::UNDEFINED,
+                JsStatementResult::undefined(),
                 JsStatementResult::string("oops: undefined"),
             ],
         );
         run_test(
             "var a; a + ' <- oops'",
             vec![
-                JsStatementResult::UNDEFINED,
+                JsStatementResult::undefined(),
                 JsStatementResult::string("undefined <- oops"),
             ],
         );
@@ -187,5 +195,22 @@ mod tests {
             "atob(btoa('a' + 'b' + 'c') + 'de')",
             vec![JsStatementResult::string("abcu")],
         );
+    }
+
+    #[test]
+    pub fn test_function_declaration() {
+        run_test(
+            "function foo(arg1, arg2) { arg1 + arg2; }",
+            vec![JsStatementResult::Value(Rc::new(JsValue::Function(
+                JsFunction::UserDefined(
+                    "foo".to_string(),
+                    vec!["arg1".to_string(), "arg2".to_string()],
+                    vec![JsStatement::Expression(JsExpression::Add(
+                        Box::new(JsExpression::Reference("arg1".to_string())),
+                        Box::new(JsExpression::Reference("arg2".to_string())),
+                    ))],
+                ),
+            )))],
+        )
     }
 }

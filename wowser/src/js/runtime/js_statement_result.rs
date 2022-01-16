@@ -1,30 +1,40 @@
+use std::rc::Rc;
+
 use super::JsValue;
 
 /// Represents the resulting value of evaluating a statement
 #[derive(Debug, PartialEq)]
 pub enum JsStatementResult {
-    Value(JsValue),
+    Value(Rc<JsValue>),
     Void,
 }
 
 impl JsStatementResult {
-    pub const NAN: Self = Self::Value(JsValue::NAN);
-    pub const UNDEFINED: Self = Self::Value(JsValue::Undefined);
-
     pub fn number(v: f64) -> Self {
-        Self::Value(JsValue::Number(v))
+        Self::Value(JsValue::number_rc(v))
+    }
+
+    pub fn nan() -> Self {
+        Self::Value(JsValue::nan_rc())
     }
 
     pub fn string<S>(string: S) -> Self
     where
         S: Into<String>,
     {
-        Self::Value(JsValue::String(string.into()))
+        Self::Value(JsValue::string_rc(string.into()))
+    }
+
+    pub fn undefined() -> Self {
+        Self::Value(JsValue::undefined_rc())
     }
 
     pub fn is_nan(&self) -> bool {
         match self {
-            JsStatementResult::Value(JsValue::Number(n)) => n.is_nan(),
+            JsStatementResult::Value(value) => match value.as_ref() {
+                JsValue::Number(n) => n.is_nan(),
+                _ => false,
+            },
             _ => false,
         }
     }
@@ -32,21 +42,29 @@ impl JsStatementResult {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use super::JsStatementResult;
     use crate::js::JsValue;
 
     #[test]
     fn test_nan() {
-        match JsStatementResult::NAN {
-            JsStatementResult::Value(JsValue::Number(v)) => assert!(v.is_nan()),
+        match JsStatementResult::nan() {
+            JsStatementResult::Value(v) => match v.as_ref() {
+                JsValue::Number(n) => assert!(n.is_nan()),
+                v => panic!("Invalid value type: {:?}", v),
+            },
             v => panic!("Invalid result value: {:?}", v),
         }
     }
 
     #[test]
     fn test_undefined() {
-        match JsStatementResult::UNDEFINED {
-            JsStatementResult::Value(JsValue::Undefined) => {}
+        match JsStatementResult::undefined() {
+            JsStatementResult::Value(v) => match v.as_ref() {
+                JsValue::Undefined => {}
+                v => panic!("Invalid value type: {:?}", v),
+            },
             v => panic!("Invalid result value: {:?}", v),
         }
     }
@@ -54,7 +72,10 @@ mod tests {
     #[test]
     fn test_number() {
         match JsStatementResult::number(123.0) {
-            JsStatementResult::Value(JsValue::Number(v)) => assert_eq!(v, 123.0),
+            JsStatementResult::Value(v) => match v.as_ref() {
+                JsValue::Number(v) => assert_eq!(*v, 123.0),
+                v => panic!("Invalid value type: {:?}", v),
+            },
             v => panic!("Invalid result value: {:?}", v),
         }
     }
@@ -63,20 +84,20 @@ mod tests {
     fn test_string() {
         assert_eq!(
             JsStatementResult::string("123"),
-            JsStatementResult::Value(JsValue::String(String::from("123")))
+            JsStatementResult::Value(Rc::new(JsValue::String(String::from("123"))))
         );
         assert_eq!(
             JsStatementResult::string(String::from("abc")),
-            JsStatementResult::Value(JsValue::String(String::from("abc")))
+            JsStatementResult::Value(Rc::new(JsValue::String(String::from("abc"))))
         );
     }
 
     #[test]
     fn test_is_nan() {
-        assert!(JsStatementResult::NAN.is_nan());
+        assert!(JsStatementResult::nan().is_nan());
 
         assert!(!JsStatementResult::string("123").is_nan());
         assert!(!JsStatementResult::number(1.0).is_nan());
-        assert!(!JsStatementResult::UNDEFINED.is_nan());
+        assert!(!JsStatementResult::undefined().is_nan());
     }
 }

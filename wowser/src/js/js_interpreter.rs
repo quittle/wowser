@@ -1,4 +1,6 @@
-use super::{JsDocument, JsExpression, JsRule, JsStatement, JsValue};
+use std::rc::Rc;
+
+use super::{JsDocument, JsExpression, JsFunction, JsRule, JsStatement, JsValue};
 use crate::{
     js::JsReference,
     parse::{
@@ -26,6 +28,7 @@ fn on_statement(statement: &JsASTNode) -> JsStatement {
         JsRule::Expression => JsStatement::Expression(on_expression(first_child)),
         JsRule::VarDeclaration => on_var_declaration(first_child),
         JsRule::VariableAssignment => on_variable_assignment(first_child),
+        JsRule::FunctionDeclaration => on_function_declaration(first_child),
         rule => panic!("Unexpected child of Statement: {}", rule),
     }
 }
@@ -35,7 +38,7 @@ fn on_var_declaration(var_declaration: &JsASTNode) -> JsStatement {
 
     let reference = JsReference {
         name: on_variable_name(&children[1]),
-        value: JsValue::Undefined,
+        value: JsValue::undefined_rc(),
     };
     if children.len() == 4 {
         JsStatement::VariableAssignment(reference, on_expression(&children[3]))
@@ -59,10 +62,37 @@ fn on_variable_assignment(variable_assignment: &JsASTNode) -> JsStatement {
     JsStatement::VariableAssignment(
         JsReference {
             name: on_variable_name(&children[0]),
-            value: JsValue::Undefined,
+            value: JsValue::undefined_rc(),
         },
         on_expression(&children[2]),
     )
+}
+
+fn on_function_declaration(node: &JsASTNode) -> JsStatement {
+    let children = extract_interpreter_n_children(node, JsRule::FunctionDeclaration, 8);
+    let function_name = on_variable_name(&children[1]);
+    let params = on_function_params(&children[3]);
+    let statements = on_statements(&children[6]);
+    JsStatement::FunctionDeclaration(JsReference {
+        name: function_name.clone(),
+        value: Rc::new(JsValue::Function(JsFunction::UserDefined(
+            function_name,
+            params,
+            statements,
+        ))),
+    })
+}
+
+fn on_function_params(node: &JsASTNode) -> Vec<String> {
+    let children = extract_interpreter_children(node, JsRule::FunctionParams);
+    let variable_name = on_variable_name(&children[0]);
+    let mut params = if children.len() == 3 {
+        on_function_params(&children[2])
+    } else {
+        vec![]
+    };
+    params.insert(0, variable_name);
+    params
 }
 
 fn on_expression(node: &JsASTNode) -> JsExpression {

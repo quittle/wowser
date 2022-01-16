@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use super::JsFunction;
 
 /// Represents any type
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub enum JsValue {
     Number(f64),
     String(String),
@@ -12,8 +14,28 @@ pub enum JsValue {
 impl JsValue {
     pub const NAN: Self = Self::Number(f64::NAN);
 
+    pub fn nan_rc() -> Rc<Self> {
+        Rc::new(Self::NAN)
+    }
+
     pub fn str(s: &str) -> Self {
         JsValue::String(s.into())
+    }
+
+    pub fn str_rc(s: &str) -> Rc<Self> {
+        Rc::new(Self::str(s))
+    }
+
+    pub fn string_rc(s: String) -> Rc<Self> {
+        Rc::new(Self::String(s))
+    }
+
+    pub fn number_rc(value: f64) -> Rc<Self> {
+        Rc::new(Self::Number(value))
+    }
+
+    pub fn undefined_rc() -> Rc<Self> {
+        Rc::new(Self::Undefined)
     }
 }
 
@@ -32,8 +54,14 @@ impl ToString for JsValue {
 
 impl From<JsValue> for f64 {
     fn from(value: JsValue) -> f64 {
+        From::from(&value)
+    }
+}
+
+impl From<&JsValue> for f64 {
+    fn from(value: &JsValue) -> f64 {
         match value {
-            JsValue::Number(v) => v,
+            JsValue::Number(v) => *v,
             JsValue::String(v) => {
                 let trimmed = v.trim();
                 // Strings with just whitespace convert to 0

@@ -20,7 +20,7 @@ impl JsClosure {
             |reference| reference.name == variable_name,
             || JsReference {
                 name: variable_name.into(),
-                value: JsValue::Undefined,
+                value: JsValue::undefined_rc(),
             },
         )
     }

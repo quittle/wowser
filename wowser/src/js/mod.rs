@@ -252,6 +252,27 @@ mod tests {
                 JsStatementResult::string("1abc"),
                 JsStatementResult::undefined(),
             ],
-        )
+        );
+
+        run_test(
+            "function foo(arg1, arg2) { arg1 + arg2; return arg1; arg2; return arg2; } foo(1, 'abc')",
+            vec![
+                JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "foo".to_string(),
+                    vec!["arg1".to_string(), "arg2".to_string()],
+                    vec![
+                        JsStatement::Expression(JsExpression::Add(
+                            Box::new(JsExpression::Reference("arg1".to_string())),
+                            Box::new(JsExpression::Reference("arg2".to_string())),
+                        )),
+                        JsStatement::Return(JsExpression::Reference("arg1".to_string())),
+                        JsStatement::Expression(JsExpression::Reference("arg2".to_string())),
+                        JsStatement::Return(JsExpression::Reference("arg2".to_string())),
+                    ],
+                )))),
+                JsStatementResult::string("1abc"),
+                JsStatementResult::number(1),
+            ],
+        );
     }
 }

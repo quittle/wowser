@@ -29,6 +29,7 @@ fn on_statement(statement: &JsASTNode) -> JsStatement {
         JsRule::VarDeclaration => on_var_declaration(first_child),
         JsRule::VariableAssignment => on_variable_assignment(first_child),
         JsRule::FunctionDeclaration => on_function_declaration(first_child),
+        JsRule::ReturnKeyword => JsStatement::Return(on_expression(&children[1])),
         rule => panic!("Unexpected child of Statement: {}", rule),
     }
 }

@@ -6,12 +6,16 @@ use super::JsValue;
 #[derive(Debug, PartialEq)]
 pub enum JsStatementResult {
     Value(Rc<JsValue>),
+    ReturnValue(Rc<JsValue>),
     Void,
 }
 
 impl JsStatementResult {
-    pub fn number(v: f64) -> Self {
-        Self::Value(JsValue::number_rc(v))
+    pub fn number<F>(v: F) -> Self
+    where
+        F: Into<f64>,
+    {
+        Self::Value(JsValue::number_rc(v.into()))
     }
 
     pub fn nan() -> Self {

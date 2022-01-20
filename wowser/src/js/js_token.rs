@@ -6,6 +6,7 @@ pub enum JsToken {
     Document,
     VarKeyword,
     FunctionKeyword,
+    ReturnKeyword,
     VariableName,
     Number,
     String,
@@ -24,6 +25,7 @@ pub enum JsToken {
 const STATEMENT_START: &[JsToken] = &[
     JsToken::VarKeyword,
     JsToken::FunctionKeyword,
+    JsToken::ReturnKeyword,
     JsToken::Semicolon,
 ];
 
@@ -40,7 +42,8 @@ impl Token for JsToken {
             Self::Document => "",
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
-            Self::VariableName => r"\s*((?!(var|function))[a-zA-Z_][\w\d]*)\s*",
+            Self::ReturnKeyword => r"\s*(return\s)\s*",
+            Self::VariableName => r"\s*((?!(var|function|return))[a-zA-Z_][\w\d]*)\s*",
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
             Self::OperatorAdd => r"\s*(\+)\s*",
@@ -72,6 +75,7 @@ impl Token for JsToken {
             Self::FunctionKeyword => vec![
                 Self::VariableName,
             ],
+            Self::ReturnKeyword => Vec::from(EXPRESSION_START),
             Self::VariableName => vec![
                 Self::OperatorEquals,
                 Self::OperatorAdd,

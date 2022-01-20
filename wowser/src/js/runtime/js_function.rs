@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{JsClosureContext, JsStatement, JsValue};
+use super::{JsClosureContext, JsStatement, JsStatementResult, JsValue};
 
 #[derive(Clone)]
 pub struct JsFunctionImplementation {
@@ -67,12 +67,13 @@ impl JsFunction {
                         }
                     }
                     for statement in implementation {
-                        let result = statement.run(closure_context);
-                        closure_context.expression_results.push(result);
+                        match statement.run(closure_context) {
+                            JsStatementResult::ReturnValue(value) => return value,
+                            result => closure_context.expression_results.push(result),
+                        }
                     }
-                });
-
-                JsValue::undefined_rc() // TODO: implement return
+                    JsValue::undefined_rc() // TODO: implement return
+                })
             }
         }
     }

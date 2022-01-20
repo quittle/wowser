@@ -7,6 +7,7 @@ pub enum JsStatement {
     VarDeclaration(JsReference),
     VariableAssignment(JsReference, JsExpression),
     FunctionDeclaration(JsReference),
+    Return(JsExpression),
 }
 
 impl JsStatement {
@@ -31,6 +32,9 @@ impl JsStatement {
                     closure_context.get_or_declare_reference_mut(&reference.name);
                 closure_reference.value = reference.value.clone();
                 JsStatementResult::Value(reference.value.clone())
+            }
+            Self::Return(expression) => {
+                JsStatementResult::ReturnValue(expression.run(closure_context))
             }
         }
     }

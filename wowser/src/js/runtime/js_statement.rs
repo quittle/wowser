@@ -1,4 +1,4 @@
-use super::{JsClosure, JsExpression, JsReference, JsStatementResult};
+use super::{JsClosureContext, JsExpression, JsReference, JsStatementResult};
 
 #[derive(Debug, PartialEq)]
 pub enum JsStatement {
@@ -10,21 +10,26 @@ pub enum JsStatement {
 }
 
 impl JsStatement {
-    pub fn run(&self, closure: &mut JsClosure) -> JsStatementResult {
+    pub fn run(&self, closure_context: &mut JsClosureContext) -> JsStatementResult {
         match self {
             Self::Empty => JsStatementResult::Void,
-            Self::Expression(expression) => JsStatementResult::Value(expression.run(closure)),
+            Self::Expression(expression) => {
+                JsStatementResult::Value(expression.run(closure_context))
+            }
             Self::VarDeclaration(reference) => {
-                let reference = closure.get_or_declare_reference_mut(&reference.name);
+                let reference = closure_context.get_or_declare_reference_mut(&reference.name);
                 JsStatementResult::Value(reference.value.clone())
             }
             Self::VariableAssignment(reference, expression) => {
-                let value = expression.run(closure);
-                let reference = closure.get_or_declare_reference_mut(&reference.name);
+                let value = expression.run(closure_context);
+                let reference = closure_context.get_or_declare_reference_mut(&reference.name);
                 reference.value = value;
                 JsStatementResult::Value(reference.value.clone())
             }
             Self::FunctionDeclaration(reference) => {
+                let closure_reference =
+                    closure_context.get_or_declare_reference_mut(&reference.name);
+                closure_reference.value = reference.value.clone();
                 JsStatementResult::Value(reference.value.clone())
             }
         }

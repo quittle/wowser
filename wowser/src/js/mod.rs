@@ -31,7 +31,7 @@ mod tests {
     fn run_js(script: &str) -> Vec<JsStatementResult> {
         let mut js_document = parse_js(script).unwrap();
         js_document.run();
-        js_document.expression_results
+        js_document.global_closure_context.expression_results
     }
 
     fn run_test(script: &str, expected_results: Vec<JsStatementResult>) {
@@ -211,6 +211,47 @@ mod tests {
                     ))],
                 ),
             )))],
+        );
+        run_test(
+            "function foo(arg1, arg2) { arg1 + arg2; };function bar(arg1, arg2) { arg1 + arg2; }",
+            vec![
+                JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "foo".to_string(),
+                    vec!["arg1".to_string(), "arg2".to_string()],
+                    vec![JsStatement::Expression(JsExpression::Add(
+                        Box::new(JsExpression::Reference("arg1".to_string())),
+                        Box::new(JsExpression::Reference("arg2".to_string())),
+                    ))],
+                )))),
+                JsStatementResult::Void,
+                JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "bar".to_string(),
+                    vec!["arg1".to_string(), "arg2".to_string()],
+                    vec![JsStatement::Expression(JsExpression::Add(
+                        Box::new(JsExpression::Reference("arg1".to_string())),
+                        Box::new(JsExpression::Reference("arg2".to_string())),
+                    ))],
+                )))),
+            ],
+        );
+    }
+
+    #[test]
+    pub fn test_user_function_invocations() {
+        run_test(
+            "function foo(arg1, arg2) { arg1 + arg2; } foo(1, 'abc')",
+            vec![
+                JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "foo".to_string(),
+                    vec!["arg1".to_string(), "arg2".to_string()],
+                    vec![JsStatement::Expression(JsExpression::Add(
+                        Box::new(JsExpression::Reference("arg1".to_string())),
+                        Box::new(JsExpression::Reference("arg2".to_string())),
+                    ))],
+                )))),
+                JsStatementResult::string("1abc"),
+                JsStatementResult::undefined(),
+            ],
         )
     }
 }

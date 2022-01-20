@@ -8,6 +8,18 @@ pub struct JsClosure {
 }
 
 impl JsClosure {
+    pub fn has_reference(&self, variable_name: &str) -> bool {
+        self.references
+            .iter()
+            .any(|reference| reference.name == variable_name)
+    }
+
+    pub fn get_reference(&self, variable_name: &str) -> Option<&JsReference> {
+        self.references
+            .iter()
+            .find(|reference| reference.name == variable_name)
+    }
+
     pub fn get_reference_mut(&mut self, variable_name: &str) -> Option<&mut JsReference> {
         self.references
             .iter_mut()
@@ -22,6 +34,7 @@ impl JsClosure {
                 name: variable_name.into(),
                 value: JsValue::undefined_rc(),
             },
-        )
+        );
+        self.references.last_mut().unwrap()
     }
 }

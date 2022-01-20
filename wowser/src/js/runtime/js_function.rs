@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{JsStatement, JsValue};
+use super::{JsClosureContext, JsStatement, JsValue};
 
 #[derive(Clone)]
 pub struct JsFunctionImplementation {
@@ -51,10 +51,29 @@ impl JsFunction {
         }
     }
 
-    pub fn run(&self, args: &[Rc<JsValue>]) -> Rc<JsValue> {
+    pub fn run(&self, closure_context: &mut JsClosureContext, args: &[Rc<JsValue>]) -> Rc<JsValue> {
         match self {
             Self::Native(_, implementation) => implementation.func.as_ref()(args),
-            Self::UserDefined(_name, _params, _implementation) => JsValue::undefined_rc(), // TODO: implement running
+            Self::UserDefined(_name, params, implementation) => {
+                closure_context.with_new_context(|closure_context| {
+                    let closure = closure_context.get_lastest_closure();
+                    for (index, param_name) in params.iter().enumerate() {
+                        // Ensure all params are declared
+                        let reference = closure.get_or_declare_reference_mut(param_name);
+
+                        // Assign args that line up with parameters are assigned
+                        if let Some(arg) = args.get(index) {
+                            reference.value = arg.clone();
+                        }
+                    }
+                    for statement in implementation {
+                        let result = statement.run(closure_context);
+                        closure_context.expression_results.push(result);
+                    }
+                });
+
+                JsValue::undefined_rc() // TODO: implement return
+            }
         }
     }
 }

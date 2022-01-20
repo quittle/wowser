@@ -1,5 +1,6 @@
 mod globals;
 mod js_closure;
+mod js_closure_context;
 mod js_document;
 mod js_expression;
 mod js_function;
@@ -9,6 +10,7 @@ mod js_statement_result;
 mod js_value;
 
 pub use js_closure::*;
+pub use js_closure_context::*;
 pub use js_document::*;
 pub use js_expression::*;
 pub use js_function::*;

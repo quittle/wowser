@@ -1,10 +1,9 @@
-use super::{globals::add_globals, JsClosure, JsStatement, JsStatementResult};
+use super::{globals::add_globals, JsClosure, JsClosureContext, JsStatement};
 
 #[derive(Debug)]
 pub struct JsDocument {
     pub statements: Vec<JsStatement>,
-    pub expression_results: Vec<JsStatementResult>,
-    global_closure: JsClosure,
+    pub global_closure_context: JsClosureContext,
 }
 
 impl JsDocument {
@@ -13,15 +12,14 @@ impl JsDocument {
         add_globals(&mut global_closure);
         Self {
             statements,
-            expression_results: vec![],
-            global_closure,
+            global_closure_context: JsClosureContext::new(global_closure),
         }
     }
 
     pub fn run(&mut self) {
         for statement in &self.statements {
-            let result = statement.run(&mut self.global_closure);
-            self.expression_results.push(result);
+            let result = statement.run(&mut self.global_closure_context);
+            self.global_closure_context.expression_results.push(result);
         }
     }
 }

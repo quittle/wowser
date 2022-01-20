@@ -130,6 +130,7 @@ impl Token for JsToken {
                     Self::Terminator,
                 ],
                 EXPRESSION_START,
+                STATEMENT_START,
             ].concat(),
             Self::Comma => [
                 &[

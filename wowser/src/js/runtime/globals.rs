@@ -27,15 +27,15 @@ fn js_atob(args: &[Rc<JsValue>]) -> Rc<JsValue> {
                     return JsValue::str_rc(decoded_string);
                 }
             }
-            JsValue::undefined_rc() // TODO: This should be a TypeError or DOMException when supported
+            JsValue::type_error_or_dom_exception_rc()
         }
-        _ => JsValue::undefined_rc(), // TODO: This should be a TypeError when supported
+        _ => JsValue::type_error_rc(),
     }
 }
 
 fn js_btoa(args: &[Rc<JsValue>]) -> Rc<JsValue> {
     match args.get(0) {
         Some(value) => JsValue::string_rc(value.to_string().base64_encode()),
-        _ => JsValue::undefined_rc(), // TODO: This should be a TypeError when supported
+        _ => JsValue::type_error_rc(),
     }
 }

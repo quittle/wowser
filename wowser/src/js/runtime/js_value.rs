@@ -37,6 +37,18 @@ impl JsValue {
     pub fn undefined_rc() -> Rc<Self> {
         Rc::new(Self::Undefined)
     }
+
+    pub fn type_error_rc() -> Rc<Self> {
+        Self::undefined_rc() // TODO: These should raise exceptions when supported
+    }
+
+    pub fn type_error_or_dom_exception_rc() -> Rc<Self> {
+        Self::undefined_rc() // TODO: These should raise exceptions when supported
+    }
+
+    pub fn reference_error_rc() -> Rc<Self> {
+        Self::undefined_rc() // TODO: These should raise exceptions when supported
+    }
 }
 
 impl ToString for JsValue {

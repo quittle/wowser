@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{JsClosure, JsValue};
+use super::{JsClosureContext, JsValue};
 
 #[derive(Debug, PartialEq)]
 pub enum JsExpression {
@@ -14,18 +14,17 @@ pub enum JsExpression {
 }
 
 impl JsExpression {
-    pub fn run(&self, global_references: &mut JsClosure) -> Rc<JsValue> {
+    pub fn run(&self, closure_context: &mut JsClosureContext) -> Rc<JsValue> {
         match self {
-            Self::Reference(variable_name) => global_references
+            Self::Reference(variable_name) => closure_context
                 .get_reference_mut(variable_name)
                 .map(|reference| reference.value.clone())
-                // TODO: This should raise a ReferenceError instead when they exist
-                .unwrap_or_else(JsValue::undefined_rc),
+                .unwrap_or_else(JsValue::reference_error_rc),
             Self::Number(num) => JsValue::number_rc(*num),
             Self::String(num) => JsValue::str_rc(num),
             Self::Add(a, b) => {
-                let a_value = a.run(global_references);
-                let b_value = b.run(global_references);
+                let a_value = a.run(closure_context);
+                let b_value = b.run(closure_context);
                 match (a_value.as_ref(), b_value.as_ref()) {
                     (JsValue::Number(num_a), JsValue::Number(num_b)) => {
                         JsValue::number_rc(num_a + num_b)
@@ -48,23 +47,26 @@ impl JsExpression {
                 }
             }
             Self::Multiply(a, b) => {
-                let a_value = a.run(global_references);
-                let b_value = b.run(global_references);
+                let a_value = a.run(closure_context);
+                let b_value = b.run(closure_context);
                 JsValue::number_rc(f64::from(a_value.as_ref()) * f64::from(b_value.as_ref()))
             }
             Self::CastToNumber(expression) => {
-                let value = expression.run(global_references);
+                let value = expression.run(closure_context);
                 JsValue::number_rc(f64::from(value.as_ref()))
             }
-            Self::InvokeFunction(reference_to_invoke, args) => {
-                let value = reference_to_invoke.run(global_references);
+            Self::InvokeFunction(reference_to_invoke, arg_expressions) => {
+                let value = reference_to_invoke.run(closure_context);
+
                 match value.as_ref() {
                     JsValue::Function(function) => {
-                        let evaluated_args: Vec<Rc<JsValue>> =
-                            args.iter().map(|arg| arg.run(global_references)).collect();
-                        function.run(&evaluated_args)
+                        let mut evaluated_args: Vec<_> = Vec::with_capacity(arg_expressions.len());
+                        for expression in arg_expressions {
+                            evaluated_args.push(expression.run(closure_context))
+                        }
+                        function.run(closure_context, &evaluated_args)
                     }
-                    _ => JsValue::undefined_rc(), // TODO: This should be a TypeError when they exist
+                    _ => JsValue::type_error_rc(),
                 }
             }
         }

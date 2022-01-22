@@ -10,6 +10,7 @@ pub enum JsValue {
     String(String),
     Function(JsFunction),
     Undefined,
+    Null,
 }
 
 impl JsValue {
@@ -43,6 +44,10 @@ impl JsValue {
         Rc::new(Self::Undefined)
     }
 
+    pub fn null_rc() -> Rc<Self> {
+        Rc::new(Self::Null)
+    }
+
     pub fn type_error_rc() -> Rc<Self> {
         Self::undefined_rc() // TODO: These should raise exceptions when supported
     }
@@ -63,6 +68,7 @@ impl ToString for JsValue {
             Self::Number(v) => v.to_string(),
             Self::String(v) => v.clone(),
             Self::Undefined => "undefined".to_string(),
+            Self::Null => "null".to_string(),
             Self::Function(function) => {
                 format!("function {}() {{ [native code] }}", function.get_name())
             }
@@ -97,6 +103,7 @@ impl From<&JsValue> for f64 {
                 }
             }
             JsValue::Undefined => f64::NAN,
+            JsValue::Null => 0.0,
             JsValue::Function(_) => f64::NAN,
         }
     }
@@ -109,6 +116,7 @@ impl From<JsValue> for bool {
             JsValue::Number(v) => !v.is_nan() && v != 0.0,
             JsValue::String(v) => !v.is_empty(),
             JsValue::Undefined => false,
+            JsValue::Null => false,
             JsValue::Function(_) => true,
         }
     }

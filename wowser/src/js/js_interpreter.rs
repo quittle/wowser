@@ -144,6 +144,7 @@ fn on_literal_value(node: &JsASTNode) -> JsExpression {
     match child.rule {
         JsRule::TrueKeyword => JsExpression::Boolean(true),
         JsRule::FalseKeyword => JsExpression::Boolean(false),
+        JsRule::NullKeyword => JsExpression::Null,
         JsRule::Number => on_number(child),
         JsRule::String => on_string(child),
         JsRule::Undefined => JsExpression::Undefined,

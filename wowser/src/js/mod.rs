@@ -312,4 +312,15 @@ mod tests {
         assert!(run_js("undefined * false")[0].is_nan());
         run_test("true + '2'", vec![JsStatementResult::string("true2")]);
     }
+
+    #[test]
+    fn test_null() {
+        run_test("null", vec![JsStatementResult::null()]);
+        run_test("null;", vec![JsStatementResult::null()]);
+        run_test("1 + null;", vec![JsStatementResult::number(1)]);
+        run_test("3 * null", vec![JsStatementResult::number(0)]);
+        assert!(run_js("null + undefined")[0].is_nan());
+        run_test("null + ''", vec![JsStatementResult::string("null")]);
+        run_test("null * ''", vec![JsStatementResult::number(0)]);
+    }
 }

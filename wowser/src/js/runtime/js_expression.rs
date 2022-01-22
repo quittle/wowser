@@ -8,6 +8,7 @@ pub enum JsExpression {
     Number(f64),
     String(String),
     Undefined,
+    Null,
     Add(Box<JsExpression>, Box<JsExpression>),
     Multiply(Box<JsExpression>, Box<JsExpression>),
     Reference(String),
@@ -26,13 +27,20 @@ impl JsExpression {
             Self::Number(num) => JsValue::number_rc(*num),
             Self::String(num) => JsValue::str_rc(num),
             Self::Undefined => JsValue::undefined_rc(),
+            Self::Null => JsValue::null_rc(),
             Self::Add(a, b) => {
                 let a_value = a.run(closure_context);
                 let b_value = b.run(closure_context);
                 match (a_value.as_ref(), b_value.as_ref()) {
                     (
-                        a @ JsValue::Number(_) | a @ JsValue::Boolean(_) | a @ JsValue::Undefined,
-                        b @ JsValue::Number(_) | b @ JsValue::Boolean(_) | b @ JsValue::Undefined,
+                        a @ JsValue::Number(_)
+                        | a @ JsValue::Boolean(_)
+                        | a @ JsValue::Undefined
+                        | a @ JsValue::Null,
+                        b @ JsValue::Number(_)
+                        | b @ JsValue::Boolean(_)
+                        | b @ JsValue::Undefined
+                        | b @ JsValue::Null,
                     ) => JsValue::number_rc(f64::from(a) + f64::from(b)),
                     (a @ JsValue::String(_) | a @ JsValue::Function(_), b) => {
                         JsValue::string_rc(a.to_string() + &b.to_string())

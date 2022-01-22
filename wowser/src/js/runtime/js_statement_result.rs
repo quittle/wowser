@@ -37,6 +37,10 @@ impl JsStatementResult {
         Self::Value(JsValue::undefined_rc())
     }
 
+    pub fn null() -> Self {
+        Self::Value(JsValue::null_rc())
+    }
+
     pub fn is_nan(&self) -> bool {
         match self {
             JsStatementResult::Value(value) => match value.as_ref() {

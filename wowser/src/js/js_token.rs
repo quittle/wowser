@@ -9,6 +9,7 @@ pub enum JsToken {
     ReturnKeyword,
     TrueKeyword,
     FalseKeyword,
+    NullKeyword,
     VariableName,
     Number,
     String,
@@ -35,6 +36,7 @@ const STATEMENT_START: &[JsToken] = &[
 const EXPRESSION_START: &[JsToken] = &[
     JsToken::TrueKeyword,
     JsToken::FalseKeyword,
+    JsToken::NullKeyword,
     JsToken::VariableName,
     JsToken::Number,
     JsToken::String,
@@ -60,8 +62,9 @@ impl Token for JsToken {
             Self::ReturnKeyword => r"\s*(return\s)\s*",
             Self::TrueKeyword => r"\s*(true)\s*",
             Self::FalseKeyword => r"\s*(false)\s*",
+            Self::NullKeyword => r"\s*(null)\s*",
             Self::VariableName => {
-                r"\s*((?!((var|function|return|undefined|true|false)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
+                r"\s*((?!((var|function|return|undefined|true|false|null)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
             }
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
@@ -98,6 +101,7 @@ impl Token for JsToken {
             Self::ReturnKeyword => Vec::from(EXPRESSION_START),
             Self::TrueKeyword => Vec::from(POST_EXPRESSION),
             Self::FalseKeyword => Vec::from(POST_EXPRESSION),
+            Self::NullKeyword => Vec::from(POST_EXPRESSION),
             Self::VariableName => [
                 &[
                     Self::OperatorEquals,
@@ -108,15 +112,7 @@ impl Token for JsToken {
             Self::Number => Vec::from(POST_EXPRESSION),
             Self::String => Vec::from(POST_EXPRESSION),
             Self::Undefined => Vec::from(POST_EXPRESSION),
-            Self::OperatorAdd => vec![
-                Self::TrueKeyword,
-                Self::FalseKeyword,
-                Self::VariableName,
-                Self::Number,
-                Self::String,
-                Self::OperatorAdd,
-                Self::Undefined,
-            ],
+            Self::OperatorAdd => Vec::from(EXPRESSION_START),
             Self::OperatorMultiply => Vec::from(EXPRESSION_START),
             Self::OperatorEquals => Vec::from(EXPRESSION_START),
             Self::OpenParen => [

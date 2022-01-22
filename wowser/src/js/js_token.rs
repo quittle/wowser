@@ -7,6 +7,8 @@ pub enum JsToken {
     VarKeyword,
     FunctionKeyword,
     ReturnKeyword,
+    TrueKeyword,
+    FalseKeyword,
     VariableName,
     Number,
     String,
@@ -31,6 +33,8 @@ const STATEMENT_START: &[JsToken] = &[
 ];
 
 const EXPRESSION_START: &[JsToken] = &[
+    JsToken::TrueKeyword,
+    JsToken::FalseKeyword,
     JsToken::VariableName,
     JsToken::Number,
     JsToken::String,
@@ -54,8 +58,10 @@ impl Token for JsToken {
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
             Self::ReturnKeyword => r"\s*(return\s)\s*",
+            Self::TrueKeyword => r"\s*(true)\s*",
+            Self::FalseKeyword => r"\s*(false)\s*",
             Self::VariableName => {
-                r"\s*((?!((var|function|return|undefined)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
+                r"\s*((?!((var|function|return|undefined|true|false)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
             }
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
@@ -90,20 +96,21 @@ impl Token for JsToken {
                 Self::VariableName,
             ],
             Self::ReturnKeyword => Vec::from(EXPRESSION_START),
-            Self::VariableName => vec![
-                Self::OperatorEquals,
-                Self::OperatorAdd,
-                Self::OperatorMultiply,
-                Self::OpenParen,
-                Self::CloseParen,
-                Self::Comma,
-                Self::Semicolon,
-                Self::Terminator,
-            ],
+            Self::TrueKeyword => Vec::from(POST_EXPRESSION),
+            Self::FalseKeyword => Vec::from(POST_EXPRESSION),
+            Self::VariableName => [
+                &[
+                    Self::OperatorEquals,
+                    Self::OpenParen,
+                ],
+                POST_EXPRESSION,
+            ].concat(),
             Self::Number => Vec::from(POST_EXPRESSION),
             Self::String => Vec::from(POST_EXPRESSION),
             Self::Undefined => Vec::from(POST_EXPRESSION),
             Self::OperatorAdd => vec![
+                Self::TrueKeyword,
+                Self::FalseKeyword,
                 Self::VariableName,
                 Self::Number,
                 Self::String,

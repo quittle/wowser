@@ -4,6 +4,7 @@ use super::{JsClosureContext, JsValue};
 
 #[derive(Debug, PartialEq)]
 pub enum JsExpression {
+    Boolean(bool),
     Number(f64),
     String(String),
     Undefined,
@@ -21,6 +22,7 @@ impl JsExpression {
                 .get_reference_mut(variable_name)
                 .map(|reference| reference.value.clone())
                 .unwrap_or_else(JsValue::reference_error_rc),
+            Self::Boolean(b) => JsValue::bool_rc(*b),
             Self::Number(num) => JsValue::number_rc(*num),
             Self::String(num) => JsValue::str_rc(num),
             Self::Undefined => JsValue::undefined_rc(),
@@ -28,22 +30,14 @@ impl JsExpression {
                 let a_value = a.run(closure_context);
                 let b_value = b.run(closure_context);
                 match (a_value.as_ref(), b_value.as_ref()) {
-                    (JsValue::Number(num_a), JsValue::Number(num_b)) => {
-                        JsValue::number_rc(num_a + num_b)
-                    }
-                    (JsValue::Number(_), JsValue::Undefined) => JsValue::nan_rc(),
-                    (JsValue::Undefined, JsValue::Number(_)) => JsValue::nan_rc(),
-                    (JsValue::Undefined, JsValue::Undefined) => JsValue::nan_rc(),
-                    (a @ JsValue::String(_), b) => {
+                    (
+                        a @ JsValue::Number(_) | a @ JsValue::Boolean(_) | a @ JsValue::Undefined,
+                        b @ JsValue::Number(_) | b @ JsValue::Boolean(_) | b @ JsValue::Undefined,
+                    ) => JsValue::number_rc(f64::from(a) + f64::from(b)),
+                    (a @ JsValue::String(_) | a @ JsValue::Function(_), b) => {
                         JsValue::string_rc(a.to_string() + &b.to_string())
                     }
-                    (a, b @ JsValue::String(_)) => {
-                        JsValue::string_rc(a.to_string() + &b.to_string())
-                    }
-                    (a @ JsValue::Function(_), b) => {
-                        JsValue::string_rc(a.to_string() + &b.to_string())
-                    }
-                    (a, b @ JsValue::Function(_)) => {
+                    (a, b @ JsValue::String(_) | b @ JsValue::Function(_)) => {
                         JsValue::string_rc(a.to_string() + &b.to_string())
                     }
                 }

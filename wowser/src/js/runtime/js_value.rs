@@ -5,6 +5,7 @@ use super::JsFunction;
 /// Represents any type
 #[derive(Debug, PartialEq)]
 pub enum JsValue {
+    Boolean(bool),
     Number(f64),
     String(String),
     Function(JsFunction),
@@ -13,6 +14,10 @@ pub enum JsValue {
 
 impl JsValue {
     pub const NAN: Self = Self::Number(f64::NAN);
+
+    pub fn bool_rc(b: bool) -> Rc<Self> {
+        Rc::new(Self::Boolean(b))
+    }
 
     pub fn nan_rc() -> Rc<Self> {
         Rc::new(Self::NAN)
@@ -54,6 +59,7 @@ impl JsValue {
 impl ToString for JsValue {
     fn to_string(&self) -> String {
         match self {
+            Self::Boolean(b) => b.to_string(),
             Self::Number(v) => v.to_string(),
             Self::String(v) => v.clone(),
             Self::Undefined => "undefined".to_string(),
@@ -73,6 +79,13 @@ impl From<JsValue> for f64 {
 impl From<&JsValue> for f64 {
     fn from(value: &JsValue) -> f64 {
         match value {
+            JsValue::Boolean(b) => {
+                if *b {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
             JsValue::Number(v) => *v,
             JsValue::String(v) => {
                 let trimmed = v.trim();
@@ -85,6 +98,18 @@ impl From<&JsValue> for f64 {
             }
             JsValue::Undefined => f64::NAN,
             JsValue::Function(_) => f64::NAN,
+        }
+    }
+}
+
+impl From<JsValue> for bool {
+    fn from(value: JsValue) -> bool {
+        match value {
+            JsValue::Boolean(v) => v,
+            JsValue::Number(v) => !v.is_nan() && v != 0.0,
+            JsValue::String(v) => !v.is_empty(),
+            JsValue::Undefined => false,
+            JsValue::Function(_) => true,
         }
     }
 }

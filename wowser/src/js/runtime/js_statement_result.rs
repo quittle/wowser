@@ -11,6 +11,10 @@ pub enum JsStatementResult {
 }
 
 impl JsStatementResult {
+    pub fn bool(b: bool) -> Self {
+        Self::Value(JsValue::bool_rc(b))
+    }
+
     pub fn number<F>(v: F) -> Self
     where
         F: Into<f64>,

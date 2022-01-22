@@ -12,6 +12,8 @@ pub enum JsRule {
     FunctionKeyword,
     FunctionParams,
     ReturnKeyword,
+    TrueKeyword,
+    FalseKeyword,
     VariableName,
     VariableAssignment,
     Expression,
@@ -93,6 +95,12 @@ impl Rule for JsRule {
             Self::ReturnKeyword => vec![
                 RuleType::Token(JsToken::ReturnKeyword),
             ],
+            Self::TrueKeyword => vec![
+                RuleType::Token(JsToken::TrueKeyword),
+            ],
+            Self::FalseKeyword => vec![
+                RuleType::Token(JsToken::FalseKeyword),
+            ],
             Self::VariableName => vec![
                 RuleType::Token(JsToken::VariableName),
             ],
@@ -142,6 +150,8 @@ impl Rule for JsRule {
                 RuleType::Sequence(vec![]),
             ],
             Self::LiteralValue => vec![
+                RuleType::Rule(Self::TrueKeyword),
+                RuleType::Rule(Self::FalseKeyword),
                 RuleType::Rule(Self::Number),
                 RuleType::Rule(Self::String),
                 RuleType::Rule(Self::Undefined),

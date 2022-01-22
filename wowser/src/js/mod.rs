@@ -301,4 +301,15 @@ mod tests {
             vec![JsStatementResult::number(1), JsStatementResult::number(1)],
         );
     }
+
+    #[test]
+    fn test_bool() {
+        run_test("true", vec![JsStatementResult::bool(true)]);
+        run_test("false", vec![JsStatementResult::bool(false)]);
+        run_test("false + true;", vec![JsStatementResult::number(1)]);
+        run_test("true + false", vec![JsStatementResult::number(1)]);
+        run_test("1 * false", vec![JsStatementResult::number(0.0)]);
+        assert!(run_js("undefined * false")[0].is_nan());
+        run_test("true + '2'", vec![JsStatementResult::string("true2")]);
+    }
 }

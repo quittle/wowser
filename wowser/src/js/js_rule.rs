@@ -32,6 +32,7 @@ pub enum JsRule {
     LiteralValue,
     Number,
     String,
+    Undefined,
     Semicolon,
     Terminator,
 }
@@ -114,6 +115,7 @@ impl Rule for JsRule {
             ],
             Self::ExpressionSubAdd => vec![
                 RuleType::Rule(Self::FunctionInvoke),
+                RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::ExpressionMultiply),
                 RuleType::Rule(Self::VariableName),
                 RuleType::Rule(Self::ExpressionAdd),
@@ -142,6 +144,7 @@ impl Rule for JsRule {
             Self::LiteralValue => vec![
                 RuleType::Rule(Self::Number),
                 RuleType::Rule(Self::String),
+                RuleType::Rule(Self::Undefined),
             ],
             Self::OperatorAdd => vec![
                 RuleType::Token(JsToken::OperatorAdd),
@@ -172,6 +175,9 @@ impl Rule for JsRule {
             ],
             Self::String => vec![
                 RuleType::Token(JsToken::String),
+            ],
+            Self::Undefined => vec![
+                RuleType::Token(JsToken::Undefined),
             ],
             Self::Semicolon => vec![
                 RuleType::Token(JsToken::Semicolon),

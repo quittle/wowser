@@ -34,6 +34,7 @@ mod tests {
         js_document.global_closure_context.expression_results
     }
 
+    #[track_caller]
     fn run_test(script: &str, expected_results: Vec<JsStatementResult>) {
         let results = run_js(script);
         assert_eq!(results, expected_results);
@@ -273,6 +274,31 @@ mod tests {
                 JsStatementResult::string("1abc"),
                 JsStatementResult::number(1),
             ],
+        );
+    }
+
+    #[test]
+    fn test_undefined() {
+        run_test("undefined", vec![JsStatementResult::undefined()]);
+        run_test(
+            "undefined; undefined",
+            vec![
+                JsStatementResult::undefined(),
+                JsStatementResult::undefined(),
+            ],
+        );
+        run_test(
+            "var a; a = undefined; a",
+            vec![
+                JsStatementResult::undefined(),
+                JsStatementResult::undefined(),
+                JsStatementResult::undefined(),
+            ],
+        );
+        assert!(run_js("undefined+undefined*undefined+undefined",)[0].is_nan());
+        run_test(
+            "var undefined_var = 1; undefined_var",
+            vec![JsStatementResult::number(1), JsStatementResult::number(1)],
         );
     }
 }

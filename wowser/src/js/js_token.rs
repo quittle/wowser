@@ -10,6 +10,7 @@ pub enum JsToken {
     VariableName,
     Number,
     String,
+    Undefined,
     OperatorAdd,
     OperatorMultiply,
     OperatorEquals,
@@ -33,7 +34,17 @@ const EXPRESSION_START: &[JsToken] = &[
     JsToken::VariableName,
     JsToken::Number,
     JsToken::String,
+    JsToken::Undefined,
     JsToken::OperatorAdd,
+];
+
+const POST_EXPRESSION: &[JsToken] = &[
+    JsToken::OperatorAdd,
+    JsToken::OperatorMultiply,
+    JsToken::CloseParen,
+    JsToken::Comma,
+    JsToken::Semicolon,
+    JsToken::Terminator,
 ];
 
 impl Token for JsToken {
@@ -43,9 +54,12 @@ impl Token for JsToken {
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
             Self::ReturnKeyword => r"\s*(return\s)\s*",
-            Self::VariableName => r"\s*((?!(var|function|return))[a-zA-Z_][\w\d]*)\s*",
+            Self::VariableName => {
+                r"\s*((?!((var|function|return|undefined)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
+            }
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
+            Self::Undefined => r"\s*(undefined)\s*",
             Self::OperatorAdd => r"\s*(\+)\s*",
             Self::OperatorMultiply => r"\s*(\*)\s*",
             Self::OperatorEquals => r"\s*(=)\s*",
@@ -86,27 +100,15 @@ impl Token for JsToken {
                 Self::Semicolon,
                 Self::Terminator,
             ],
-            Self::Number => vec![
-                Self::OperatorAdd,
-                Self::OperatorMultiply,
-                Self::CloseParen,
-                Self::Comma,
-                Self::Semicolon,
-                Self::Terminator,
-            ],
-            Self::String => vec![
-                Self::OperatorAdd,
-                Self::OperatorMultiply,
-                Self::CloseParen,
-                Self::Comma,
-                Self::Semicolon,
-                Self::Terminator,
-            ],
+            Self::Number => Vec::from(POST_EXPRESSION),
+            Self::String => Vec::from(POST_EXPRESSION),
+            Self::Undefined => Vec::from(POST_EXPRESSION),
             Self::OperatorAdd => vec![
                 Self::VariableName,
                 Self::Number,
                 Self::String,
-                Self::OperatorAdd
+                Self::OperatorAdd,
+                Self::Undefined,
             ],
             Self::OperatorMultiply => Vec::from(EXPRESSION_START),
             Self::OperatorEquals => Vec::from(EXPRESSION_START),

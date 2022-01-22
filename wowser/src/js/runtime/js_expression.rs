@@ -6,6 +6,7 @@ use super::{JsClosureContext, JsValue};
 pub enum JsExpression {
     Number(f64),
     String(String),
+    Undefined,
     Add(Box<JsExpression>, Box<JsExpression>),
     Multiply(Box<JsExpression>, Box<JsExpression>),
     Reference(String),
@@ -22,6 +23,7 @@ impl JsExpression {
                 .unwrap_or_else(JsValue::reference_error_rc),
             Self::Number(num) => JsValue::number_rc(*num),
             Self::String(num) => JsValue::str_rc(num),
+            Self::Undefined => JsValue::undefined_rc(),
             Self::Add(a, b) => {
                 let a_value = a.run(closure_context);
                 let b_value = b.run(closure_context);

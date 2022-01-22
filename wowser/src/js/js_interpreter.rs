@@ -144,6 +144,7 @@ fn on_literal_value(node: &JsASTNode) -> JsExpression {
     match child.rule {
         JsRule::Number => on_number(child),
         JsRule::String => on_string(child),
+        JsRule::Undefined => JsExpression::Undefined,
         rule => panic!("Unexpected rule: {}", rule),
     }
 }

@@ -92,7 +92,7 @@ pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
     str::from_utf8(bytes).map_err(|e| {
         format!(
             "{} - Original String<{}>",
-            e.to_string(),
+            e,
             String::from_utf8_lossy(bytes)
         )
     })

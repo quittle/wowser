@@ -37,7 +37,7 @@ impl HtmlDocument {
 
 impl Display for HtmlDocument {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}{}", self.doctype, self.html.to_string())
+        write!(f, "{}{}", self.doctype, self.html)
     }
 }
 

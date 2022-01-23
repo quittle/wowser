@@ -6,6 +6,8 @@ pub enum JsRule {
     Document,
     Statements,
     Statement,
+    IfKeyword,
+    IfStatement,
     VarDeclaration,
     VarKeyword,
     FunctionDeclaration,
@@ -60,6 +62,7 @@ impl Rule for JsRule {
             ],
             Self::Statement => vec![
                 RuleType::Rule(Self::FunctionDeclaration),
+                RuleType::Rule(Self::IfStatement),
                 RuleType::Sequence(vec![Self::ReturnKeyword, Self::Expression, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::VarDeclaration, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Expression, Self::Semicolon]),
@@ -95,6 +98,34 @@ impl Rule for JsRule {
             ],
             Self::ReturnKeyword => vec![
                 RuleType::Token(JsToken::ReturnKeyword),
+            ],
+            Self::IfStatement => vec![
+                RuleType::Sequence(vec![
+                    Self::IfKeyword,
+                    Self::OpenParen,
+                    Self::Expression,
+                    Self::CloseParen,
+                    Self::OpenCurlyBrace,
+                    Self::Statements,
+                    Self::CloseCurlyBrace
+                ]),
+                RuleType::Sequence(vec![
+                    Self::IfKeyword,
+                    Self::OpenParen,
+                    Self::Expression,
+                    Self::CloseParen,
+                    Self::Statement,
+                ]),
+                RuleType::Sequence(vec![
+                    Self::IfKeyword,
+                    Self::OpenParen,
+                    Self::Expression,
+                    Self::CloseParen,
+                    Self::Expression,
+                ]),
+            ],
+            Self::IfKeyword => vec![
+                RuleType::Token(JsToken::IfKeyword),
             ],
             Self::TrueKeyword => vec![
                 RuleType::Token(JsToken::TrueKeyword),

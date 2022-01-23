@@ -8,6 +8,7 @@ pub enum JsStatement {
     VariableAssignment(JsReference, JsExpression),
     FunctionDeclaration(JsReference),
     Return(JsExpression),
+    If(JsExpression, Vec<JsStatement>),
 }
 
 impl JsStatement {
@@ -35,6 +36,17 @@ impl JsStatement {
             }
             Self::Return(expression) => {
                 JsStatementResult::ReturnValue(expression.run(closure_context))
+            }
+            Self::If(condition_expression, execution_statements) => {
+                let result = condition_expression.run(closure_context);
+                let result_bool: bool = result.as_ref().into();
+                if result_bool {
+                    for statement in execution_statements {
+                        let result = statement.run(closure_context);
+                        closure_context.record_new_result(result);
+                    }
+                }
+                JsStatementResult::Void
             }
         }
     }

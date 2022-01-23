@@ -69,7 +69,7 @@ impl JsFunction {
                     for statement in implementation {
                         match statement.run(closure_context) {
                             JsStatementResult::ReturnValue(value) => return value,
-                            result => closure_context.expression_results.push(result),
+                            result => closure_context.record_new_result(result),
                         }
                     }
                     JsValue::undefined_rc() // TODO: implement return

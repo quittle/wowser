@@ -323,4 +323,32 @@ mod tests {
         run_test("null + ''", vec![JsStatementResult::string("null")]);
         run_test("null * ''", vec![JsStatementResult::number(0)]);
     }
+
+    #[test]
+    fn test_if_statements() {
+        run_test(
+            "if(true){1;}",
+            vec![JsStatementResult::number(1), JsStatementResult::Void],
+        );
+        run_test(
+            "if(true)1",
+            vec![JsStatementResult::number(1), JsStatementResult::Void],
+        );
+        run_test(
+            "if(true)var i;2",
+            vec![
+                JsStatementResult::undefined(),
+                JsStatementResult::Void,
+                JsStatementResult::number(2),
+            ],
+        );
+        run_test(
+            "1; if (null * undefined) { 2; } 3",
+            vec![
+                JsStatementResult::number(1),
+                JsStatementResult::Void,
+                JsStatementResult::number(3),
+            ],
+        );
+    }
 }

@@ -30,6 +30,7 @@ fn on_statement(statement: &JsASTNode) -> JsStatement {
         JsRule::VariableAssignment => on_variable_assignment(first_child),
         JsRule::FunctionDeclaration => on_function_declaration(first_child),
         JsRule::ReturnKeyword => JsStatement::Return(on_expression(&children[1])),
+        JsRule::IfStatement => on_if_statement(first_child),
         rule => panic!("Unexpected child of Statement: {}", rule),
     }
 }
@@ -94,6 +95,28 @@ fn on_function_params(node: &JsASTNode) -> Vec<String> {
     };
     params.insert(0, variable_name);
     params
+}
+
+fn on_if_statement(node: &JsASTNode) -> JsStatement {
+    let children = extract_interpreter_children(node, JsRule::IfStatement);
+
+    let conditional_expression = on_expression(&children[2]);
+
+    let execution_statements = if children.len() == 5 {
+        let execution_node = &children[4];
+        match execution_node.rule {
+            JsRule::Expression => vec![JsStatement::Expression(on_expression(execution_node))],
+            JsRule::Statement => vec![on_statement(execution_node)],
+            _ => panic!(
+                "Unexpected if statement execution node: {}",
+                execution_node.rule
+            ),
+        }
+    } else {
+        on_statements(&children[5])
+    };
+
+    JsStatement::If(conditional_expression, execution_statements)
 }
 
 fn on_expression(node: &JsASTNode) -> JsExpression {

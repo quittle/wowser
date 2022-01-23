@@ -4,6 +4,7 @@ use wowser_macros::DisplayFromDebug;
 #[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq)]
 pub enum JsToken {
     Document,
+    IfKeyword,
     VarKeyword,
     FunctionKeyword,
     ReturnKeyword,
@@ -27,6 +28,7 @@ pub enum JsToken {
 }
 
 const STATEMENT_START: &[JsToken] = &[
+    JsToken::IfKeyword,
     JsToken::VarKeyword,
     JsToken::FunctionKeyword,
     JsToken::ReturnKeyword,
@@ -57,6 +59,7 @@ impl Token for JsToken {
     fn regex(&self) -> &str {
         match self {
             Self::Document => "",
+            Self::IfKeyword => r"\s*(if)\s*",
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
             Self::ReturnKeyword => r"\s*(return\s)\s*",
@@ -64,7 +67,7 @@ impl Token for JsToken {
             Self::FalseKeyword => r"\s*(false)\s*",
             Self::NullKeyword => r"\s*(null)\s*",
             Self::VariableName => {
-                r"\s*((?!((var|function|return|undefined|true|false|null)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
+                r"\s*((?!((var|function|return|undefined|true|false|null|if)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
             }
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
@@ -92,6 +95,9 @@ impl Token for JsToken {
                 EXPRESSION_START,
                 STATEMENT_START,
             ].concat(),
+            Self::IfKeyword => vec![
+                Self::OpenParen,
+            ],
             Self::VarKeyword => vec![
                 Self::VariableName,
             ],
@@ -122,14 +128,18 @@ impl Token for JsToken {
                 ],
                 EXPRESSION_START,
             ].concat(),
-            Self::CloseParen => vec![
-                Self::CloseParen,
-                Self::OpenCurlyBrace,
-                Self::OperatorMultiply,
-                Self::OperatorAdd,
-                Self::Comma,
+            Self::CloseParen => [
+                &[
+                    Self::CloseParen,
+                    Self::OpenCurlyBrace,
+                    Self::OperatorMultiply,
+                    Self::OperatorAdd,
+                    Self::Comma,
                 Self::Terminator,
-            ],
+                ],
+                EXPRESSION_START,
+                STATEMENT_START,
+            ].concat(),
             Self::OpenCurlyBrace => [
                 EXPRESSION_START,
                 STATEMENT_START,

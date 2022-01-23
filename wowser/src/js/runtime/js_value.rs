@@ -109,11 +109,11 @@ impl From<&JsValue> for f64 {
     }
 }
 
-impl From<JsValue> for bool {
-    fn from(value: JsValue) -> bool {
+impl From<&JsValue> for bool {
+    fn from(value: &JsValue) -> bool {
         match value {
-            JsValue::Boolean(v) => v,
-            JsValue::Number(v) => !v.is_nan() && v != 0.0,
+            JsValue::Boolean(v) => *v,
+            JsValue::Number(v) => !v.is_nan() && *v != 0.0,
             JsValue::String(v) => !v.is_empty(),
             JsValue::Undefined => false,
             JsValue::Null => false,

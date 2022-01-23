@@ -60,4 +60,8 @@ impl JsClosureContext {
                 .get_or_declare_reference_mut(variable_name)
         }
     }
+
+    pub fn record_new_result(&mut self, result: JsStatementResult) {
+        self.expression_results.push(result);
+    }
 }

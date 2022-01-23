@@ -19,7 +19,7 @@ impl JsDocument {
     pub fn run(&mut self) {
         for statement in &self.statements {
             let result = statement.run(&mut self.global_closure_context);
-            self.global_closure_context.expression_results.push(result);
+            self.global_closure_context.record_new_result(result);
         }
     }
 }

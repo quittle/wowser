@@ -13,6 +13,7 @@ pub struct ParsedToken<'a, T: Token> {
     pub token: T,
     pub literal: &'a str,
     pub offset: ParsedTokenOffset,
+    pub full_match: &'a str,
 }
 
 impl<T: Token> fmt::Debug for ParsedToken<'_, T> {
@@ -74,6 +75,7 @@ impl<T: Token> Lexer<T> {
                         token,
                         literal: real_capture,
                         offset: cur_source_offset,
+                        full_match: capture,
                     });
                     return Option::Some(subpath);
                 }

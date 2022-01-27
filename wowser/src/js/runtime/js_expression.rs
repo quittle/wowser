@@ -9,6 +9,8 @@ pub enum JsExpression {
     String(String),
     Undefined,
     Null,
+    TripleEquals(bool, Box<JsExpression>, Box<JsExpression>),
+    DoubleEquals(bool, Box<JsExpression>, Box<JsExpression>),
     Add(Box<JsExpression>, Box<JsExpression>),
     Multiply(Box<JsExpression>, Box<JsExpression>),
     Reference(String),
@@ -28,6 +30,58 @@ impl JsExpression {
             Self::String(num) => JsValue::str_rc(num),
             Self::Undefined => JsValue::undefined_rc(),
             Self::Null => JsValue::null_rc(),
+            Self::TripleEquals(match_equality, a, b) => {
+                let a_value = a.run(closure_context);
+                let b_value = b.run(closure_context);
+                let result = match (a_value.as_ref(), b_value.as_ref()) {
+                    (JsValue::Boolean(a), JsValue::Boolean(b)) => a == b,
+                    (JsValue::Number(a), JsValue::Number(b)) => a == b,
+                    (JsValue::String(a), JsValue::String(b)) => a == b,
+                    (JsValue::Function(a), JsValue::Function(b)) => a == b,
+                    (JsValue::Null, JsValue::Null) => true,
+                    (JsValue::Undefined, JsValue::Undefined) => true,
+                    (_, _) => false,
+                };
+                JsValue::bool_rc(*match_equality == result)
+            }
+            Self::DoubleEquals(match_equality, a, b) => {
+                let a_value = a.run(closure_context);
+                let b_value = b.run(closure_context);
+                let result = match (a_value.as_ref(), b_value.as_ref()) {
+                    (JsValue::String(a), JsValue::String(b)) => a == b,
+                    (
+                        a @ JsValue::Boolean(_) | a @ JsValue::Number(_) | a @ JsValue::String(_),
+                        b @ JsValue::Boolean(_) | b @ JsValue::Number(_) | b @ JsValue::String(_),
+                    ) => f64::from(a) == f64::from(b),
+                    (
+                        JsValue::Null | JsValue::Undefined,
+                        JsValue::Boolean(_)
+                        | JsValue::Number(_)
+                        | JsValue::String(_)
+                        | JsValue::Function(_),
+                    ) => false,
+                    (
+                        JsValue::Boolean(_)
+                        | JsValue::Number(_)
+                        | JsValue::String(_)
+                        | JsValue::Function(_),
+                        JsValue::Null | JsValue::Undefined,
+                    ) => false,
+                    (JsValue::Null | JsValue::Undefined, JsValue::Null | JsValue::Undefined) => {
+                        true
+                    }
+                    (JsValue::Boolean(_) | JsValue::Number(_), JsValue::Function(_)) => false,
+                    (JsValue::Function(_), JsValue::Boolean(_) | JsValue::Number(_)) => false,
+                    (a @ JsValue::String(_), b @ JsValue::Function(_)) => {
+                        a.to_string() == b.to_string()
+                    }
+                    (a @ JsValue::Function(_), b @ JsValue::String(_)) => {
+                        a.to_string() == b.to_string()
+                    }
+                    (JsValue::Function(a), JsValue::Function(b)) => a == b,
+                };
+                JsValue::bool_rc(*match_equality == result)
+            }
             Self::Add(a, b) => {
                 let a_value = a.run(closure_context);
                 let b_value = b.run(closure_context);

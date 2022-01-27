@@ -69,9 +69,14 @@ impl ToString for JsValue {
             Self::String(v) => v.clone(),
             Self::Undefined => "undefined".to_string(),
             Self::Null => "null".to_string(),
-            Self::Function(function) => {
-                format!("function {}() {{ [native code] }}", function.get_name())
-            }
+            Self::Function(function) => match function {
+                JsFunction::Native(name, _implementation) => {
+                    format!("function {}() {{ [native code] }}", name)
+                }
+                JsFunction::UserDefined(source, _name, _args, _implementation) => {
+                    source.to_string()
+                }
+            },
         }
     }
 }

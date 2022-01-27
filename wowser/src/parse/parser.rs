@@ -21,6 +21,20 @@ impl<'a, R: Rule> ASTNode<'a, R> {
                 .find_map(|child| child.get_first_token())
         }
     }
+
+    pub fn rebuild_full_text(&self) -> String {
+        let mut ret = String::new();
+
+        if let Some(token) = self.token {
+            ret += token.full_match;
+        }
+
+        for node in &self.children {
+            ret += &node.rebuild_full_text();
+        }
+
+        ret
+    }
 }
 
 /// The results of interpretting a rule over tokens

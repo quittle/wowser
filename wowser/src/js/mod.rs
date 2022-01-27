@@ -24,10 +24,9 @@ pub fn parse_js(document: &str) -> Result<JsDocument, String> {
 mod tests {
     use std::rc::Rc;
 
-    use crate::js::JsValue;
+    use super::{parse_js, JsExpression, JsFunction, JsStatement, JsStatementResult, JsValue};
 
-    use super::{parse_js, JsExpression, JsFunction, JsStatement, JsStatementResult};
-
+    #[track_caller]
     fn run_js(script: &str) -> Vec<JsStatementResult> {
         let mut js_document = parse_js(script).unwrap();
         js_document.run();
@@ -201,9 +200,21 @@ mod tests {
     #[test]
     pub fn test_function_declaration() {
         run_test(
+            "function foo(){}",
+            vec![JsStatementResult::Value(Rc::new(JsValue::Function(
+                JsFunction::UserDefined(
+                    "function foo(){}".to_string(),
+                    "foo".to_string(),
+                    vec![],
+                    vec![],
+                ),
+            )))],
+        );
+        run_test(
             "function foo(arg1, arg2) { arg1 + arg2; }",
             vec![JsStatementResult::Value(Rc::new(JsValue::Function(
                 JsFunction::UserDefined(
+                    "function foo(arg1, arg2) { arg1 + arg2; }".to_string(),
                     "foo".to_string(),
                     vec!["arg1".to_string(), "arg2".to_string()],
                     vec![JsStatement::Expression(JsExpression::Add(
@@ -217,6 +228,7 @@ mod tests {
             "function foo(arg1, arg2) { arg1 + arg2; };function bar(arg1, arg2) { arg1 + arg2; }",
             vec![
                 JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "function foo(arg1, arg2) { arg1 + arg2; }".to_string(),
                     "foo".to_string(),
                     vec!["arg1".to_string(), "arg2".to_string()],
                     vec![JsStatement::Expression(JsExpression::Add(
@@ -226,6 +238,7 @@ mod tests {
                 )))),
                 JsStatementResult::Void,
                 JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "function bar(arg1, arg2) { arg1 + arg2; }".to_string(),
                     "bar".to_string(),
                     vec!["arg1".to_string(), "arg2".to_string()],
                     vec![JsStatement::Expression(JsExpression::Add(
@@ -243,6 +256,7 @@ mod tests {
             "function foo(arg1, arg2) { arg1 + arg2; } foo(1, 'abc')",
             vec![
                 JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "function foo(arg1, arg2) { arg1 + arg2; }".to_string(),
                     "foo".to_string(),
                     vec!["arg1".to_string(), "arg2".to_string()],
                     vec![JsStatement::Expression(JsExpression::Add(
@@ -259,6 +273,7 @@ mod tests {
             "function foo(arg1, arg2) { arg1 + arg2; return arg1; arg2; return arg2; } foo(1, 'abc')",
             vec![
                 JsStatementResult::Value(Rc::new(JsValue::Function(JsFunction::UserDefined(
+                    "function foo(arg1, arg2) { arg1 + arg2; return arg1; arg2; return arg2; }".to_string(),
                     "foo".to_string(),
                     vec!["arg1".to_string(), "arg2".to_string()],
                     vec![
@@ -349,6 +364,64 @@ mod tests {
                 JsStatementResult::Void,
                 JsStatementResult::number(3),
             ],
+        );
+    }
+
+    #[test]
+    fn test_triple_equality() {
+        run_test("1 === 1", vec![JsStatementResult::bool(true)]);
+        // NaN inequality
+        run_test(
+            "1*undefined === 1*undefined",
+            vec![JsStatementResult::bool(false)],
+        );
+        run_test("1 === 01", vec![JsStatementResult::bool(true)]);
+        run_test("'abc' === \"abc\"", vec![JsStatementResult::bool(true)]);
+        assert_eq!(
+            run_js("function abc(){} var cba = abc; abc === cba")[2],
+            JsStatementResult::bool(true),
+        );
+        run_test("true === true", vec![JsStatementResult::bool(true)]);
+        run_test("true !== false", vec![JsStatementResult::bool(true)]);
+        run_test("null === null", vec![JsStatementResult::bool(true)]);
+        run_test(
+            "undefined === undefined",
+            vec![JsStatementResult::bool(true)],
+        );
+        run_test("undefined === null", vec![JsStatementResult::bool(false)]);
+
+        run_test("1 !== 1", vec![JsStatementResult::bool(false)]);
+    }
+
+    #[test]
+    fn test_double_equality() {
+        run_test("1 == 1", vec![JsStatementResult::bool(true)]);
+        // NaN inequality
+        run_test(
+            "1*undefined == 1*undefined",
+            vec![JsStatementResult::bool(false)],
+        );
+        run_test("1 == 01", vec![JsStatementResult::bool(true)]);
+        run_test("'abc' == \"abc\"", vec![JsStatementResult::bool(true)]);
+        assert_eq!(
+            run_js("function abc(){} var cba = abc; abc == cba")[2],
+            JsStatementResult::bool(true),
+        );
+        run_test("true == true", vec![JsStatementResult::bool(true)]);
+        run_test("true != false", vec![JsStatementResult::bool(true)]);
+        run_test("null == null", vec![JsStatementResult::bool(true)]);
+        run_test(
+            "undefined == undefined",
+            vec![JsStatementResult::bool(true)],
+        );
+        run_test("undefined == null", vec![JsStatementResult::bool(true)]);
+
+        run_test("1 != 1", vec![JsStatementResult::bool(false)]);
+
+        run_test("1 == ' 01  '", vec![JsStatementResult::bool(true)]);
+        assert_eq!(
+            run_js("  function  abc ( ) { } abc == 'function  abc ( ) { }'")[1],
+            JsStatementResult::bool(true),
         );
     }
 }

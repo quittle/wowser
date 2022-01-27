@@ -18,6 +18,7 @@ pub enum JsToken {
     OperatorAdd,
     OperatorMultiply,
     OperatorEquals,
+    OperatorEquality,
     OpenParen,
     CloseParen,
     OpenCurlyBrace,
@@ -49,6 +50,7 @@ const EXPRESSION_START: &[JsToken] = &[
 const POST_EXPRESSION: &[JsToken] = &[
     JsToken::OperatorAdd,
     JsToken::OperatorMultiply,
+    JsToken::OperatorEquality,
     JsToken::CloseParen,
     JsToken::Comma,
     JsToken::Semicolon,
@@ -75,6 +77,7 @@ impl Token for JsToken {
             Self::OperatorAdd => r"\s*(\+)\s*",
             Self::OperatorMultiply => r"\s*(\*)\s*",
             Self::OperatorEquals => r"\s*(=)\s*",
+            Self::OperatorEquality => r"\s*(|!==|!=|===|==)\s*",
             Self::OpenParen => r"\s*(\()\s*",
             Self::CloseParen => r"\s*(\))\s*",
             Self::OpenCurlyBrace => r"\s*({)\s*",
@@ -121,6 +124,7 @@ impl Token for JsToken {
             Self::OperatorAdd => Vec::from(EXPRESSION_START),
             Self::OperatorMultiply => Vec::from(EXPRESSION_START),
             Self::OperatorEquals => Vec::from(EXPRESSION_START),
+            Self::OperatorEquality => Vec::from(EXPRESSION_START),
             Self::OpenParen => [
                 &[
                     Self::VariableName,
@@ -141,6 +145,9 @@ impl Token for JsToken {
                 STATEMENT_START,
             ].concat(),
             Self::OpenCurlyBrace => [
+                &[
+                    Self::CloseCurlyBrace,
+                ],
                 EXPRESSION_START,
                 STATEMENT_START,
             ].concat(),

@@ -34,6 +34,8 @@ impl std::cmp::PartialEq for JsFunctionImplementation {
 pub enum JsFunction {
     Native(String, JsFunctionImplementation),
     UserDefined(
+        // Source Text
+        String,
         // Name
         String,
         // Params
@@ -47,14 +49,14 @@ impl JsFunction {
     pub fn get_name(&self) -> &str {
         match self {
             Self::Native(name, _) => name,
-            Self::UserDefined(name, _params, _implementation) => name,
+            Self::UserDefined(_source, name, _params, _implementation) => name,
         }
     }
 
     pub fn run(&self, closure_context: &mut JsClosureContext, args: &[Rc<JsValue>]) -> Rc<JsValue> {
         match self {
             Self::Native(_, implementation) => implementation.func.as_ref()(args),
-            Self::UserDefined(_name, params, implementation) => {
+            Self::UserDefined(_source, _name, params, implementation) => {
                 closure_context.with_new_context(|closure_context| {
                     let closure = closure_context.get_lastest_closure();
                     for (index, param_name) in params.iter().enumerate() {

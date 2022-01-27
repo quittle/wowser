@@ -75,9 +75,11 @@ fn on_function_declaration(node: &JsASTNode) -> JsStatement {
     let function_name = on_variable_name(&children[1]);
     let params = on_function_params(&children[3]);
     let statements = on_statements(&children[6]);
+    let raw_text = node.rebuild_full_text().trim().to_string();
     JsStatement::FunctionDeclaration(JsReference {
         name: function_name.clone(),
         value: Rc::new(JsValue::Function(JsFunction::UserDefined(
+            raw_text,
             function_name,
             params,
             statements,
@@ -87,6 +89,11 @@ fn on_function_declaration(node: &JsASTNode) -> JsStatement {
 
 fn on_function_params(node: &JsASTNode) -> Vec<String> {
     let children = extract_interpreter_children(node, JsRule::FunctionParams);
+
+    if children.is_empty() {
+        return vec![];
+    }
+
     let variable_name = on_variable_name(&children[0]);
     let mut params = if children.len() == 3 {
         on_function_params(&children[2])
@@ -130,6 +137,7 @@ fn on_expression(node: &JsASTNode) -> JsExpression {
         JsRule::LiteralValue => on_literal_value(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         JsRule::ExpressionMultiply => on_expression_multiply(child),
+        JsRule::ExpressionEquality => on_expression_equality(child),
         rule => panic!("Unexpected rule: {}", rule),
     }
 }
@@ -259,6 +267,48 @@ fn on_expression_sub_multiply(node: &JsASTNode) -> JsExpression {
         JsRule::VariableName => on_variable_name_reference(first_child),
         rule => panic!("Invalid child type {}", rule),
     }
+}
+
+fn on_expression_equality(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ExpressionEquality, 3);
+
+    let first_child = &children[0];
+    let a = Box::new(match first_child.rule {
+        JsRule::FunctionInvoke => on_function_invoke(first_child),
+        JsRule::ExpressionAdd => on_expression_add(first_child),
+        JsRule::ExpressionMultiply => on_expression_multiply(first_child),
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
+        rule => panic!("Invalid first child rule: {}", rule),
+    });
+    let b = Box::new(on_expression_sub_equality(&children[2]));
+
+    match on_equality_operator(&children[1]).as_str() {
+        "==" => JsExpression::DoubleEquals(true, a, b),
+        "!=" => JsExpression::DoubleEquals(false, a, b),
+        "===" => JsExpression::TripleEquals(true, a, b),
+        "!==" => JsExpression::TripleEquals(false, a, b),
+        operator => panic!("Invalid equality operator found: {operator}"),
+    }
+}
+
+fn on_expression_sub_equality(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ExpressionSubEquality, 1);
+
+    let first_child = &children[0];
+    match first_child.rule {
+        JsRule::FunctionInvoke => on_function_invoke(first_child),
+        JsRule::ExpressionEquality => on_expression_equality(first_child),
+        JsRule::ExpressionAdd => on_expression_add(first_child),
+        JsRule::ExpressionMultiply => on_expression_multiply(first_child),
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
+        rule => panic!("Invalid child type {}", rule),
+    }
+}
+
+fn on_equality_operator(node: &JsASTNode) -> String {
+    extract_interpreter_token(node, JsRule::OperatorEquality)
 }
 
 impl Interpreter<'_, JsRule> for JsInterpreter {

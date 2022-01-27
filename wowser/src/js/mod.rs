@@ -340,6 +340,12 @@ mod tests {
     }
 
     #[test]
+    fn test_nan() {
+        assert!(run_js("NaN")[0].is_nan());
+        assert!(run_js("NaN * Nan + NaN")[0].is_nan());
+    }
+
+    #[test]
     fn test_if_statements() {
         run_test(
             "if(true){1;}",

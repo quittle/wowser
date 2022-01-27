@@ -41,6 +41,7 @@ pub enum JsRule {
     Number,
     String,
     Undefined,
+    NaNKeyword,
     Semicolon,
     Terminator,
 }
@@ -211,6 +212,7 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::String),
                 RuleType::Rule(Self::Undefined),
                 RuleType::Rule(Self::NullKeyword),
+                RuleType::Rule(Self::NaNKeyword),
             ],
             Self::OperatorAdd => vec![
                 RuleType::Token(JsToken::OperatorAdd),
@@ -247,6 +249,9 @@ impl Rule for JsRule {
             ],
             Self::Undefined => vec![
                 RuleType::Token(JsToken::Undefined),
+            ],
+            Self::NaNKeyword => vec![
+                RuleType::Token(JsToken::NaNKeyword),
             ],
             Self::Semicolon => vec![
                 RuleType::Token(JsToken::Semicolon),

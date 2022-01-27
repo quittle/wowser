@@ -11,6 +11,7 @@ pub enum JsToken {
     TrueKeyword,
     FalseKeyword,
     NullKeyword,
+    NaNKeyword,
     VariableName,
     Number,
     String,
@@ -40,11 +41,12 @@ const EXPRESSION_START: &[JsToken] = &[
     JsToken::TrueKeyword,
     JsToken::FalseKeyword,
     JsToken::NullKeyword,
-    JsToken::VariableName,
     JsToken::Number,
     JsToken::String,
     JsToken::Undefined,
+    JsToken::NaNKeyword,
     JsToken::OperatorAdd,
+    JsToken::VariableName,
 ];
 
 const POST_EXPRESSION: &[JsToken] = &[
@@ -69,15 +71,16 @@ impl Token for JsToken {
             Self::FalseKeyword => r"\s*(false)\s*",
             Self::NullKeyword => r"\s*(null)\s*",
             Self::VariableName => {
-                r"\s*((?!((var|function|return|undefined|true|false|null|if)[^a-zA-Z_]))[a-zA-Z_][\w\d]*)\s*"
+                r"\s*((?!((var|function|return|undefined|true|false|null|if|NaN)[^a-zA-Z_$]))[a-zA-Z_][\w\d]*)\s*"
             }
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
             Self::Undefined => r"\s*(undefined)\s*",
+            Self::NaNKeyword => r"\s*(NaN)\s*",
             Self::OperatorAdd => r"\s*(\+)\s*",
             Self::OperatorMultiply => r"\s*(\*)\s*",
             Self::OperatorEquals => r"\s*(=)\s*",
-            Self::OperatorEquality => r"\s*(|!==|!=|===|==)\s*",
+            Self::OperatorEquality => r"\s*(!==|!=|===|==)\s*",
             Self::OpenParen => r"\s*(\()\s*",
             Self::CloseParen => r"\s*(\))\s*",
             Self::OpenCurlyBrace => r"\s*({)\s*",
@@ -121,6 +124,7 @@ impl Token for JsToken {
             Self::Number => Vec::from(POST_EXPRESSION),
             Self::String => Vec::from(POST_EXPRESSION),
             Self::Undefined => Vec::from(POST_EXPRESSION),
+            Self::NaNKeyword => Vec::from(POST_EXPRESSION),
             Self::OperatorAdd => Vec::from(EXPRESSION_START),
             Self::OperatorMultiply => Vec::from(EXPRESSION_START),
             Self::OperatorEquals => Vec::from(EXPRESSION_START),

@@ -179,6 +179,7 @@ fn on_literal_value(node: &JsASTNode) -> JsExpression {
         JsRule::Number => on_number(child),
         JsRule::String => on_string(child),
         JsRule::Undefined => JsExpression::Undefined,
+        JsRule::NaNKeyword => JsExpression::Number(f64::NAN),
         rule => panic!("Unexpected rule: {}", rule),
     }
 }

@@ -43,7 +43,10 @@ impl JsStatement {
                 if result_bool {
                     for statement in execution_statements {
                         let result = statement.run(closure_context);
-                        closure_context.record_new_result(result);
+                        match result {
+                            JsStatementResult::ReturnValue(_) => return result,
+                            _ => closure_context.record_new_result(result),
+                        };
                     }
                 }
                 JsStatementResult::Void

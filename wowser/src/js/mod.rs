@@ -430,4 +430,17 @@ mod tests {
             JsStatementResult::bool(true),
         );
     }
+
+    #[test]
+    fn test_recursion() {
+        assert_eq!(
+            run_js("function factorial(num) {if (num == 1) { return 1; } return num * factorial(num + -1);} factorial(5)").last().unwrap(),
+            &JsStatementResult::number(120),
+        );
+        assert_eq!(
+            run_js("function recurse(num) {recurse(num + 1);} recurse(1)").last().unwrap(),
+            &JsStatementResult::undefined(),
+            "Infinite recursion leads to undefined right now instead of a stack overflow exception."
+        );
+    }
 }

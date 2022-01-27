@@ -131,7 +131,6 @@ impl Token for JsToken {
             Self::OperatorEquality => Vec::from(EXPRESSION_START),
             Self::OpenParen => [
                 &[
-                    Self::VariableName,
                     Self::CloseParen,
                 ],
                 EXPRESSION_START,
@@ -157,6 +156,7 @@ impl Token for JsToken {
             ].concat(),
             Self::CloseCurlyBrace => [
                 &[
+                    Self::CloseCurlyBrace,
                     Self::Terminator,
                 ],
                 EXPRESSION_START,

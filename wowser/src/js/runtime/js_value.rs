@@ -59,6 +59,10 @@ impl JsValue {
     pub fn reference_error_rc() -> Rc<Self> {
         Self::undefined_rc() // TODO: These should raise exceptions when supported
     }
+
+    pub fn stack_overflow_error_rc() -> Rc<Self> {
+        Self::undefined_rc() // TODO: This should raise RangeError: Maximum call stack size exceeded when supported
+    }
 }
 
 impl ToString for JsValue {

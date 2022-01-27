@@ -57,6 +57,10 @@ impl JsFunction {
         match self {
             Self::Native(_, implementation) => implementation.func.as_ref()(args),
             Self::UserDefined(_source, _name, params, implementation) => {
+                if closure_context.get_closure_depth() > 255 {
+                    return JsValue::stack_overflow_error_rc();
+                }
+
                 closure_context.with_new_context(|closure_context| {
                     let closure = closure_context.get_lastest_closure();
                     for (index, param_name) in params.iter().enumerate() {

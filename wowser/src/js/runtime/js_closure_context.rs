@@ -64,4 +64,8 @@ impl JsClosureContext {
     pub fn record_new_result(&mut self, result: JsStatementResult) {
         self.expression_results.push(result);
     }
+
+    pub fn get_closure_depth(&self) -> usize {
+        self.closures.len()
+    }
 }

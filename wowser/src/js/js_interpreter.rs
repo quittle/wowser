@@ -263,6 +263,7 @@ fn on_expression_sub_multiply(node: &JsASTNode) -> JsExpression {
 
     let first_child = &children[0];
     match first_child.rule {
+        JsRule::FunctionInvoke => on_function_invoke(first_child),
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
         JsRule::LiteralValue => on_literal_value(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),

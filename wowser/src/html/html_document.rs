@@ -145,10 +145,10 @@ impl Display for DoctypeHtmlNode {
         let contents = self
             .document_type_definition
             .iter()
-            .map(|s| format!(r#" "{}""#, s))
+            .map(|s| format!(r#" "{s}""#))
             .collect::<Vec<String>>()
             .join("");
-        f.write_fmt(format_args!("<!DOCTYPE{}>", contents))
+        f.write_fmt(format_args!("<!DOCTYPE{contents}>"))
     }
 }
 
@@ -242,7 +242,7 @@ impl Display for TagAttributeHtmlNode {
         f.write_str(&self.name)?;
         if let Some(value) = &self.value {
             let escaped_value = value.replace('"', "\\\"");
-            f.write_fmt(format_args!("=\"{}\"", escaped_value))?;
+            f.write_fmt(format_args!("=\"{escaped_value}\""))?;
         }
         Ok(())
     }

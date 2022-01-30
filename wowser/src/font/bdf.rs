@@ -286,7 +286,7 @@ fn parse_chars(lines: &mut Lines<BufReader<&[u8]>>) -> Result<Vec<BDFCharacter>,
             let char = parse_char(lines, &line)?;
             ret.push(char);
         } else {
-            return Err(format!("Invalid font file. Unexpected line '{}'", line).into());
+            return Err(format!("Invalid font file. Unexpected line '{line}'").into());
         }
     }
 

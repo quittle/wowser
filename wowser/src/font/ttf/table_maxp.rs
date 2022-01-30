@@ -30,11 +30,7 @@ impl TableMaxp {
         offset += 2;
 
         if version_major != 1 || version_minor != 0 {
-            return Err(format!(
-                "Unexpected maxp version {}.{}",
-                version_major, version_minor
-            )
-            .into());
+            return Err(format!("Unexpected maxp version {version_major}.{version_minor}").into());
         }
 
         let num_glyphs = u16::from_be_bytes([bytes[offset], bytes[offset + 1]]);
@@ -56,7 +52,7 @@ impl TableMaxp {
         offset += 2;
 
         if max_zones != 2 {
-            return Err(format!("Invalid number of max zones in maxp table: {}", max_zones).into());
+            return Err(format!("Invalid number of max zones in maxp table: {max_zones}").into());
         }
 
         let max_twilight_points = u16::from_be_bytes([bytes[offset], bytes[offset + 1]]);

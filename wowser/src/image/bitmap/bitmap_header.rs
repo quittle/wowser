@@ -30,7 +30,7 @@ impl BitmapHeader {
 
         let bitmap_info_header = match id.as_ref() {
             "BM" => BitmapInfoHeader::parse(&bytes[14..54]),
-            _ => Err(format!("Unsupported bitmap format: {}", id)),
+            _ => Err(format!("Unsupported bitmap format: {id}")),
         }?;
 
         Ok(BitmapHeader {

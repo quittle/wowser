@@ -167,12 +167,7 @@ impl HttpRequest {
         };
 
         let mut stream = TcpStream::connect(SocketAddr::new(*ip, port))?;
-        let request = format!(
-            "{verb} {path} HTTP/1.1\r\nHost: {domain}\r\n\r\n",
-            verb = verb_str,
-            path = path,
-            domain = host
-        );
+        let request = format!("{verb_str} {path} HTTP/1.1\r\nHost: {host}\r\n\r\n");
         stream.write_all(request.as_bytes())?;
         Ok(AsyncTcpStream::from_tcp_stream(stream))
     }

@@ -10,9 +10,7 @@ impl IndexToLocationFormat {
         Ok(match value {
             0 => Self::Short,
             1 => Self::Long,
-            _ => {
-                return Err(format!("Unsupported font index to location format: {}", value).into())
-            }
+            _ => return Err(format!("Unsupported font index to location format: {value}").into()),
         })
     }
 }

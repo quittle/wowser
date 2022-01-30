@@ -81,6 +81,6 @@ mod tests {
         content_length
             .trim()
             .parse::<usize>()
-            .unwrap_or_else(|_| panic!("Invalid content length: {}", content_length))
+            .unwrap_or_else(|_| panic!("Invalid content length: {content_length}"))
     }
 }

@@ -14,7 +14,7 @@ impl TableCmap {
         offset += 2;
 
         if version != 0 {
-            return Err(format!("Unexpected cmap version: {}", version).into());
+            return Err(format!("Unexpected cmap version: {version}").into());
         }
 
         let num_tables = u16::from_be_bytes([bytes[offset], bytes[offset + 1]]);

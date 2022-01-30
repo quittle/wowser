@@ -19,7 +19,7 @@ impl HtmlInterpreter {
                 HtmlRule::Doctype => doctype = self.on_doctype(child),
                 HtmlRule::TagContents => contents = self.on_tag_contents(child),
                 HtmlRule::Terminator => {}
-                _ => panic!("Invalid child rule type for Document: {}", rule),
+                _ => panic!("Invalid child rule type for Document: {rule}"),
             }
         }
         DocumentHtmlNode { doctype, contents }
@@ -276,8 +276,7 @@ impl HtmlInterpreter {
         let children_len = children.len();
         assert!(
             lengths.iter().any(|length| &children_len == length),
-            "Unexpected number of children. Found {}",
-            children_len,
+            "Unexpected number of children. Found {children_len}",
         );
     }
 

@@ -135,8 +135,9 @@ fn parse_rdata(
 ) -> Result<RecordData, String> {
     match record_type {
         RecordType::A => {
-            if bytes.len() != 4 {
-                Err(format!("Expected 4 bytes but got {}", bytes.len()))
+            let bytes_len = bytes.len();
+            if bytes_len != 4 {
+                Err(format!("Expected 4 bytes but got {bytes_len}"))
             } else {
                 Ok(RecordData::A(Ipv4Addr::new(
                     bytes[0], bytes[1], bytes[2], bytes[3],
@@ -172,7 +173,7 @@ pub fn compute_domain(message: &[u8], offset: usize) -> Result<(String, usize), 
         let len = first_byte as usize;
         let cur_value = u8_to_str(&message[offset + 1..(offset + 1 + len)])?;
         let rest = compute_domain(message, offset + 1 + len)?;
-        let value = format!("{}.{}", cur_value, &rest.0);
+        let value = format!("{cur_value}.{}", &rest.0);
 
         Ok((value, rest.1))
     } else {
@@ -184,7 +185,7 @@ fn proper_domain_name(domain_name: &str) -> Cow<str> {
     if domain_name.ends_with('.') {
         Cow::Borrowed(domain_name)
     } else {
-        Cow::Owned(format!("{}.", domain_name))
+        Cow::Owned(format!("{domain_name}."))
     }
 }
 
@@ -249,8 +250,8 @@ fn resolve_dns(
         }
         None => {
             return Err(format!(
-                "No valid record found for {}. Cache: {:?}",
-                domain_name, dns_cache
+                "No valid record found for {domain_name}. Cache: {:?}",
+                dns_cache
             ))
         }
     }
@@ -440,8 +441,7 @@ mod tests {
             let result = resolve_domain_name_to_ip(domain);
             assert!(
                 result.is_ok(),
-                "Failed to resolve {}: {}",
-                domain,
+                "Failed to resolve {domain}: {}",
                 result.unwrap_err()
             )
         };

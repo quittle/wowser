@@ -24,7 +24,7 @@ impl fmt::Display for UrlProtocol {
             UrlProtocol::Http => "http",
         };
 
-        write!(f, "{}", protocol)
+        write!(f, "{protocol}")
     }
 }
 
@@ -48,8 +48,8 @@ impl UrlHost {
 impl fmt::Display for UrlHost {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            UrlHost::IP(ip) => write!(f, "{}", ip),
-            UrlHost::DomainName(host) => write!(f, "{}", host),
+            UrlHost::IP(ip) => write!(f, "{ip}"),
+            UrlHost::DomainName(host) => write!(f, "{host}"),
         }
     }
 }

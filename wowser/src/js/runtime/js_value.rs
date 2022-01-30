@@ -83,7 +83,7 @@ impl ToString for JsValue {
             Self::Null => "null".to_string(),
             Self::Function(function) => match function {
                 JsFunction::Native(name, _implementation) => {
-                    format!("function {}() {{ [native code] }}", name)
+                    format!("function {name}() {{ [native code] }}")
                 }
                 JsFunction::UserDefined(source, _name, _args, _implementation) => {
                     source.to_string()

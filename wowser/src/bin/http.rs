@@ -17,7 +17,7 @@ fn main() {
     let request_token = match verb.as_str() {
         "get" => run_on_network_executor(request.get()),
         "head" => run_on_network_executor(request.head()),
-        _ => panic!("Unsupported HTTP verb {}", verb),
+        _ => panic!("Unsupported HTTP verb {verb}"),
     };
 
     loop {

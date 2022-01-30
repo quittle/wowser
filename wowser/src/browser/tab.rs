@@ -200,7 +200,7 @@ mod tests {
     use super::*;
 
     fn get_test_file(function_name: &'static str) -> String {
-        format!("src/browser/test_data/{}.bmp", function_name)
+        format!("src/browser/test_data/{function_name}.bmp")
     }
 
     /// If these tests fail and you have verified the failures were expected, set the
@@ -251,12 +251,11 @@ mod tests {
                         actual_bitmap.write(&mut expected_bitmap_file).unwrap();
                     } else {
                         let tmp_bitmap_file_path =
-                            env::temp_dir().join(format!("{}.bmp", function_name));
+                            env::temp_dir().join(format!("{function_name}.bmp"));
                         let mut tmp_bitmap_file = fs::File::create(&tmp_bitmap_file_path).unwrap();
                         actual_bitmap.write(&mut tmp_bitmap_file).unwrap();
                         panic!(
-                            "Pixels don't line up. Compare expected pixels in {} with actual pixels in {} to see the difference",
-                            &expected_bitmap_file_path,
+                            "Pixels don't line up. Compare expected pixels in {expected_bitmap_file_path} with actual pixels in {} to see the difference",
                             tmp_bitmap_file_path.to_str().unwrap(),
                         );
                     }

@@ -21,8 +21,7 @@ pub fn extract_interpreter_children<'a, R: Rule>(
     let ASTNode { rule, children, .. } = node;
     assert_eq!(
         *rule, expected_rule,
-        "Expected rule of type {}, but received {}",
-        expected_rule, rule
+        "Expected rule of type {expected_rule}, but received {rule}",
     );
     children
 }
@@ -36,8 +35,7 @@ pub fn extract_interpreter_n_children<'a, R: Rule>(
     let actual_children_length = children.len();
     assert_eq!(
         actual_children_length, expected_children_length,
-        "Expected {} children for {} but received {}",
-        expected_rule, expected_children_length, actual_children_length
+        "Expected {expected_rule} children for {expected_children_length} but received {actual_children_length}",
     );
     children
 }
@@ -48,8 +46,8 @@ pub fn extract_interpreter_token<'a, R: Rule>(
 ) -> String {
     assert_eq!(
         node.rule, expected_rule,
-        "Expected token rule of type {}, but received {}",
-        expected_rule, node.rule,
+        "Expected token rule of type {expected_rule}, but received {}",
+        node.rule,
     );
 
     let token_str: &str = node

@@ -23,7 +23,7 @@ impl HexConversion for char {
             'e' => 14,
             'f' => 15,
             _ => {
-                return Err(format!("Invalid character {}", self));
+                return Err(format!("Invalid character {self}"));
             }
         })
     }
@@ -47,7 +47,7 @@ fn u4_to_hex(u4: u8) -> char {
         13 => 'd',
         14 => 'e',
         15 => 'f',
-        _ => panic!("Invalid u4 passed in {}", u4),
+        _ => panic!("Invalid u4 passed in {u4}"),
     }
 }
 
@@ -89,13 +89,8 @@ pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
 }
 
 pub fn u8_to_str(bytes: &[u8]) -> Result<&str, String> {
-    str::from_utf8(bytes).map_err(|e| {
-        format!(
-            "{} - Original String<{}>",
-            e,
-            String::from_utf8_lossy(bytes)
-        )
-    })
+    str::from_utf8(bytes)
+        .map_err(|e| format!("{e} - Original String<{}>", String::from_utf8_lossy(bytes)))
 }
 
 pub fn split_str_into_2<T, Transform, EM, EF, E>(

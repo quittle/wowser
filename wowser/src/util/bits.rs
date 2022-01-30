@@ -89,7 +89,7 @@ impl From<u8> for Bit {
             5 => Self::Five,
             6 => Self::Six,
             7 => Self::Seven,
-            _ => panic!("Invalid bit value: {}", bit),
+            _ => panic!("Invalid bit value: {bit}"),
         }
     }
 }
@@ -155,7 +155,7 @@ impl From<u8> for U16Bit {
             13 => Self::Thirteen,
             14 => Self::Fourteen,
             15 => Self::Fifteen,
-            _ => panic!("Invalid bit value: {}", bit),
+            _ => panic!("Invalid bit value: {bit}"),
         }
     }
 }

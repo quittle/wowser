@@ -16,7 +16,7 @@ impl DirectionHint {
             0 => Self::Mixed,
             1 => Self::OnlyLTR,
             2 => Self::OnlyLTRNeutral,
-            _ => return Err(format!("Unsupported font direction hint: {}", value).into()),
+            _ => return Err(format!("Unsupported font direction hint: {value}").into()),
         })
     }
 }

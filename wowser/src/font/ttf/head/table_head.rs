@@ -63,7 +63,7 @@ impl TableHead {
         offset += 4;
 
         if magic_number != 0x5F0F3CF5 {
-            return Err(format!("Invalid magic number value: {}", magic_number).into());
+            return Err(format!("Invalid magic number value: {magic_number}").into());
         }
 
         let flags = Flags::new(u16::from_be_bytes([bytes[offset], bytes[offset + 1]]))?;
@@ -126,7 +126,7 @@ impl TableHead {
         offset += 2;
 
         if glyph_data_format != 0 {
-            return Err(format!("Invalid glyph data format: {}", glyph_data_format).into());
+            return Err(format!("Invalid glyph data format: {glyph_data_format}").into());
         }
 
         if offset != bytes.len() {

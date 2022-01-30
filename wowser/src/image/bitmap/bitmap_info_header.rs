@@ -45,7 +45,7 @@ impl BitmapInfoHeader {
         );
 
         if header_size != 40 {
-            return Err(format!("Header of unexpected length: {}", header_size));
+            return Err(format!("Header of unexpected length: {header_size}"));
         }
 
         Ok(BitmapInfoHeader {

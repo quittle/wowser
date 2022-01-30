@@ -104,10 +104,7 @@ impl CssInterpreter {
                 list.append(&mut self.on_selector_list(&children[2]));
                 list
             }
-            _ => panic!(
-                "Unsupported number of children for SelectorList {}",
-                children_len
-            ),
+            _ => panic!("Unsupported number of children for SelectorList {children_len}",),
         }
     }
 

@@ -180,6 +180,7 @@ fn on_literal_value(node: &JsASTNode) -> JsExpression {
         JsRule::String => on_string(child),
         JsRule::Undefined => JsExpression::Undefined,
         JsRule::NaNKeyword => JsExpression::Number(f64::NAN),
+        JsRule::ObjectLiteral => on_object_literal(child),
         rule => panic!("Unexpected rule: {}", rule),
     }
 }
@@ -192,9 +193,36 @@ fn on_number(node: &JsASTNode) -> JsExpression {
 }
 
 fn on_string(node: &JsASTNode) -> JsExpression {
+    JsExpression::String(on_string_literal(node))
+}
+
+fn on_string_literal(node: &JsASTNode) -> String {
     let token = extract_interpreter_token(node, JsRule::String);
-    let quote_stripped = token[1..token.len() - 1].to_string();
-    JsExpression::String(quote_stripped)
+    token[1..token.len() - 1].to_string()
+}
+
+fn on_object_literal(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ObjectLiteral, 3);
+    let object_members = on_object_members(&children[1]);
+    JsExpression::Object(object_members)
+}
+
+fn on_object_members(node: &JsASTNode) -> Vec<(String, JsExpression)> {
+    let children = extract_interpreter_children(node, JsRule::ObjectMembers);
+    if children.is_empty() {
+        return vec![];
+    }
+
+    let key = on_string_literal(&children[0]);
+    let value = on_expression(&children[2]);
+
+    let mut ret = vec![(key, value)];
+
+    if children.len() == 5 {
+        ret.extend(on_object_members(&children[4]));
+    }
+
+    ret
 }
 
 fn on_expression_add(node: &JsASTNode) -> JsExpression {

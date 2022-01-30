@@ -25,6 +25,7 @@ pub enum JsToken {
     OpenCurlyBrace,
     CloseCurlyBrace,
     Comma,
+    Colon,
     Semicolon,
     Terminator,
 }
@@ -47,6 +48,7 @@ const EXPRESSION_START: &[JsToken] = &[
     JsToken::NaNKeyword,
     JsToken::OperatorAdd,
     JsToken::VariableName,
+    JsToken::OpenCurlyBrace,
 ];
 
 const POST_EXPRESSION: &[JsToken] = &[
@@ -54,6 +56,7 @@ const POST_EXPRESSION: &[JsToken] = &[
     JsToken::OperatorMultiply,
     JsToken::OperatorEquality,
     JsToken::CloseParen,
+    JsToken::CloseCurlyBrace,
     JsToken::Comma,
     JsToken::Semicolon,
     JsToken::Terminator,
@@ -86,6 +89,7 @@ impl Token for JsToken {
             Self::OpenCurlyBrace => r"\s*({)\s*",
             Self::CloseCurlyBrace => r"\s*(})\s*",
             Self::Comma => r"\s*(,)\s*",
+            Self::Colon => r"\s*(:)\s*",
             Self::Semicolon => r"\s*(;)\s*",
             Self::Terminator => r"\s*$",
         }
@@ -122,7 +126,12 @@ impl Token for JsToken {
                 POST_EXPRESSION,
             ].concat(),
             Self::Number => Vec::from(POST_EXPRESSION),
-            Self::String => Vec::from(POST_EXPRESSION),
+            Self::String => [
+                &[
+                    Self::Colon,
+                ],
+                POST_EXPRESSION,
+            ].concat(),
             Self::Undefined => Vec::from(POST_EXPRESSION),
             Self::NaNKeyword => Vec::from(POST_EXPRESSION),
             Self::OperatorAdd => Vec::from(EXPRESSION_START),
@@ -161,13 +170,16 @@ impl Token for JsToken {
                 ],
                 EXPRESSION_START,
                 STATEMENT_START,
+                POST_EXPRESSION,
             ].concat(),
             Self::Comma => [
                 &[
                     Self::CloseParen,
+                    Self::CloseCurlyBrace,
                 ],
                 EXPRESSION_START,
             ].concat(),
+            Self::Colon => Vec::from(EXPRESSION_START),
             Self::Semicolon => [
                 &[
                     Self::CloseCurlyBrace,

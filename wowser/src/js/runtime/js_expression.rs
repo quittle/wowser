@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use super::{JsClosureContext, JsValue};
 
@@ -9,6 +9,7 @@ pub enum JsExpression {
     String(String),
     Undefined,
     Null,
+    Object(Vec<(String, JsExpression)>),
     TripleEquals(bool, Box<JsExpression>, Box<JsExpression>),
     DoubleEquals(bool, Box<JsExpression>, Box<JsExpression>),
     Add(Box<JsExpression>, Box<JsExpression>),
@@ -30,6 +31,13 @@ impl JsExpression {
             Self::String(num) => JsValue::str_rc(num),
             Self::Undefined => JsValue::undefined_rc(),
             Self::Null => JsValue::null_rc(),
+            Self::Object(members) => {
+                let mut map = HashMap::with_capacity(members.len());
+                for (key, value) in members {
+                    map.insert(key.to_string(), value.run(closure_context));
+                }
+                JsValue::object_rc(map)
+            }
             Self::TripleEquals(match_equality, a, b) => {
                 let a_value = a.run(closure_context);
                 let b_value = b.run(closure_context);
@@ -40,6 +48,7 @@ impl JsExpression {
                     (JsValue::Function(a), JsValue::Function(b)) => a == b,
                     (JsValue::Null, JsValue::Null) => true,
                     (JsValue::Undefined, JsValue::Undefined) => true,
+                    (JsValue::Object(_), JsValue::Object(_)) => Rc::ptr_eq(&a_value, &b_value),
                     (_, _) => false,
                 };
                 JsValue::bool_rc(*match_equality == result)
@@ -78,6 +87,9 @@ impl JsExpression {
                     (a @ JsValue::Function(_), b @ JsValue::String(_)) => {
                         a.to_string() == b.to_string()
                     }
+                    (JsValue::Object(_), JsValue::Object(_)) => Rc::ptr_eq(&a_value, &b_value),
+                    (JsValue::Object(_), _) => false,
+                    (_, JsValue::Object(_)) => false,
                     (JsValue::Function(a), JsValue::Function(b)) => a == b,
                 };
                 JsValue::bool_rc(*match_equality == result)
@@ -96,6 +108,12 @@ impl JsExpression {
                         | b @ JsValue::Undefined
                         | b @ JsValue::Null,
                     ) => JsValue::number_rc(f64::from(a) + f64::from(b)),
+                    (a @ JsValue::Object(_), b) => {
+                        JsValue::string_rc(a.to_string() + &b.to_string())
+                    }
+                    (a, b @ JsValue::Object(_)) => {
+                        JsValue::string_rc(a.to_string() + &b.to_string())
+                    }
                     (a @ JsValue::String(_) | a @ JsValue::Function(_), b) => {
                         JsValue::string_rc(a.to_string() + &b.to_string())
                     }

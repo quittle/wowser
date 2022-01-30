@@ -22,7 +22,7 @@ pub fn parse_js(document: &str) -> Result<JsDocument, String> {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
+    use std::{collections::HashMap, rc::Rc};
 
     use super::{parse_js, JsExpression, JsFunction, JsStatement, JsStatementResult, JsValue};
 
@@ -37,6 +37,12 @@ mod tests {
     fn run_test(script: &str, expected_results: Vec<JsStatementResult>) {
         let results = run_js(script);
         assert_eq!(results, expected_results);
+    }
+
+    #[track_caller]
+    fn assert_last_value_equals(script: &str, expected_result: JsStatementResult) {
+        let results = run_js(script);
+        assert_eq!(results.last().unwrap(), &expected_result);
     }
 
     fn result_as_number(result: &JsStatementResult) -> f64 {
@@ -395,6 +401,11 @@ mod tests {
             vec![JsStatementResult::bool(true)],
         );
         run_test("undefined === null", vec![JsStatementResult::bool(false)]);
+        assert_last_value_equals("{} == {}", JsStatementResult::bool(false));
+        assert_last_value_equals(
+            "var a = {}; var b = a; a == b",
+            JsStatementResult::bool(true),
+        );
 
         run_test("1 !== 1", vec![JsStatementResult::bool(false)]);
     }
@@ -421,6 +432,12 @@ mod tests {
             vec![JsStatementResult::bool(true)],
         );
         run_test("undefined == null", vec![JsStatementResult::bool(true)]);
+        run_test("{} == {}", vec![JsStatementResult::bool(false)]);
+        assert_last_value_equals(
+            "var a = {}; var b = a; a == b",
+            JsStatementResult::bool(true),
+        );
+        assert_last_value_equals("{} + ''", JsStatementResult::string("[object Object]"));
 
         run_test("1 != 1", vec![JsStatementResult::bool(false)]);
 
@@ -433,14 +450,63 @@ mod tests {
 
     #[test]
     fn test_recursion() {
-        assert_eq!(
-            run_js("function factorial(num) {if (num == 1) { return 1; } return num * factorial(num + -1);} factorial(5)").last().unwrap(),
-            &JsStatementResult::number(120),
+        assert_last_value_equals(
+            "function factorial(num) {if (num == 1) { return 1; } return num * factorial(num + -1);} factorial(5)",
+            JsStatementResult::number(120),
         );
-        assert_eq!(
-            run_js("function recurse(num) {recurse(num + 1);} recurse(1)").last().unwrap(),
-            &JsStatementResult::undefined(),
-            "Infinite recursion leads to undefined right now instead of a stack overflow exception."
+        // Infinite recursion leads to undefined right now instead of a stack overflow exception
+        assert_last_value_equals(
+            "function recurse(num) {recurse(num + 1);} recurse(1)",
+            JsStatementResult::undefined(),
+        );
+    }
+
+    #[test]
+    fn test_object_literal() {
+        run_test("{}", vec![JsStatementResult::object(vec![])]);
+        run_test(
+            " { 'a' : 1 } ",
+            vec![JsStatementResult::object(vec![(
+                "a",
+                JsValue::number_rc(1),
+            )])],
+        );
+        run_test(
+            "{'a': 1, 'b': 2}",
+            vec![JsStatementResult::object(vec![
+                ("a", JsValue::number_rc(1)),
+                ("b", JsValue::number_rc(2)),
+            ])],
+        );
+        run_test(
+            "{'a': 1, 'b': 2,}",
+            vec![JsStatementResult::object(vec![
+                ("a", JsValue::number_rc(1)),
+                ("b", JsValue::number_rc(2)),
+            ])],
+        );
+        run_test(
+            "{'a': 1, 'a': 2}",
+            vec![JsStatementResult::object(vec![(
+                "a",
+                JsValue::number_rc(2),
+            )])],
+        );
+        run_test(
+            "{'a': 1 + 2, 'b': {}}",
+            vec![JsStatementResult::object(vec![
+                ("a", JsValue::number_rc(3)),
+                ("b", JsValue::object_rc(HashMap::new())),
+            ])],
+        );
+    }
+
+    #[test]
+    fn test_object_operations() {
+        assert!(run_js("5 * {}").last().unwrap().is_nan(),);
+        run_test(
+            "5 + {}",
+            vec![JsStatementResult::string("5[object Object]")],
         );
     }
 }

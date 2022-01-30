@@ -14,6 +14,8 @@ pub enum JsRule {
     FunctionKeyword,
     FunctionParams,
     ReturnKeyword,
+    ObjectLiteral,
+    ObjectMembers,
     TrueKeyword,
     FalseKeyword,
     NullKeyword,
@@ -42,6 +44,7 @@ pub enum JsRule {
     String,
     Undefined,
     NaNKeyword,
+    Colon,
     Semicolon,
     Terminator,
 }
@@ -103,6 +106,15 @@ impl Rule for JsRule {
             ],
             Self::ReturnKeyword => vec![
                 RuleType::Token(JsToken::ReturnKeyword),
+            ],
+            Self::ObjectLiteral => vec![
+                RuleType::Sequence(vec![Self::OpenCurlyBrace, Self::ObjectMembers, Self::CloseCurlyBrace]),
+            ],
+            Self::ObjectMembers => vec![
+                RuleType::Sequence(vec![Self::String, Self::Colon, Self::Expression, Self::Comma, Self::ObjectMembers]),
+                RuleType::Sequence(vec![Self::String, Self::Colon, Self::Expression, Self::Comma]),
+                RuleType::Sequence(vec![Self::String, Self::Colon, Self::Expression]),
+                RuleType::Sequence(vec![]),
             ],
             Self::IfStatement => vec![
                 RuleType::Sequence(vec![
@@ -213,6 +225,7 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::Undefined),
                 RuleType::Rule(Self::NullKeyword),
                 RuleType::Rule(Self::NaNKeyword),
+                RuleType::Rule(Self::ObjectLiteral),
             ],
             Self::OperatorAdd => vec![
                 RuleType::Token(JsToken::OperatorAdd),
@@ -252,6 +265,9 @@ impl Rule for JsRule {
             ],
             Self::NaNKeyword => vec![
                 RuleType::Token(JsToken::NaNKeyword),
+            ],
+            Self::Colon => vec![
+                RuleType::Token(JsToken::Colon),
             ],
             Self::Semicolon => vec![
                 RuleType::Token(JsToken::Semicolon),

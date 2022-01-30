@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use super::JsFunction;
 
@@ -9,6 +9,7 @@ pub enum JsValue {
     Number(f64),
     String(String),
     Function(JsFunction),
+    Object(HashMap<String, Rc<JsValue>>),
     Undefined,
     Null,
 }
@@ -36,8 +37,11 @@ impl JsValue {
         Rc::new(Self::String(s))
     }
 
-    pub fn number_rc(value: f64) -> Rc<Self> {
-        Rc::new(Self::Number(value))
+    pub fn number_rc<F>(value: F) -> Rc<Self>
+    where
+        F: Into<f64>,
+    {
+        Rc::new(Self::Number(value.into()))
     }
 
     pub fn undefined_rc() -> Rc<Self> {
@@ -46,6 +50,10 @@ impl JsValue {
 
     pub fn null_rc() -> Rc<Self> {
         Rc::new(Self::Null)
+    }
+
+    pub fn object_rc(map: HashMap<String, Rc<JsValue>>) -> Rc<Self> {
+        Rc::new(Self::Object(map))
     }
 
     pub fn type_error_rc() -> Rc<Self> {
@@ -81,6 +89,7 @@ impl ToString for JsValue {
                     source.to_string()
                 }
             },
+            Self::Object(_) => "[object Object]".to_string(),
         }
     }
 }
@@ -114,6 +123,7 @@ impl From<&JsValue> for f64 {
             JsValue::Undefined => f64::NAN,
             JsValue::Null => 0.0,
             JsValue::Function(_) => f64::NAN,
+            JsValue::Object(_) => f64::NAN,
         }
     }
 }
@@ -127,6 +137,7 @@ impl From<&JsValue> for bool {
             JsValue::Undefined => false,
             JsValue::Null => false,
             JsValue::Function(_) => true,
+            JsValue::Object(_) => true,
         }
     }
 }
@@ -152,10 +163,29 @@ mod tests {
         assert_eq!(JsValue::str("").to_string(), "");
         assert_eq!(JsValue::str("abc").to_string(), "abc");
         assert_eq!(JsValue::Undefined.to_string(), "undefined");
+        assert_eq!(JsValue::Null.to_string(), "null");
         assert_eq!(
             JsValue::Function(JsFunction::Native("abc".to_string(), Default::default()))
                 .to_string(),
             "function abc() { [native code] }"
+        );
+        assert_eq!(
+            JsValue::Function(JsFunction::UserDefined(
+                "function abc(param) {return param;}".to_string(),
+                Default::default(),
+                Default::default(),
+                Default::default()
+            ))
+            .to_string(),
+            "function abc(param) {return param;}"
+        );
+        assert_eq!(
+            JsValue::Object(HashMap::from([(
+                "key".to_string(),
+                JsValue::str_rc("value")
+            )]))
+            .to_string(),
+            "[object Object]"
         );
     }
 
@@ -173,11 +203,13 @@ mod tests {
         assert_eq!(f64::from(JsValue::str("-1.2")), (-1.2));
 
         assert!(f64::from(JsValue::Undefined).is_nan());
+        assert_eq!(f64::from(JsValue::Null), 0.0);
 
         assert!(f64::from(JsValue::Function(JsFunction::Native(
             "abc".to_string(),
             Default::default()
         )))
         .is_nan());
+        assert!(f64::from(JsValue::Object(HashMap::new())).is_nan());
     }
 }

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use super::JsValue;
 
@@ -39,6 +39,14 @@ impl JsStatementResult {
 
     pub fn null() -> Self {
         Self::Value(JsValue::null_rc())
+    }
+
+    pub fn object(object: Vec<(&str, Rc<JsValue>)>) -> Self {
+        let mut map = HashMap::with_capacity(object.len());
+        for (key, value) in object {
+            map.insert(key.to_string(), value);
+        }
+        Self::Value(JsValue::object_rc(map))
     }
 
     pub fn is_nan(&self) -> bool {

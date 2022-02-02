@@ -132,23 +132,37 @@ fn on_expression(node: &JsASTNode) -> JsExpression {
     let child = &children[0];
 
     match child.rule {
-        JsRule::FunctionInvoke => on_function_invoke(child),
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(child),
         JsRule::VariableName => on_variable_name_reference(child),
         JsRule::LiteralValue => on_literal_value(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         JsRule::ExpressionMultiply => on_expression_multiply(child),
         JsRule::ExpressionEquality => on_expression_equality(child),
+        JsRule::DotAccess => on_dot_access(child),
         rule => panic!("Unexpected rule: {rule}"),
     }
 }
 
-fn on_function_invoke(node: &JsASTNode) -> JsExpression {
-    let children = extract_interpreter_n_children(node, JsRule::FunctionInvoke, 4);
+fn on_expression_function_invoke(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ExpressionFunctionInvoke, 2);
 
-    let reference_to_invoke = on_variable_name_reference(&children[0]);
-    let arguments = on_function_arguments(&children[2]);
+    let first_child = &children[0];
+    let reference_to_invoke = match first_child.rule {
+        JsRule::DotAccess => on_dot_access(first_child),
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
+        rule => panic!("Unexpected rule: {rule}"),
+    };
+
+    let arguments = on_function_invoke(&children[1]);
 
     JsExpression::InvokeFunction(Box::new(reference_to_invoke), arguments)
+}
+
+fn on_function_invoke(node: &JsASTNode) -> Vec<JsExpression> {
+    let children = extract_interpreter_n_children(node, JsRule::FunctionInvoke, 3);
+
+    on_function_arguments(&children[1])
 }
 
 fn on_function_arguments(node: &JsASTNode) -> Vec<JsExpression> {
@@ -231,8 +245,8 @@ fn on_expression_add(node: &JsASTNode) -> JsExpression {
     let first_child = &children[0];
 
     match first_child.rule {
-        JsRule::FunctionInvoke => {
-            let a = on_function_invoke(&children[0]);
+        JsRule::ExpressionFunctionInvoke => {
+            let a = on_expression_function_invoke(&children[0]);
             let b = on_expression_sub_add(&children[2]);
             JsExpression::Add(Box::new(a), Box::new(b))
         }
@@ -265,6 +279,7 @@ fn on_expression_sub_add(node: &JsASTNode) -> JsExpression {
     let first_child = &children[0];
 
     match first_child.rule {
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(first_child),
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),
         JsRule::LiteralValue => on_literal_value(first_child),
@@ -278,6 +293,7 @@ fn on_expression_multiply(node: &JsASTNode) -> JsExpression {
 
     let first_child = &children[0];
     let a = match first_child.rule {
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),
         JsRule::LiteralValue => on_literal_value(first_child),
         rule => panic!("Invalid first child rule: {rule}"),
@@ -291,7 +307,7 @@ fn on_expression_sub_multiply(node: &JsASTNode) -> JsExpression {
 
     let first_child = &children[0];
     match first_child.rule {
-        JsRule::FunctionInvoke => on_function_invoke(first_child),
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(first_child),
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
         JsRule::LiteralValue => on_literal_value(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),
@@ -304,7 +320,7 @@ fn on_expression_equality(node: &JsASTNode) -> JsExpression {
 
     let first_child = &children[0];
     let a = Box::new(match first_child.rule {
-        JsRule::FunctionInvoke => on_function_invoke(first_child),
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(first_child),
         JsRule::ExpressionAdd => on_expression_add(first_child),
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
         JsRule::VariableName => on_variable_name_reference(first_child),
@@ -327,7 +343,7 @@ fn on_expression_sub_equality(node: &JsASTNode) -> JsExpression {
 
     let first_child = &children[0];
     match first_child.rule {
-        JsRule::FunctionInvoke => on_function_invoke(first_child),
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(first_child),
         JsRule::ExpressionEquality => on_expression_equality(first_child),
         JsRule::ExpressionAdd => on_expression_add(first_child),
         JsRule::ExpressionMultiply => on_expression_multiply(first_child),
@@ -339,6 +355,49 @@ fn on_expression_sub_equality(node: &JsASTNode) -> JsExpression {
 
 fn on_equality_operator(node: &JsASTNode) -> String {
     extract_interpreter_token(node, JsRule::OperatorEquality)
+}
+
+fn on_dot_access(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::DotAccess, 3);
+
+    let first_child = &children[0];
+    let base_value = match first_child.rule {
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
+        rule => panic!("Invalid child type {rule}"),
+    };
+
+    let access_child = &children[2];
+    match access_child.rule {
+        JsRule::VariableName => {
+            JsExpression::AccessMember(Box::new(base_value), on_variable_name(access_child))
+        }
+        JsRule::DotAccess => {
+            let reversed_access_chain = recurse_dot_access(node);
+
+            let mut prev = base_value;
+            for link in reversed_access_chain.iter().rev() {
+                prev = JsExpression::AccessMember(Box::new(prev), link.to_string());
+            }
+            prev
+        }
+        rule => panic!("Invalid child type {rule}"),
+    }
+}
+
+fn recurse_dot_access(node: &JsASTNode) -> Vec<String> {
+    let children = extract_interpreter_n_children(node, JsRule::DotAccess, 3);
+
+    let access_child = &children[2];
+    match access_child.rule {
+        JsRule::VariableName => vec![on_variable_name(access_child)],
+        JsRule::DotAccess => {
+            let mut ret = recurse_dot_access(access_child);
+            ret.push(on_variable_name(&access_child.children[0]));
+            ret
+        }
+        rule => panic!("Invalid child type {rule}"),
+    }
 }
 
 impl Interpreter<'_, JsRule> for JsInterpreter {

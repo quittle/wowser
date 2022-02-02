@@ -17,6 +17,7 @@ pub enum JsExpression {
     Reference(String),
     CastToNumber(Box<JsExpression>),
     InvokeFunction(Box<JsExpression>, Vec<JsExpression>),
+    AccessMember(Box<JsExpression>, String),
 }
 
 impl JsExpression {
@@ -143,6 +144,24 @@ impl JsExpression {
                         function.run(closure_context, &evaluated_args)
                     }
                     _ => JsValue::type_error_rc(),
+                }
+            }
+            Self::AccessMember(reference, member_name) => {
+                let base_value = reference.run(closure_context);
+                match base_value.as_ref() {
+                    JsValue::Boolean(_) => JsValue::undefined_rc(), // TODO: Prototype
+                    JsValue::Number(_) => JsValue::undefined_rc(),  // TODO: Prototype
+                    JsValue::String(_) => JsValue::undefined_rc(),  // TODO: Prototype
+                    JsValue::Function(_) => JsValue::undefined_rc(), // TODO: Prototype
+                    JsValue::Object(v) => {
+                        if let Some(reference) = v.get(member_name) {
+                            reference.clone()
+                        } else {
+                            JsValue::undefined_rc()
+                        }
+                    }
+                    JsValue::Undefined => JsValue::undefined_rc(), // TODO: TypeError
+                    JsValue::Null => JsValue::undefined_rc(),      // TODO: TypeError
                 }
             }
         }

@@ -14,6 +14,7 @@ pub trait Interpreter<'a, R: Rule> {
     fn on_node(&self, ast: &ASTNode<'a, R>) -> Option<Self::Result>;
 }
 
+#[track_caller]
 pub fn extract_interpreter_children<'a, R: Rule>(
     node: &'a ASTNode<'a, R>,
     expected_rule: R,
@@ -26,6 +27,7 @@ pub fn extract_interpreter_children<'a, R: Rule>(
     children
 }
 
+#[track_caller]
 pub fn extract_interpreter_n_children<'a, R: Rule>(
     node: &'a ASTNode<'a, R>,
     expected_rule: R,
@@ -40,6 +42,7 @@ pub fn extract_interpreter_n_children<'a, R: Rule>(
     children
 }
 
+#[track_caller]
 pub fn extract_interpreter_token<'a, R: Rule>(
     node: &'a ASTNode<'a, R>,
     expected_rule: R,

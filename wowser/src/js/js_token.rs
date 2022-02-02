@@ -24,6 +24,7 @@ pub enum JsToken {
     CloseParen,
     OpenCurlyBrace,
     CloseCurlyBrace,
+    Dot,
     Comma,
     Colon,
     Semicolon,
@@ -88,6 +89,7 @@ impl Token for JsToken {
             Self::CloseParen => r"\s*(\))\s*",
             Self::OpenCurlyBrace => r"\s*({)\s*",
             Self::CloseCurlyBrace => r"\s*(})\s*",
+            Self::Dot => r"\s*(\.)\s*",
             Self::Comma => r"\s*(,)\s*",
             Self::Colon => r"\s*(:)\s*",
             Self::Semicolon => r"\s*(;)\s*",
@@ -122,12 +124,14 @@ impl Token for JsToken {
                 &[
                     Self::OperatorEquals,
                     Self::OpenParen,
+                    Self::Dot,
                 ],
                 POST_EXPRESSION,
             ].concat(),
             Self::Number => Vec::from(POST_EXPRESSION),
             Self::String => [
                 &[
+                    Self::Dot,
                     Self::Colon,
                 ],
                 POST_EXPRESSION,
@@ -172,6 +176,9 @@ impl Token for JsToken {
                 STATEMENT_START,
                 POST_EXPRESSION,
             ].concat(),
+            Self::Dot => vec![
+                Self::VariableName,
+            ],
             Self::Comma => [
                 &[
                     Self::CloseParen,

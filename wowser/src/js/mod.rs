@@ -509,4 +509,24 @@ mod tests {
             vec![JsStatementResult::string("5[object Object]")],
         );
     }
+
+    #[test]
+    fn test_object_access() {
+        assert_last_value_equals("var a=true; a.foo", JsStatementResult::undefined());
+        assert_last_value_equals("var a=123; a.foo", JsStatementResult::undefined());
+        assert_last_value_equals("var a='abc'; a.foo", JsStatementResult::undefined());
+        assert_last_value_equals("var a={}; a.foo", JsStatementResult::undefined());
+        assert_last_value_equals(
+            "var a={'not foo': 'bar'}; a.foo",
+            JsStatementResult::undefined(),
+        );
+        assert_last_value_equals(
+            "var a={'foo': 'bar'}; a.foo",
+            JsStatementResult::string("bar"),
+        );
+        assert_last_value_equals(
+            "var a={'foo': {'bar': 123}}; a.foo.bar",
+            JsStatementResult::number(123),
+        );
+    }
 }

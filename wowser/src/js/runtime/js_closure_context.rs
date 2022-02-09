@@ -1,4 +1,4 @@
-use super::{JsClosure, JsReference, JsStatementResult};
+use super::{globals::GlobalPrototypes, JsClosure, JsReference, JsStatementResult};
 
 #[derive(Debug)]
 pub struct JsClosureContext {
@@ -6,6 +6,7 @@ pub struct JsClosureContext {
     // This should not be leaked to ensure there is always at least one entry in theclosure
     closures: Vec<JsClosure>,
     pub expression_results: Vec<JsStatementResult>,
+    pub global_prototypes: GlobalPrototypes,
 }
 
 impl JsClosureContext {
@@ -13,6 +14,7 @@ impl JsClosureContext {
         Self {
             closures: vec![global],
             expression_results: vec![],
+            global_prototypes: GlobalPrototypes::default(),
         }
     }
 

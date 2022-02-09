@@ -503,7 +503,7 @@ mod tests {
 
     #[test]
     fn test_object_operations() {
-        assert!(run_js("5 * {}").last().unwrap().is_nan(),);
+        assert!(run_js("5 * {}").last().unwrap().is_nan());
         run_test(
             "5 + {}",
             vec![JsStatementResult::string("5[object Object]")],
@@ -527,6 +527,19 @@ mod tests {
         assert_last_value_equals(
             "var a={'foo': {'bar': 123}}; a.foo.bar",
             JsStatementResult::number(123),
+        );
+    }
+
+    #[test]
+    fn test_prototype_to_string() {
+        assert_last_value_equals(
+            "var a = true; a.toString()",
+            JsStatementResult::string("true"),
+        );
+        assert_last_value_equals("var a = 5; a.toString()", JsStatementResult::string("5"));
+        assert_last_value_equals(
+            "var a = {}; a.toString()",
+            JsStatementResult::string("[object Object]"),
         );
     }
 }

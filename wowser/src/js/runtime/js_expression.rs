@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use super::{JsClosureContext, JsValue};
+use super::{get_member_from_prototype_chain, JsClosureContext, JsValue};
 
 #[derive(Debug, PartialEq)]
 pub enum JsExpression {
@@ -133,7 +133,19 @@ impl JsExpression {
                 JsValue::number_rc(f64::from(value.as_ref()))
             }
             Self::InvokeFunction(reference_to_invoke, arg_expressions) => {
-                let value = reference_to_invoke.run(closure_context);
+                let (this_value, value) = if let JsExpression::AccessMember(base, name) =
+                    reference_to_invoke.as_ref()
+                {
+                    let this_value = base.run(closure_context);
+                    let value =
+                        get_member_from_prototype_chain(this_value.as_ref(), name, closure_context);
+                    (this_value, value)
+                } else {
+                    (
+                        JsValue::undefined_rc(),
+                        reference_to_invoke.run(closure_context),
+                    )
+                };
 
                 match value.as_ref() {
                     JsValue::Function(function) => {
@@ -141,28 +153,14 @@ impl JsExpression {
                         for expression in arg_expressions {
                             evaluated_args.push(expression.run(closure_context))
                         }
-                        function.run(closure_context, &evaluated_args)
+                        function.run(closure_context, this_value, &evaluated_args)
                     }
                     _ => JsValue::type_error_rc(),
                 }
             }
             Self::AccessMember(reference, member_name) => {
                 let base_value = reference.run(closure_context);
-                match base_value.as_ref() {
-                    JsValue::Boolean(_) => JsValue::undefined_rc(), // TODO: Prototype
-                    JsValue::Number(_) => JsValue::undefined_rc(),  // TODO: Prototype
-                    JsValue::String(_) => JsValue::undefined_rc(),  // TODO: Prototype
-                    JsValue::Function(_) => JsValue::undefined_rc(), // TODO: Prototype
-                    JsValue::Object(v) => {
-                        if let Some(reference) = v.get(member_name) {
-                            reference.clone()
-                        } else {
-                            JsValue::undefined_rc()
-                        }
-                    }
-                    JsValue::Undefined => JsValue::undefined_rc(), // TODO: TypeError
-                    JsValue::Null => JsValue::undefined_rc(),      // TODO: TypeError
-                }
+                get_member_from_prototype_chain(base_value.as_ref(), member_name, closure_context)
             }
         }
     }

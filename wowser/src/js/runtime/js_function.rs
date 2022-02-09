@@ -3,14 +3,15 @@ use std::rc::Rc;
 use super::{JsClosureContext, JsStatement, JsStatementResult, JsValue};
 
 #[derive(Clone)]
+#[allow(clippy::type_complexity)]
 pub struct JsFunctionImplementation {
-    pub func: Rc<dyn Fn(&[Rc<JsValue>]) -> Rc<JsValue>>,
+    pub func: Rc<dyn Fn(Rc<JsValue>, &[Rc<JsValue>]) -> Rc<JsValue>>,
 }
 
 impl Default for JsFunctionImplementation {
     fn default() -> Self {
         Self {
-            func: Rc::new(|_| JsValue::undefined_rc()),
+            func: Rc::new(|_, _| JsValue::undefined_rc()),
         }
     }
 }
@@ -53,9 +54,14 @@ impl JsFunction {
         }
     }
 
-    pub fn run(&self, closure_context: &mut JsClosureContext, args: &[Rc<JsValue>]) -> Rc<JsValue> {
+    pub fn run(
+        &self,
+        closure_context: &mut JsClosureContext,
+        this: Rc<JsValue>,
+        args: &[Rc<JsValue>],
+    ) -> Rc<JsValue> {
         match self {
-            Self::Native(_, implementation) => implementation.func.as_ref()(args),
+            Self::Native(_, implementation) => implementation.func.as_ref()(this, args),
             Self::UserDefined(_source, _name, params, implementation) => {
                 if closure_context.get_closure_depth() > 255 {
                     return JsValue::stack_overflow_error_rc();

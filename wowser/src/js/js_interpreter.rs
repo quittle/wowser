@@ -133,11 +133,12 @@ fn on_expression(node: &JsASTNode) -> JsExpression {
 
     match child.rule {
         JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(child),
-        JsRule::VariableName => on_variable_name_reference(child),
-        JsRule::LiteralValue => on_literal_value(child),
+        JsRule::ExpressionEquality => on_expression_equality(child),
         JsRule::ExpressionAdd => on_expression_add(child),
         JsRule::ExpressionMultiply => on_expression_multiply(child),
-        JsRule::ExpressionEquality => on_expression_equality(child),
+        JsRule::ExpressionConditional => on_expression_conditional(child),
+        JsRule::VariableName => on_variable_name_reference(child),
+        JsRule::LiteralValue => on_literal_value(child),
         JsRule::DotAccess => on_dot_access(child),
         rule => panic!("Unexpected rule: {rule}"),
     }
@@ -179,6 +180,38 @@ fn on_function_arguments(node: &JsASTNode) -> Vec<JsExpression> {
     }
 
     ret
+}
+
+fn on_expression_conditional(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ExpressionConditional, 5);
+
+    let case_sub_conditional = &children[0];
+    let true_condition_expression = &children[2];
+    let false_condition_expression_sub_conditional = &children[4];
+
+    JsExpression::Condition(
+        Box::new(on_expression_sub_conditional(case_sub_conditional)),
+        Box::new(on_expression(true_condition_expression)),
+        Box::new(on_expression_sub_conditional(
+            false_condition_expression_sub_conditional,
+        )),
+    )
+}
+
+fn on_expression_sub_conditional(node: &JsASTNode) -> JsExpression {
+    let children = extract_interpreter_n_children(node, JsRule::ExpressionSubConditional, 1);
+
+    let first_child = &children[0];
+
+    match first_child.rule {
+        JsRule::ExpressionFunctionInvoke => on_expression_function_invoke(first_child),
+        JsRule::ExpressionEquality => on_expression_equality(first_child),
+        JsRule::ExpressionAdd => on_expression_add(first_child),
+        JsRule::ExpressionMultiply => on_expression_multiply(first_child),
+        JsRule::VariableName => on_variable_name_reference(first_child),
+        JsRule::LiteralValue => on_literal_value(first_child),
+        rule => panic!("Unexpected rule: {rule}"),
+    }
 }
 
 fn on_literal_value(node: &JsASTNode) -> JsExpression {

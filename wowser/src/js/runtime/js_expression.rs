@@ -18,6 +18,7 @@ pub enum JsExpression {
     CastToNumber(Box<JsExpression>),
     InvokeFunction(Box<JsExpression>, Vec<JsExpression>),
     AccessMember(Box<JsExpression>, String),
+    Condition(Box<JsExpression>, Box<JsExpression>, Box<JsExpression>),
 }
 
 impl JsExpression {
@@ -161,6 +162,16 @@ impl JsExpression {
             Self::AccessMember(reference, member_name) => {
                 let base_value = reference.run(closure_context);
                 get_member_from_prototype_chain(base_value.as_ref(), member_name, closure_context)
+            }
+            Self::Condition(conditional_expression, true_expression, false_expression) => {
+                let condition_result = conditional_expression.run(closure_context);
+                let condition_truthiness: bool = condition_result.as_ref().into();
+
+                if condition_truthiness {
+                    true_expression.run(closure_context)
+                } else {
+                    false_expression.run(closure_context)
+                }
             }
         }
     }

@@ -31,6 +31,8 @@ pub enum JsRule {
     ExpressionFunctionInvoke,
     FunctionInvoke,
     FunctionArguments,
+    ExpressionConditional,
+    ExpressionSubConditional,
     OperatorAdd,
     OperatorMultiply,
     OperatorEquals,
@@ -49,6 +51,7 @@ pub enum JsRule {
     NaNKeyword,
     Colon,
     Semicolon,
+    QuestionMark,
     Terminator,
 }
 
@@ -163,11 +166,29 @@ impl Rule for JsRule {
                 RuleType::Sequence(vec![Self::VariableName, Self::OperatorEquals, Self::Expression]),
             ],
             Self::Expression => vec![
+                RuleType::Rule(Self::ExpressionConditional),
                 RuleType::Rule(Self::ExpressionEquality),
                 RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::ExpressionMultiply),
                 RuleType::Rule(Self::ExpressionFunctionInvoke),
                 RuleType::Rule(Self::DotAccess),
+                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::LiteralValue),
+            ],
+            Self::ExpressionConditional => vec![
+                RuleType::Sequence(vec![
+                    JsRule::ExpressionSubConditional,
+                    JsRule::QuestionMark,
+                    JsRule::Expression,
+                    JsRule::Colon,
+                    JsRule::ExpressionSubConditional,
+                ]),
+            ],
+            Self::ExpressionSubConditional => vec![
+                RuleType::Rule(Self::ExpressionFunctionInvoke),
+                RuleType::Rule(Self::ExpressionEquality),
+                RuleType::Rule(Self::ExpressionAdd),
+                RuleType::Rule(Self::ExpressionMultiply),
                 RuleType::Rule(Self::VariableName),
                 RuleType::Rule(Self::LiteralValue),
             ],
@@ -289,6 +310,9 @@ impl Rule for JsRule {
             ],
             Self::Semicolon => vec![
                 RuleType::Token(JsToken::Semicolon),
+            ],
+            Self::QuestionMark => vec![
+                RuleType::Token(JsToken::QuestionMark),
             ],
             Self::Terminator => vec![
                 RuleType::Token(JsToken::Terminator)

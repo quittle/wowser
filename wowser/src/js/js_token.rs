@@ -28,6 +28,7 @@ pub enum JsToken {
     Comma,
     Colon,
     Semicolon,
+    QuestionMark,
     Terminator,
 }
 
@@ -60,6 +61,8 @@ const POST_EXPRESSION: &[JsToken] = &[
     JsToken::CloseCurlyBrace,
     JsToken::Comma,
     JsToken::Semicolon,
+    JsToken::Colon,
+    JsToken::QuestionMark,
     JsToken::Terminator,
 ];
 
@@ -93,6 +96,7 @@ impl Token for JsToken {
             Self::Comma => r"\s*(,)\s*",
             Self::Colon => r"\s*(:)\s*",
             Self::Semicolon => r"\s*(;)\s*",
+            Self::QuestionMark => r"\s*(\?)\s*",
             Self::Terminator => r"\s*$",
         }
     }
@@ -195,6 +199,7 @@ impl Token for JsToken {
                 EXPRESSION_START,
                 STATEMENT_START,
             ].concat(),
+            Self::QuestionMark =>  Vec::from(EXPRESSION_START),
             Self::Terminator => vec![],
         }
     }

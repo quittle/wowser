@@ -542,4 +542,12 @@ mod tests {
             JsStatementResult::string("[object Object]"),
         );
     }
+
+    #[test]
+    fn test_condition() {
+        assert_last_value_equals("1 ? 2 : 3", JsStatementResult::number(2));
+        assert_last_value_equals("false ? 2 : 3", JsStatementResult::number(3));
+        assert_last_value_equals("1 ? 0 ? 3 : 4 : 5", JsStatementResult::number(4));
+        assert_last_value_equals("1 + 1 ? 2 + 2 : 3 + 3", JsStatementResult::number(4));
+    }
 }

@@ -1,65 +1,9 @@
 use std::rc::Rc;
 
-use super::CssRule;
+use super::{
+    CssAtRule, CssBlock, CssDocument, CssProperty, CssRule, CssSelectorChain, CssSelectorChainItem,
+};
 use crate::parse::*;
-
-#[derive(Debug)]
-pub enum CssNode<'a> {
-    Document(Vec<CssNode<'a>>),
-    Block {
-        selectors: Vec<CssNode<'a>>,
-        properties: Vec<CssNode<'a>>,
-    },
-    Selector(Vec<CssNode<'a>>),
-    SelectorItem(&'a str),
-    Property {
-        key: &'a str,
-        value: &'a str,
-    },
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct CssDocument {
-    pub blocks: Vec<CssBlock>,
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct CssBlock {
-    pub selectors: Vec<CssSelectorChain>,
-    pub properties: Vec<Rc<CssProperty>>,
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct CssSelectorChain {
-    pub item: CssSelectorChainItem,
-    pub next: Option<Box<CssSelectorChain>>,
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub enum CssSelectorChainItem {
-    Tag(String),
-    Class(String),
-    Id(String),
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct CssProperty {
-    pub key: String,
-    pub value: String,
-}
-
-impl CssProperty {
-    pub fn new(key: &str, value: &str) -> CssProperty {
-        CssProperty {
-            key: key.into(),
-            value: value.into(),
-        }
-    }
-
-    pub fn new_rc(key: &str, value: &str) -> Rc<CssProperty> {
-        Rc::new(Self::new(key, value))
-    }
-}
 
 type CssASTNode<'a> = ASTNode<'a, CssRule>;
 
@@ -189,12 +133,42 @@ fn on_top_level_entries(node: &CssASTNode) -> Vec<CssBlock> {
     let first_child = &children[0];
     let block = match &first_child.rule {
         CssRule::Block => on_block(first_child),
-        CssRule::AtRule => panic!("Not supported right now"),
+        CssRule::AtRule => {
+            on_at_rule(first_child);
+            panic!("Unsupported still")
+        }
         rule => panic!("Unexpected rule: {rule}"),
     };
     let mut rest = on_top_level_entries(&children[1]);
     rest.insert(0, block);
     rest
+}
+
+fn on_at_rule(node: &CssASTNode) -> CssAtRule {
+    let children = extract_interpreter_n_children(node, CssRule::AtRule, 3);
+
+    let rule = on_at_keyword(&children[0]);
+    let args = on_at_keyword_symbols(&children[1]);
+    let blocks = on_blocks(&children[2]);
+    CssAtRule { rule, args, blocks }
+}
+
+fn on_at_keyword(node: &CssASTNode) -> String {
+    let token = extract_interpreter_token(node, CssRule::AtKeyword);
+
+    token.trim().to_string()
+}
+
+fn on_at_keyword_symbols(node: &CssASTNode) -> Vec<String> {
+    let children = extract_interpreter_children(node, CssRule::AtKeywordSymbols);
+
+    children.iter().map(on_at_keyword_symbol).collect()
+}
+
+fn on_at_keyword_symbol(node: &CssASTNode) -> String {
+    let token = extract_interpreter_token(node, CssRule::AtKeywordSymbol);
+
+    token.trim().to_string()
 }
 
 pub struct CssInterpreter {}

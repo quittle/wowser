@@ -51,10 +51,7 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelectorChain {
-                        item: CssSelectorChainItem::Tag("foo".into()),
-                        next: None
-                    }],
+                    selectors: vec![vec![CssSelectorChainItem::Tag("foo".into()),]],
                     properties: vec![]
                 }]
             },
@@ -64,10 +61,7 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelectorChain {
-                        item: CssSelectorChainItem::Tag("foo".into()),
-                        next: None
-                    }],
+                    selectors: vec![vec![CssSelectorChainItem::Tag("foo".into())]],
                     properties: vec![CssProperty::new_rc("key", "value")]
                 }]
             },
@@ -77,13 +71,10 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelectorChain {
-                        item: CssSelectorChainItem::Tag("foo".into()),
-                        next: Some(Box::new(CssSelectorChain {
-                            item: CssSelectorChainItem::Tag("bar".into()),
-                            next: None
-                        }))
-                    },],
+                    selectors: vec![vec![
+                        CssSelectorChainItem::Tag("foo".into()),
+                        CssSelectorChainItem::Tag("bar".into()),
+                    ]],
                     properties: vec![]
                 }]
             },
@@ -94,14 +85,8 @@ mod tests {
             CssDocument {
                 blocks: vec![CssBlock {
                     selectors: vec![
-                        CssSelectorChain {
-                            item: CssSelectorChainItem::Tag("foo".into()),
-                            next: None
-                        },
-                        CssSelectorChain {
-                            item: CssSelectorChainItem::Tag("bar".into()),
-                            next: None
-                        },
+                        vec![CssSelectorChainItem::Tag("foo".into())],
+                        vec![CssSelectorChainItem::Tag("bar".into())]
                     ],
                     properties: vec![]
                 }]
@@ -112,10 +97,7 @@ mod tests {
         assert_eq!(
             CssDocument {
                 blocks: vec![CssBlock {
-                    selectors: vec![CssSelectorChain {
-                        item: CssSelectorChainItem::Tag("foo".into()),
-                        next: None
-                    }],
+                    selectors: vec![vec![CssSelectorChainItem::Tag("foo".into())]],
                     properties: vec![
                         CssProperty::new_rc("key", "value"),
                         CssProperty::new_rc("key2", "value2"),
@@ -133,17 +115,11 @@ mod tests {
             CssDocument {
                 blocks: vec![CssBlock {
                     selectors: vec![
-                        CssSelectorChain {
-                            item: CssSelectorChainItem::Tag("foo".into()),
-                            next: Some(Box::new(CssSelectorChain {
-                                item: CssSelectorChainItem::Id("bar".into()),
-                                next: None
-                            }))
-                        },
-                        CssSelectorChain {
-                            item: CssSelectorChainItem::Class("class".into()),
-                            next: None
-                        }
+                        vec![
+                            CssSelectorChainItem::Tag("foo".into()),
+                            CssSelectorChainItem::Id("bar".into()),
+                        ],
+                        vec![CssSelectorChainItem::Class("class".into())]
                     ],
                     properties: vec![
                         CssProperty::new_rc("hi", "'there'"),
@@ -158,22 +134,13 @@ mod tests {
             CssDocument {
                 blocks: vec![
                     CssBlock {
-                        selectors: vec![CssSelectorChain {
-                            item: CssSelectorChainItem::Tag("foo".into()),
-                            next: None
-                        }],
+                        selectors: vec![vec![CssSelectorChainItem::Tag("foo".into())]],
                         properties: vec![CssProperty::new_rc("key", "'value-with_symbols'"),]
                     },
                     CssBlock {
                         selectors: vec![
-                            CssSelectorChain {
-                                item: CssSelectorChainItem::Tag("bar".into()),
-                                next: None
-                            },
-                            CssSelectorChain {
-                                item: CssSelectorChainItem::Tag("baz".into()),
-                                next: None
-                            },
+                            vec![CssSelectorChainItem::Tag("bar".into())],
+                            vec![CssSelectorChainItem::Tag("baz".into())]
                         ],
                         properties: vec![
                             CssProperty::new_rc("k", "v"),

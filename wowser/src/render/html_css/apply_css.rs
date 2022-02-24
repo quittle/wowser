@@ -3,7 +3,6 @@ use std::rc::Rc;
 
 use crate::css::CssDocument;
 use crate::css::CssProperty;
-use crate::css::CssSelectorChain;
 use crate::css::CssSelectorChainItem;
 use crate::html::ElementContents;
 use crate::html::ElementContentsId;
@@ -62,29 +61,45 @@ fn get_applicable_styles<'a>(
 fn do_elements_match(
     element: &ElementContents,
     parents: &[&ElementContents],
-    selector_chain: &CssSelectorChain,
+    selector_chain: &[CssSelectorChainItem],
 ) -> bool {
-    let mut cur_selector = selector_chain;
+    let mut selector_iterator = selector_chain.iter().peekable();
+
+    let mut cur_selector = selector_iterator.next();
+
     // Tracks if we matched all the way down the stack already.
     // If no next selector, then we did our best to match and "succeeded",
     // otherwise we need to match within the loop.
     for node in parents {
-        if let Some(next_selector) = cur_selector.next.as_ref() {
-            if does_element_match(node, cur_selector) {
-                cur_selector = next_selector
-            }
-        } else {
+        if selector_iterator.peek().is_none() {
             // If no next selector then we reached the end and must match on the input element with this final one.
             // Break early as an optimization.
             break;
         }
+
+        if let Some(selector) = cur_selector {
+            if does_element_match(node, selector) {
+                cur_selector = selector_iterator.next();
+            }
+        } else {
+            unreachable!("cur_selector should never have been None");
+        }
     }
-    cur_selector.next.is_none() && does_element_match(element, cur_selector)
+
+    if selector_iterator.peek().is_some() {
+        // Did not make it through the entire selector chain yet so not a match
+        false
+    } else if let Some(selector) = cur_selector {
+        does_element_match(element, selector)
+    } else {
+        // Possible if there are no parents and an empty selector chain
+        false
+    }
 }
 
-fn does_element_match(element_contents: &ElementContents, selector: &CssSelectorChain) -> bool {
+fn does_element_match(element_contents: &ElementContents, selector: &CssSelectorChainItem) -> bool {
     if let ElementContents::Element(element) = element_contents {
-        match &selector.item {
+        match &selector {
             CssSelectorChainItem::Tag(tag_name) => element.tag_name == *tag_name,
             CssSelectorChainItem::Class(class) => element.attributes.iter().any(|attribute| {
                 attribute.name == "class"

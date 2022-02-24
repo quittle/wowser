@@ -1,8 +1,6 @@
 use std::rc::Rc;
 
-use super::{
-    CssAtRule, CssBlock, CssDocument, CssProperty, CssRule, CssSelectorChain, CssSelectorChainItem,
-};
+use super::{CssAtRule, CssBlock, CssDocument, CssProperty, CssRule, CssSelectorChainItem};
 use crate::parse::*;
 
 type CssASTNode<'a> = ASTNode<'a, CssRule>;
@@ -23,7 +21,7 @@ fn on_block(node: &CssASTNode) -> CssBlock {
     }
 }
 
-fn on_selector_list(selector_list: &CssASTNode) -> Vec<CssSelectorChain> {
+fn on_selector_list(selector_list: &CssASTNode) -> Vec<Vec<CssSelectorChainItem>> {
     let children = extract_interpreter_children(selector_list, CssRule::SelectorList);
     let children_len = children.len();
     match children_len {
@@ -37,26 +35,11 @@ fn on_selector_list(selector_list: &CssASTNode) -> Vec<CssSelectorChain> {
     }
 }
 
-fn on_selector(selector: &CssASTNode) -> CssSelectorChain {
+fn on_selector(selector: &CssASTNode) -> Vec<CssSelectorChainItem> {
     let children = extract_interpreter_children(selector, CssRule::Selector);
     assert!(!children.is_empty(), "Expected at least one child");
 
-    let mut ret = CssSelectorChain {
-        item: on_selector_item(&children[0]),
-        next: None,
-    };
-
-    let mut cur_node = &mut ret;
-    for child in children.iter().skip(1) {
-        let next_node = CssSelectorChain {
-            item: on_selector_item(child),
-            next: None,
-        };
-        cur_node.next = Some(Box::new(next_node));
-        let boxed_node = cur_node.next.as_mut().expect("Unexpected empty next node");
-        cur_node = boxed_node.as_mut();
-    }
-    ret
+    children.iter().map(on_selector_item).collect()
 }
 
 fn on_selector_item(selector: &CssASTNode) -> CssSelectorChainItem {

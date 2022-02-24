@@ -53,6 +53,12 @@ pub fn extract_interpreter_token<'a, R: Rule>(
         node.rule,
     );
 
+    let children_len = node.children.len();
+    assert_eq!(
+        0, children_len,
+        "Expected no children on a token node but found {children_len}",
+    );
+
     let token_str: &str = node
         .token
         .unwrap_or_else(|| panic!("Expected token to be present on node: {}", node.rule))

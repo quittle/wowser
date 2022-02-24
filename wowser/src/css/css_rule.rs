@@ -5,12 +5,17 @@ use wowser_macros::DisplayFromDebug;
 #[derive(Clone, Copy, Debug, DisplayFromDebug, PartialEq, Eq, Hash)]
 pub enum CssRule {
     Document,
+    TopLevelEntries,
     Blocks,
     Block,
     SelectorList,
     Selector,
     SelectorItem,
     SelectorSeparator,
+    AtRule,
+    AtKeyword,
+    AtKeywordSymbols,
+    AtKeywordSymbol,
     BlockBody,
     BlockBodyOpen,
     BlockBodyClose,
@@ -34,8 +39,13 @@ impl Rule for CssRule {
     fn children(&self) -> Vec<RuleType<CssRule>> {
         match self {
             Self::Document => vec![
-                RuleType::Sequence(vec![Self::Blocks, Self::Terminator]),
+                RuleType::Sequence(vec![Self::TopLevelEntries, Self::Terminator]),
                 RuleType::Rule(Self::Terminator),
+            ],
+            Self::TopLevelEntries => vec![
+                RuleType::Sequence(vec![Self::Block, Self::TopLevelEntries]),
+                RuleType::Sequence(vec![Self::AtRule, Self::TopLevelEntries]),
+                RuleType::Sequence(vec![]),
             ],
             Self::Blocks => vec![
                 RuleType::RepeatableRule(Self::Block),
@@ -55,6 +65,18 @@ impl Rule for CssRule {
             ],
             Self::SelectorSeparator => vec![
                 RuleType::Token(CssToken::SelectorSeparator),
+            ],
+            Self::AtRule => vec![
+                RuleType::Sequence(vec![Self::AtKeyword, Self::AtKeywordSymbols, Self::Blocks]),
+            ],
+            Self::AtKeywordSymbols => vec![
+                RuleType::RepeatableRule(Self::AtKeywordSymbol),
+            ],
+            Self::AtKeyword => vec![
+                RuleType::Token(CssToken::AtKeyword),
+            ],
+            Self::AtKeywordSymbol => vec![
+                RuleType::Token(CssToken::AtKeywordSymbol),
             ],
             Self::BlockBody => vec![
                 RuleType::Sequence(vec![Self::BlockBodyOpen, Self::PropertyList, Self::BlockBodyClose])

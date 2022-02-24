@@ -6,6 +6,8 @@ pub enum CssToken {
     Document,
     SelectorSeparator,
     Selector,
+    AtKeyword,
+    AtKeywordSymbol,
     OpenBrace,
     CloseBrace,
     PropertyKey,
@@ -21,6 +23,8 @@ impl Token for CssToken {
             Self::Document => "",
             Self::Selector => r"\s*([#\-_\.\w\d\[\]]+)\s*",
             Self::SelectorSeparator => r"\s*(,)\s*",
+            Self::AtKeyword => r"\s*(@\w[\w\-]*)\s",
+            Self::AtKeywordSymbol => r"\s*(\w+)\s",
             Self::OpenBrace => r"\s*(\{)\s*",
             Self::CloseBrace => r"\s*(\})\s*",
             Self::PropertyKey => r"[\-\w\.\d]+",
@@ -45,6 +49,13 @@ impl Token for CssToken {
             ],
             Self::SelectorSeparator => vec![
                 Self::Selector,
+            ],
+            Self::AtKeyword => vec![
+                Self::AtKeywordSymbol,
+            ],
+            Self::AtKeywordSymbol =>vec![
+                Self::AtKeywordSymbol,
+                Self::OpenBrace,
             ],
             Self::OpenBrace => vec![
                 Self::PropertyKey,

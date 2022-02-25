@@ -61,11 +61,11 @@ fn render_once(
         .iter()
         .collect::<Vec<_>>();
     sorted_css_documents.sort_by_key(|entry| entry.1 .0);
-    let css_blocks: Vec<_> = sorted_css_documents
+    let entries: Vec<_> = sorted_css_documents
         .iter()
-        .flat_map(|css_document| css_document.1 .1.blocks.clone())
+        .flat_map(|css_document| css_document.1 .1.entries.clone())
         .collect();
-    let merged_css_document = CssDocument { blocks: css_blocks };
+    let merged_css_document = CssDocument { entries };
 
     let css_styling = &style_html(html, &merged_css_document);
 

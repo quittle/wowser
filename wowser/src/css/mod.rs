@@ -35,12 +35,12 @@ mod tests {
     #[test]
     fn empty_config() {
         assert_eq!(
-            CssDocument { blocks: vec![] },
+            CssDocument { entries: vec![] },
             parse(""),
             "Empty document without spaces"
         );
         assert_eq!(
-            CssDocument { blocks: vec![] },
+            CssDocument { entries: vec![] },
             parse("  "),
             "Empty document with spaces"
         );
@@ -50,59 +50,59 @@ mod tests {
     fn simple_config() {
         assert_eq!(
             CssDocument {
-                blocks: vec![CssBlock {
+                entries: vec![CssTopLevelEntry::Block(CssBlock {
                     selectors: vec![vec![CssSelectorChainItem::Tag("foo".into()),]],
                     properties: vec![]
-                }]
+                })]
             },
             parse("foo { }"),
             "Minimal block with a tag selector"
         );
         assert_eq!(
             CssDocument {
-                blocks: vec![CssBlock {
+                entries: vec![CssTopLevelEntry::Block(CssBlock {
                     selectors: vec![vec![CssSelectorChainItem::Tag("foo".into())]],
                     properties: vec![CssProperty::new_rc("key", "value")]
-                }]
+                })]
             },
             parse("foo { key: value; }"),
             "Minimal block with a tag selector and single key-value"
         );
         assert_eq!(
             CssDocument {
-                blocks: vec![CssBlock {
+                entries: vec![CssTopLevelEntry::Block(CssBlock {
                     selectors: vec![vec![
                         CssSelectorChainItem::Tag("foo".into()),
                         CssSelectorChainItem::Tag("bar".into()),
                     ]],
                     properties: vec![]
-                }]
+                })]
             },
             parse("foo bar{}"),
             "Multiple tag selectors with minimal spacing"
         );
         assert_eq!(
             CssDocument {
-                blocks: vec![CssBlock {
+                entries: vec![CssTopLevelEntry::Block(CssBlock {
                     selectors: vec![
                         vec![CssSelectorChainItem::Tag("foo".into())],
                         vec![CssSelectorChainItem::Tag("bar".into())]
                     ],
                     properties: vec![]
-                }]
+                })]
             },
             parse("foo, bar { }"),
             "Multiple selectors with comma"
         );
         assert_eq!(
             CssDocument {
-                blocks: vec![CssBlock {
+                entries: vec![CssTopLevelEntry::Block(CssBlock {
                     selectors: vec![vec![CssSelectorChainItem::Tag("foo".into())]],
                     properties: vec![
                         CssProperty::new_rc("key", "value"),
                         CssProperty::new_rc("key2", "value2"),
                     ]
-                }]
+                })]
             },
             parse("foo { key: value; key2: value2 }"),
             "Trailing CSS Property without semicolon"
@@ -113,7 +113,7 @@ mod tests {
     fn complex_config() {
         assert_eq!(
             CssDocument {
-                blocks: vec![CssBlock {
+                entries: vec![CssTopLevelEntry::Block(CssBlock {
                     selectors: vec![
                         vec![
                             CssSelectorChainItem::Tag("foo".into()),
@@ -125,19 +125,19 @@ mod tests {
                         CssProperty::new_rc("hi", "'there'"),
                         CssProperty::new_rc("display", "none")
                     ]
-                }]
+                })]
             },
             parse("foo #bar, .class { hi: 'there'; display: none; }"),
             "More complex format"
         );
         assert_eq!(
             CssDocument {
-                blocks: vec![
-                    CssBlock {
+                entries: vec![
+                    CssTopLevelEntry::Block(CssBlock {
                         selectors: vec![vec![CssSelectorChainItem::Tag("foo".into())]],
                         properties: vec![CssProperty::new_rc("key", "'value-with_symbols'"),]
-                    },
-                    CssBlock {
+                    }),
+                    CssTopLevelEntry::Block(CssBlock {
                         selectors: vec![
                             vec![CssSelectorChainItem::Tag("bar".into())],
                             vec![CssSelectorChainItem::Tag("baz".into())]
@@ -146,7 +146,7 @@ mod tests {
                             CssProperty::new_rc("k", "v"),
                             CssProperty::new_rc("v", "k"),
                         ]
-                    }
+                    })
                 ]
             },
             parse("foo{key:'value-with_symbols';}bar,baz{k:v;v:k;}"),

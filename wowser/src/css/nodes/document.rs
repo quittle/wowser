@@ -1,6 +1,6 @@
-use super::CssBlock;
+use super::CssTopLevelEntry;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct CssDocument {
-    pub blocks: Vec<CssBlock>,
+    pub entries: Vec<CssTopLevelEntry>,
 }

@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
-use super::{CssAtRule, CssBlock, CssDocument, CssProperty, CssRule, CssSelectorChainItem};
+use super::{
+    CssAtRule, CssBlock, CssDocument, CssProperty, CssRule, CssSelectorChainItem, CssTopLevelEntry,
+};
 use crate::parse::*;
 
 type CssASTNode<'a> = ASTNode<'a, CssRule>;
@@ -107,23 +109,20 @@ fn on_property_value(selector: &CssASTNode) -> String {
     token.trim().to_string()
 }
 
-fn on_top_level_entries(node: &CssASTNode) -> Vec<CssBlock> {
+fn on_top_level_entries(node: &CssASTNode) -> Vec<CssTopLevelEntry> {
     let children = extract_interpreter_children(node, CssRule::TopLevelEntries);
     if children.is_empty() {
         return vec![];
     }
 
     let first_child = &children[0];
-    let block = match &first_child.rule {
-        CssRule::Block => on_block(first_child),
-        CssRule::AtRule => {
-            on_at_rule(first_child);
-            panic!("Unsupported still")
-        }
+    let entry = match &first_child.rule {
+        CssRule::Block => CssTopLevelEntry::Block(on_block(first_child)),
+        CssRule::AtRule => CssTopLevelEntry::AtRule(on_at_rule(first_child)),
         rule => panic!("Unexpected rule: {rule}"),
     };
     let mut rest = on_top_level_entries(&children[1]);
-    rest.insert(0, block);
+    rest.insert(0, entry);
     rest
 }
 
@@ -163,10 +162,10 @@ impl Interpreter<'_, CssRule> for CssInterpreter {
         let children = extract_interpreter_children(document, CssRule::Document);
 
         if children.len() == 1 && children[0].rule == CssRule::Terminator {
-            Some(CssDocument { blocks: vec![] })
+            Some(CssDocument { entries: vec![] })
         } else {
             Some(CssDocument {
-                blocks: on_top_level_entries(&children[0]),
+                entries: on_top_level_entries(&children[0]),
             })
         }
     }

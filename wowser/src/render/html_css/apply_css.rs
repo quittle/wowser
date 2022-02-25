@@ -4,6 +4,7 @@ use std::rc::Rc;
 use crate::css::CssDocument;
 use crate::css::CssProperty;
 use crate::css::CssSelectorChainItem;
+use crate::css::CssTopLevelEntry;
 use crate::html::ElementContents;
 use crate::html::ElementContentsId;
 use crate::html::HtmlDocument;
@@ -46,15 +47,23 @@ fn get_applicable_styles<'a>(
     parents: &[&ElementContents],
 ) -> Vec<Rc<CssProperty>> {
     css_document
-        .blocks
+        .entries
         .iter()
-        .filter(|block| {
-            block
-                .selectors
-                .iter()
-                .any(|selector_chain| do_elements_match(element, parents, selector_chain))
+        .filter_map(|entry| match entry {
+            CssTopLevelEntry::Block(block) => {
+                let is_match = block
+                    .selectors
+                    .iter()
+                    .any(|selector_chain| do_elements_match(element, parents, selector_chain));
+                if is_match {
+                    Some(block.properties.clone())
+                } else {
+                    None
+                }
+            }
+            CssTopLevelEntry::AtRule(_) => None,
         })
-        .flat_map(|block| block.properties.clone())
+        .flatten()
         .collect()
 }
 

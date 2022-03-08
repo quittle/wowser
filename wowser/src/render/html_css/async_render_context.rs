@@ -19,7 +19,6 @@ impl AsyncRenderContext {
             .map(|mut network_resource_manager| network_resource_manager.get_or_request(url))
             .ok()
             .flatten()
-            .map(|result_weak| result_weak.upgrade())
-            .flatten()
+            .and_then(|result_weak| result_weak.upgrade())
     }
 }

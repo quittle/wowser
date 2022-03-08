@@ -14,11 +14,9 @@ use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
 use std::{borrow::Cow, str};
 
 fn find_local_udp_socket() -> Result<UdpSocket, std::io::Error> {
-    let mut err;
-
-    match UdpSocket::bind(SocketAddr::from(([0, 0, 0, 0], 2000))) {
+    let mut err = match UdpSocket::bind(SocketAddr::from(([0, 0, 0, 0], 2000))) {
         Ok(socket) => return Ok(socket),
-        Err(e) => err = e,
+        Err(e) => e,
     };
 
     for port in (3000..4000).step_by(13) {

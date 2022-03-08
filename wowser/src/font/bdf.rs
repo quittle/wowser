@@ -86,7 +86,7 @@ impl Font for BDFFont {
                 let bounding_box = c
                     .bounding_box
                     .as_ref()
-                    .or_else(|| self.bounding_box.as_ref())
+                    .or(self.bounding_box.as_ref())
                     .unwrap_or(&Bbx::DEFAULT);
                 let font_descent = self
                     .properties

@@ -234,7 +234,7 @@ fn on_literal_value(node: &JsASTNode) -> JsExpression {
 
 fn on_number(node: &JsASTNode) -> JsExpression {
     let token = extract_interpreter_token(node, JsRule::Number);
-    let normalized_number = token.replace("_", "");
+    let normalized_number = token.replace('_', "");
     let number_value = normalized_number.parse::<f64>().unwrap();
     JsExpression::Number(number_value)
 }

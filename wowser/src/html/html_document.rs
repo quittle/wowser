@@ -187,8 +187,7 @@ impl ElementHtmlNode {
         self.attributes
             .iter()
             .find(|attribute| attribute.name == lowercase_name)
-            .map(|attribute| attribute.value.as_ref())
-            .flatten()
+            .and_then(|attribute| attribute.value.as_ref())
             .map(|value| value.as_str())
     }
 

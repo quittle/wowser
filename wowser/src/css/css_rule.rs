@@ -67,7 +67,13 @@ impl Rule for CssRule {
                 RuleType::Token(CssToken::SelectorSeparator),
             ],
             Self::AtRule => vec![
-                RuleType::Sequence(vec![Self::AtKeyword, Self::AtKeywordSymbols, Self::Blocks]),
+                RuleType::Sequence(vec![
+                    Self::AtKeyword,
+                    Self::AtKeywordSymbols,
+                    Self::BlockBodyOpen,
+                    Self::Blocks,
+                    Self::BlockBodyClose,
+                ]),
             ],
             Self::AtKeywordSymbols => vec![
                 RuleType::RepeatableRule(Self::AtKeywordSymbol),

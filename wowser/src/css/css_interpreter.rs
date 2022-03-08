@@ -7,7 +7,6 @@ use crate::parse::*;
 
 type CssASTNode<'a> = ASTNode<'a, CssRule>;
 
-#[allow(dead_code)]
 fn on_blocks(blocks: &CssASTNode) -> Vec<CssBlock> {
     let children = extract_interpreter_children(blocks, CssRule::Blocks);
 
@@ -39,7 +38,6 @@ fn on_selector_list(selector_list: &CssASTNode) -> Vec<Vec<CssSelectorChainItem>
 
 fn on_selector(selector: &CssASTNode) -> Vec<CssSelectorChainItem> {
     let children = extract_interpreter_children(selector, CssRule::Selector);
-    assert!(!children.is_empty(), "Expected at least one child");
 
     children.iter().map(on_selector_item).collect()
 }
@@ -127,11 +125,11 @@ fn on_top_level_entries(node: &CssASTNode) -> Vec<CssTopLevelEntry> {
 }
 
 fn on_at_rule(node: &CssASTNode) -> CssAtRule {
-    let children = extract_interpreter_n_children(node, CssRule::AtRule, 3);
+    let children = extract_interpreter_n_children(node, CssRule::AtRule, 5);
 
     let rule = on_at_keyword(&children[0]);
     let args = on_at_keyword_symbols(&children[1]);
-    let blocks = on_blocks(&children[2]);
+    let blocks = on_blocks(&children[3]);
     CssAtRule { rule, args, blocks }
 }
 

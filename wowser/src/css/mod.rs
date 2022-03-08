@@ -28,6 +28,7 @@ pub fn parse_css(document: &str) -> Result<CssDocument, String> {
 mod tests {
     use super::*;
 
+    #[track_caller]
     fn parse(document: &str) -> CssDocument {
         parse_css(document).expect("Failed to parse CSS")
     }
@@ -106,6 +107,33 @@ mod tests {
             },
             parse("foo { key: value; key2: value2 }"),
             "Trailing CSS Property without semicolon"
+        );
+    }
+
+    #[test]
+    fn test_at_rule() {
+        assert_eq!(
+            CssDocument {
+                entries: vec![CssTopLevelEntry::AtRule(CssAtRule {
+                    rule: "@media".to_string(),
+                    args: vec!["print".to_string()],
+                    blocks: vec![],
+                })]
+            },
+            parse("@media print {}"),
+        );
+        assert_eq!(
+            CssDocument {
+                entries: vec![CssTopLevelEntry::AtRule(CssAtRule {
+                    rule: "@media".to_string(),
+                    args: vec!["print".to_string()],
+                    blocks: vec![CssBlock {
+                        selectors: vec![vec![CssSelectorChainItem::Tag("tag".into())]],
+                        properties: vec![CssProperty::new_rc("key", "value"),]
+                    }]
+                })]
+            },
+            parse("@media print { tag { key: value; } }"),
         );
     }
 

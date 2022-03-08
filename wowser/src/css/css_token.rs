@@ -40,6 +40,7 @@ impl Token for CssToken {
         match self {
             Self::Document => vec![
                 Self::Selector,
+                Self::AtKeyword,
                 Self::Terminator,
             ],
             Self::Selector => vec![
@@ -58,6 +59,7 @@ impl Token for CssToken {
                 Self::OpenBrace,
             ],
             Self::OpenBrace => vec![
+                Self::Selector,
                 Self::PropertyKey,
                 Self::CloseBrace,
             ],
@@ -77,6 +79,8 @@ impl Token for CssToken {
             ],
             Self::CloseBrace => vec![
                 Self::Selector,
+                Self::AtKeyword,
+                Self::CloseBrace,
                 Self::Terminator,
             ],
             Self::Terminator => vec![],

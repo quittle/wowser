@@ -80,11 +80,16 @@ pub fn get_error() -> GlfwError {
     }
 }
 
-/// Like `get_error`, except returns an Ok if `GlfwError::NoError` or
+/// Like `get_error`, except returns an Ok(()) if `GlfwError::NoError` or
 /// returns Err(GlfwError) if not.
 pub fn get_error_result() -> GlfwResult {
+    get_result_if_not_error(|| ())
+}
+
+// Like `get_error`, except returns Ok with the result of `when_ok` when the error is `GlfwError::NoError`.
+pub fn get_result_if_not_error<F: FnOnce() -> T, T>(when_ok: F) -> Result<T, GlfwError> {
     match get_error() {
-        GlfwError::NoError => Ok(()),
+        GlfwError::NoError => Ok(when_ok()),
         err => Err(err),
     }
 }

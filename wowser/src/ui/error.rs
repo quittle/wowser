@@ -11,6 +11,14 @@ pub enum UiError {
     GlfwError(glfw::GlfwError),
 }
 
+#[allow(dead_code)]
+pub fn ui_result_from_glfw_result(result: glfw::GlfwResult) -> UiResult {
+    match result {
+        Ok(()) => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
 impl Error for UiError {}
 
 impl From<UiError> for String {

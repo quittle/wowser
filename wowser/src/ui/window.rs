@@ -114,6 +114,22 @@ impl Window {
     pub fn get_bounds(&self) -> &Rect<i32> {
         &self.bounds
     }
+
+    pub fn get_glfw_window(&self) -> &glfw::Window {
+        &self.window
+    }
+
+    /// Call to have the window
+    pub fn check_for_updates(&mut self) -> UiResult {
+        if self.window.should_close()? {
+            self.window.close()?;
+        }
+        Ok(())
+    }
+
+    pub fn is_alive(&self) -> bool {
+        self.window.is_alive()
+    }
 }
 
 /// Performs mutations to a window, drop when complete to actually render the update.

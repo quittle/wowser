@@ -21,7 +21,7 @@ fn get_useragent_css() -> CssDocument {
 }
 
 pub struct Tab<'w> {
-    window: &'w mut Window,
+    pub window: &'w mut Window,
     html: HtmlDocument,
     async_render_context: AsyncRenderContext,
 }

@@ -9,7 +9,10 @@ use wowser_glfw as glfw;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let url = args.get(1).expect("URL");
+    run(url);
+}
 
+fn run(url: &str) {
     let url = Url::parse(url).expect("Invalid URL provided");
     let request = HttpRequest::new(url);
     let response = futures::executor::block_on(request.get()).expect("Failed to load HTML page");
@@ -28,6 +31,12 @@ fn main() {
 
         loop {
             glfw::poll_events().unwrap();
+            tab.window
+                .check_for_updates()
+                .expect("Error while checking UI updates");
+            if !tab.window.is_alive() {
+                break;
+            }
             tab.render();
         }
     }

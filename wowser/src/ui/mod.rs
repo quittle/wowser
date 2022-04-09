@@ -4,6 +4,7 @@ mod window;
 pub use error::{UiError, UiResult};
 pub use window::Window;
 
+#[cfg(test)]
 pub mod tests {
     use lazy_static::lazy_static;
     use std::sync::Mutex;

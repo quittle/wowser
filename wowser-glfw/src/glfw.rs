@@ -1,7 +1,8 @@
-use crate::get_result_if_not_error;
-
-use super::{get_error, set_window_size_callback, GlfwError, GlfwResult};
+use super::{
+    get_error, get_result_if_not_error, set_window_size_callback, GlfwError, GlfwResult, WindowHint,
+};
 use std::ffi::CString;
+use std::os::raw::c_int;
 use std::ptr::{self, NonNull};
 use wowser_glfw_sys::*;
 
@@ -228,4 +229,23 @@ pub fn window_should_close(window: &Window) -> Result<bool, GlfwError> {
 
     // Return the error or the actual result of should_close
     get_result_if_not_error(|| should_close != 0)
+}
+
+pub fn set_window_hint(hint: WindowHint, value: bool) -> GlfwResult {
+    let glfw_hint = hint.into();
+    let glfw_value = bool_to_glfw_bool(value);
+
+    unsafe {
+        glfwWindowHint(glfw_hint, glfw_value);
+    }
+
+    get_glfw_result()
+}
+
+pub fn bool_to_glfw_bool(value: bool) -> c_int {
+    if value {
+        GLFW_TRUE as c_int
+    } else {
+        GLFW_FALSE as c_int
+    }
 }

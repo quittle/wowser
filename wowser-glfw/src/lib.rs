@@ -2,10 +2,12 @@ mod callback;
 mod error;
 mod glfw;
 mod ptr_holder;
+mod window_hint;
 
 pub use callback::*;
 pub use error::*;
 pub use glfw::*;
+pub use window_hint::*;
 
 /// Used to convert a callback for usage with this module's set_error_callback
 /// ```

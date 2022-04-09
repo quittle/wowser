@@ -38,3 +38,4 @@ sudo apt install clang cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor
 
 1. When parsing protocols, normalize data as early as possible to minimize the chance of bugs and reduce the cognitive load of keep track of normalizations
 1. When normalizing strings, prefer lowercase over uppercase where possible.
+1. When running UI tests, the windows are headless by default to help stabilize them. To show them in situations like debugging, set the environment variable `WOWSER_HEADLESS` to `false` when invoking.

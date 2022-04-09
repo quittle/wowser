@@ -23,6 +23,10 @@ fn initialize_gl() -> gl::GlResult {
 pub fn start() {
     initialize_glfw().expect("Unable to initialize GLFW");
     initialize_gl().expect("Unable to initialize GL");
+
+    if cfg!(test) {
+        test_start();
+    }
 }
 
 fn destroy_glfw() -> glfw::GlfwResult {
@@ -32,4 +36,17 @@ fn destroy_glfw() -> glfw::GlfwResult {
 
 pub fn stop() {
     destroy_glfw().expect("Unable to destroy glfw");
+}
+
+#[cfg(not(test))]
+fn test_start() {}
+
+#[cfg(test)]
+use crate::util::get_bool_env;
+
+#[cfg(test)]
+fn test_start() {
+    let is_headless = get_bool_env("WOWSER_HEADLESS", true);
+    glfw::set_window_hint(glfw::WindowHint::Visible, !is_headless)
+        .expect("Unable to hide window for test");
 }

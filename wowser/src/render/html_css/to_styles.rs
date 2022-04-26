@@ -139,7 +139,7 @@ fn render(
         ElementContents::Text(text_node) => StyleNodeChild::Text(TextStyleNode {
             text: text_node.text.clone(),
             text_color: cur_inherited_styles.text_color,
-            font_size: 12_f32, // TODO: Parse from styles
+            font_size: 11_f32, // TODO: Parse from styles
         }),
     };
 

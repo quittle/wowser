@@ -93,6 +93,14 @@ impl From<u8> for Bit {
         }
     }
 }
+
+impl From<usize> for Bit {
+    fn from(bit: usize) -> Bit {
+        debug_assert!(bit <= u8::MAX as usize);
+        Bit::from(bit as u8)
+    }
+}
+
 /// The index of a bit in a byte, starting from the left
 pub enum U16Bit {
     Zero,

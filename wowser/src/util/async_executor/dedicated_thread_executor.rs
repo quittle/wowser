@@ -31,7 +31,6 @@ where
                 // Take the future, and if it has not yet completed (is still Some),
                 // poll it in an attempt to complete it.
                 if let Ok(mut future_slot) = task.future.lock() {
-                    // let mut future_slot = task.future.lock().unwrap();
                     if let Some(mut future) = future_slot.take() {
                         // Create a `LocalWaker` from the task itself
                         let waker = waker_ref(&task);
@@ -146,7 +145,7 @@ mod tests {
             .unwrap();
         assert!(executor.get_result(token).is_none());
         // This needs to be elongated due to the slowness of panic'ing on slow machines (like in GitHub Actions)
-        thread::sleep(SLEEP_DURATION * 5);
+        thread::sleep(SLEEP_DURATION * 50);
         let result = executor.get_result(token);
         assert!(result.is_some());
         assert!(result.unwrap().is_err());

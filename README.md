@@ -12,16 +12,26 @@ This project is built with Rust. To get started, install [`rustup`](https://rust
 
 [Install VcXsrv](https://sourceforge.net/projects/vcxsrv) so the client can draw.
 
+#### Easy Way
+
+Run this from within WSL
+
+```bash
+source scripts/windows_x11
+```
+
+#### Manual Way
+
 Start `XLaunch` with **Native opengl** disabled and **Disable access control** checked or run this from within WSL.
 
 ```bash
 wslview config.xlaunch
 ```
 
-Run this from a WSL terminal before starting to connect to the Windows X11 server.
+Run this from a WSL terminal before running something that opens a window to connect to the Windows X11 server.
 
 ```bash
-export DISPLAY="$(cat /etc/resolv.conf | grep -oE '([0-9]{1,}\.){3}[0-9]{1,}'):0.0"
+export DISPLAY=$(route.exe print | grep 0.0.0.0 | head -1 | awk '{print $4}'):0.0
 ```
 
 ### Windows without WSL

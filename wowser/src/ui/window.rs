@@ -238,9 +238,8 @@ impl WindowMutator<'_> {
         width: u32,
         color: &Color,
     ) -> UiResult {
-        let height = (bitmap.len() as u32 / width) as i32;
-
-        if color.a != 0 {
+        if width > 0 && color.a != 0 {
+            let height = (bitmap.len() as u32 / width) as i32;
             gl::color_4ub(color.r, color.g, color.b, color.a);
             gl::pixel_zoom(1.0, -1.0)?;
             gl::raster_pos_2i(point.x, point.y + height)?;

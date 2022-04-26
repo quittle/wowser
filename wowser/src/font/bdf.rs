@@ -1,5 +1,8 @@
 use super::{Font, FontError, RenderedCharacter};
-use crate::util::{split_str_into_2, split_str_into_3, split_str_into_4, string_to_bytes, Point};
+use crate::util::{
+    split_str_into_2, split_str_into_3, split_str_into_4, string_to_bytes, BitExtractor,
+    NumberUtils, Point,
+};
 use std::io::{BufRead, BufReader, Lines};
 use std::{cmp, iter, str::FromStr};
 
@@ -80,7 +83,7 @@ impl BDFFont {
 }
 
 impl Font for BDFFont {
-    fn render_character(&self, character: char, _point_size: f32) -> Option<RenderedCharacter> {
+    fn render_character(&self, character: char, point_size: f32) -> Option<RenderedCharacter> {
         for c in self.characters.as_deref()? {
             if c.encoding == Some(character as u32) {
                 let bounding_box = c
@@ -92,22 +95,66 @@ impl Font for BDFFont {
                     .properties
                     .as_ref()
                     .map_or(0, |properties| properties.font_descent.unwrap_or(0));
+                let font_point_size = self.size.as_ref().map_or(0, |size| size.point_size);
+                let (scaled_bitmap, scaled_width, scaling_ratio) = scale_bitmap(
+                    c.bitmap.as_ref()?,
+                    bounding_box.width as u32,
+                    font_point_size as f32,
+                    point_size,
+                );
                 return Some(RenderedCharacter {
-                    bitmap: c.bitmap.clone()?,
-                    width: c.d_width?.0 as f32,
+                    bitmap: scaled_bitmap,
+                    width: scaled_width as f32,
                     offset: Point {
-                        x: bounding_box.offset_x as f32,
+                        x: (bounding_box.offset_x as f32) * scaling_ratio,
                         y: ((self.size.as_ref().map_or(0, |size| size.point_size) as i32
                             - bounding_box.height)
                             - bounding_box.offset_y
-                            - font_descent as i32) as f32,
+                            - font_descent as i32) as f32
+                            * scaling_ratio,
                     },
-                    next_char_offset: c.d_width?.0 as f32,
+                    next_char_offset: c.d_width?.0 as f32 * scaling_ratio,
                 });
             }
         }
         None
     }
+}
+
+fn scale_bitmap(
+    bitmap: &[u8],
+    bit_width: u32,
+    font_point_size: f32,
+    point_size: f32,
+) -> (Vec<u8>, usize, f32) {
+    if bit_width == 0 {
+        return (vec![], 0, 0.0);
+    }
+
+    let byte_width = bit_width.div_ceiling(8);
+    let height = bitmap.len() / byte_width as usize;
+    let scaling_ratio = point_size / font_point_size;
+    let new_height = (scaling_ratio * height as f32) as usize;
+    let new_bit_width = (scaling_ratio * bit_width as f32) as usize;
+    let new_byte_width = new_bit_width.div_ceiling(8);
+
+    let mut ret = vec![0; new_byte_width * new_height];
+    for y in 0..new_height {
+        let orig_y = (y as f32 / scaling_ratio) as usize;
+        for x in 0..new_bit_width {
+            let orig_x_bit = (x as f32 / scaling_ratio) as usize;
+            let orig_byte = bitmap[orig_y * byte_width as usize + orig_x_bit / 8];
+            let orig_bit_offset = orig_x_bit % 8;
+            let orig_bit = orig_byte.get_bit(orig_bit_offset.into());
+            let new_bit_offset = x % 8;
+            if orig_bit {
+                let new_byte_mask = 1 << (7 - new_bit_offset);
+                ret[y * new_byte_width + x / 8] |= new_byte_mask;
+            }
+        }
+    }
+    debug_assert!(ret.len() % new_byte_width == 0);
+    (ret, new_byte_width, scaling_ratio)
 }
 
 fn next_line(lines: &mut Lines<BufReader<&[u8]>>) -> Result<Option<String>, FontError> {
@@ -263,11 +310,12 @@ fn parse_char(
         .ok_or("DWIDTH not provided for character")?
         .0;
 
-    let mut bitmap = Vec::with_capacity(d_width_x as usize * cmp::max(1, nested_bitmap.len()));
+    let width_in_bytes = (d_width_x / 8) as usize;
+    let mut bitmap = Vec::with_capacity(width_in_bytes * cmp::max(1, nested_bitmap.len()));
 
     for row in nested_bitmap.iter().rev() {
         bitmap.extend(row);
-        if row.len() < d_width_x as usize {
+        if row.len() < width_in_bytes as usize {
             bitmap.extend(iter::repeat(0_u8).take(d_width_x as usize - row.len()));
         }
     }
@@ -335,5 +383,47 @@ mod tests {
             Some("-gnu-Unifont-Medium-R-Normal-Sans-16-160-75-75-c-80-iso10646-1".to_string())
         );
         font.properties.expect("Expected properties");
+    }
+
+    #[test]
+    fn scale_font() {
+        let bytes = include_bytes!("../../data/unifont-13.0.02.bdf");
+        let font = BDFFont::load(bytes).expect("Expected font to load");
+        let character = font
+            .render_character('A', 20.736) //12.0)
+            .expect("Unable to render character");
+        assert_eq!(
+            character,
+            RenderedCharacter {
+                #[rustfmt::skip]
+                bitmap: vec![
+                    0, 0,
+                    0, 0,
+                    0, 0,
+                    0b100000, 0b11000000,
+                    0b100000, 0b11000000,
+                    0b100000, 0b11000000,
+                    0b100000, 0b11000000,
+                    0b100000, 0b11000000,
+                    0b111111, 0b11000000,
+                    0b111111, 0b11000000,
+                    0b100000, 0b11000000,
+                    0b100000, 0b11000000,
+                    0b010001, 0b00000000,
+                    0b010001, 0b00000000,
+                    0b010001, 0b00000000,
+                    0b001110, 0b00000000,
+                    0, 0,
+                    0, 0,
+                    0, 0,
+                    0, 0,
+                ],
+                width: 2.0,
+                offset: Point { x: 0.0, y: 0.0 },
+                next_char_offset: 10.368,
+            },
+            "Rendered character\n{}",
+            character.render_pixels_to_string(),
+        )
     }
 }

@@ -8,6 +8,7 @@ mod geometry;
 mod hasher;
 pub mod logging; // Don't expose any of these directly
 mod lru_cache;
+mod number;
 mod reflection;
 mod roots;
 mod string;
@@ -22,6 +23,7 @@ pub use error::*;
 pub use geometry::*;
 pub use hasher::*;
 pub use lru_cache::*;
+pub use number::*;
 pub use reflection::*;
 pub use roots::*;
 pub use string::*;

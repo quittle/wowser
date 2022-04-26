@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ "$_" == "$0" ]]; then
+    echo "Whoops, this script should be sourced instead of run directly. Re-run with"
+    echo
+    echo -e "\e[1m$\e[0m \e[1;43msource $0\e[0m"
+    echo
+    echo -n "Copy to clipboard? Ctrl+C to abort "
+    read _
+    echo "source $0" | clip.exe
+    echo "Copied!"
+fi
+
+wslview config.xlaunch
+
+export DISPLAY=$(route.exe print | grep 0.0.0.0 | head -1 | awk '{print $4}'):0.0

@@ -239,7 +239,7 @@ fn calculate_text_width(text: &str, font_size: f32, caching_font: &mut CachingFo
     for char in text.chars() {
         ret += caching_font
             .render_character(char, font_size)
-            .map(|c| c.width)
+            .map(|c| c.next_char_offset)
             .unwrap_or(0_f32);
     }
     ret

@@ -250,8 +250,11 @@ mod tests {
                             fs::File::create(expected_bitmap_file_path).unwrap();
                         actual_bitmap.write(&mut expected_bitmap_file).unwrap();
                     } else {
+                        let wowser_temp_dir = env::temp_dir().join("wowser-test");
+                        fs::create_dir_all(&wowser_temp_dir)
+                            .expect("Unable to create wowser test temp dir");
                         let tmp_bitmap_file_path =
-                            env::temp_dir().join(format!("{function_name}.bmp"));
+                            wowser_temp_dir.join(format!("{function_name}.bmp"));
                         let mut tmp_bitmap_file = fs::File::create(&tmp_bitmap_file_path).unwrap();
                         actual_bitmap.write(&mut tmp_bitmap_file).unwrap();
                         panic!(

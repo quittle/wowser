@@ -10,6 +10,7 @@ macro_rules! log {
 pub mod browser;
 pub mod css;
 pub mod font;
+pub mod garbage_collector;
 pub mod html;
 pub mod image;
 pub mod js;

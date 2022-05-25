@@ -3,11 +3,11 @@ use std::{cell::RefCell, rc::Weak};
 use super::{inner_node::InnerNode, GarbageCollectable};
 
 /// Represents an opaque node that can be garbage collected
-pub struct Node<T: GarbageCollectable> {
+pub struct GcNode<T: GarbageCollectable> {
     node: Weak<RefCell<InnerNode<T>>>,
 }
 
-impl<T: GarbageCollectable> Node<T> {
+impl<T: GarbageCollectable> GcNode<T> {
     pub fn map_value<F, U>(&self, map: F) -> Option<U>
     where
         F: FnOnce(&T) -> U,
@@ -37,16 +37,16 @@ impl<T: GarbageCollectable> Node<T> {
     }
 }
 
-impl<T: GarbageCollectable> Clone for Node<T> {
-    fn clone(&self) -> Node<T> {
-        Node {
+impl<T: GarbageCollectable> Clone for GcNode<T> {
+    fn clone(&self) -> GcNode<T> {
+        GcNode {
             node: self.node.clone(),
         }
     }
 }
 
 /// Internal details usable by others in this module
-impl<T: GarbageCollectable> Node<T> {
+impl<T: GarbageCollectable> GcNode<T> {
     pub(super) fn new(node: Weak<RefCell<InnerNode<T>>>) -> Self {
         Self { node }
     }

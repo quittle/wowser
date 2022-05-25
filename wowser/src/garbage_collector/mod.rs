@@ -1,25 +1,25 @@
 mod garbage_collectable;
+mod gc_node;
+mod gc_node_graph;
 mod gc_sweep_id;
 mod inner_node;
-mod node;
-mod node_graph;
 
 pub use garbage_collectable::GarbageCollectable;
-pub use node::Node;
-pub use node_graph::NodeGraph;
+pub use gc_node::GcNode;
+pub use gc_node_graph::GcNodeGraph;
 
 #[cfg(test)]
 mod tests {
-    use super::{GarbageCollectable, Node, NodeGraph};
+    use super::{GarbageCollectable, GcNode, GcNodeGraph};
 
     struct TestTree {
         value: u8,
-        left: Option<Node<TestTree>>,
-        right: Option<Node<TestTree>>,
+        left: Option<GcNode<TestTree>>,
+        right: Option<GcNode<TestTree>>,
     }
 
     impl GarbageCollectable for TestTree {
-        fn get_referenced_nodes(&self) -> Vec<Node<TestTree>> {
+        fn get_referenced_nodes(&self) -> Vec<GcNode<TestTree>> {
             self.left
                 .iter()
                 .chain(self.right.iter())
@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     pub fn test_empty() {
-        let (mut graph, _root) = NodeGraph::<TestTree>::new(TestTree::new(u8::MAX));
+        let (mut graph, _root) = GcNodeGraph::<TestTree>::new(TestTree::new(u8::MAX));
         assert_eq!(graph.size(), 1);
         graph.gc();
         assert_eq!(graph.size(), 1);
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     pub fn test_single_node() {
-        let (mut graph, mut root) = NodeGraph::<TestTree>::new(TestTree::new(1));
+        let (mut graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
         assert_eq!(graph.size(), 1);
 
         let child = graph.create_node(TestTree::new(2));
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     pub fn test_cycle() {
-        let (mut graph, mut root) = NodeGraph::<TestTree>::new(TestTree::new(1));
+        let (mut graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
         assert_eq!(graph.size(), 1);
 
         let mut node1 = graph.create_node(TestTree::new(2));
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     pub fn test_garbage_collection() {
-        let (mut graph, mut root) = NodeGraph::<TestTree>::new(TestTree::new(100));
+        let (mut graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
         let left_child = graph.create_node(TestTree::new(20));
         let right_child = graph.create_node(TestTree::new(3));
 

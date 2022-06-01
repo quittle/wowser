@@ -1,13 +1,21 @@
 use crate::util::mut_vec_find_or_insert;
 
-use super::{JsReference, JsValue};
+use super::{JsReference, JsValue, JsValueGraph};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct JsClosure {
     pub references: Vec<JsReference>,
+    pub node_graph: JsValueGraph,
 }
 
 impl JsClosure {
+    pub fn new(node_graph: &JsValueGraph) -> Self {
+        Self {
+            references: vec![],
+            node_graph: node_graph.clone(),
+        }
+    }
+
     pub fn has_reference(&self, variable_name: &str) -> bool {
         self.references
             .iter()
@@ -32,7 +40,7 @@ impl JsClosure {
             |reference| reference.name == variable_name,
             || JsReference {
                 name: variable_name.into(),
-                value: JsValue::undefined_rc(),
+                value: JsValue::undefined_rc(&self.node_graph),
             },
         );
         self.references.last_mut().unwrap()

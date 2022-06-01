@@ -1,30 +1,30 @@
 use std::rc::Rc;
 
-use super::{JsClosureContext, JsStatement, JsStatementResult, JsValue};
+use super::{JsClosureContext, JsStatement, JsStatementResult, JsValue, JsValueNode};
 
 #[derive(Clone)]
 #[allow(clippy::type_complexity)]
-pub struct JsFunctionImplementation {
-    pub func: Rc<dyn Fn(Rc<JsValue>, &[Rc<JsValue>]) -> Rc<JsValue>>,
+pub struct JsNativeFunctionImplementation {
+    pub func: Rc<dyn Fn(JsValueNode, &[JsValueNode]) -> JsValueNode>,
 }
 
-impl Default for JsFunctionImplementation {
+impl Default for JsNativeFunctionImplementation {
     fn default() -> Self {
         Self {
-            func: Rc::new(|_, _| JsValue::undefined_rc()),
+            func: Rc::new(|this, _| JsValue::undefined_rc(&this.get_node_graph())),
         }
     }
 }
 
-impl std::fmt::Debug for JsFunctionImplementation {
+impl std::fmt::Debug for JsNativeFunctionImplementation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("JsFunctionImplementation")
+        f.debug_struct("JsNativeFunctionImplementation")
             .field("func", &"[Native]".to_string())
             .finish()
     }
 }
 
-impl std::cmp::PartialEq for JsFunctionImplementation {
+impl std::cmp::PartialEq for JsNativeFunctionImplementation {
     fn eq(&self, _other: &Self) -> bool {
         false
     }
@@ -33,7 +33,7 @@ impl std::cmp::PartialEq for JsFunctionImplementation {
 // Functions cannot be compared and are always considered unequal
 #[derive(Debug, PartialEq)]
 pub enum JsFunction {
-    Native(String, JsFunctionImplementation),
+    Native(String, JsNativeFunctionImplementation),
     UserDefined(
         // Source Text
         String,
@@ -57,14 +57,14 @@ impl JsFunction {
     pub fn run(
         &self,
         closure_context: &mut JsClosureContext,
-        this: Rc<JsValue>,
-        args: &[Rc<JsValue>],
-    ) -> Rc<JsValue> {
+        this: JsValueNode,
+        args: &[JsValueNode],
+    ) -> JsValueNode {
         match self {
             Self::Native(_, implementation) => implementation.func.as_ref()(this, args),
             Self::UserDefined(_source, _name, params, implementation) => {
                 if closure_context.get_closure_depth() > 255 {
-                    return JsValue::stack_overflow_error_rc();
+                    return JsValue::stack_overflow_error_rc(&closure_context.nodes_graph);
                 }
 
                 closure_context.with_new_context(|closure_context| {
@@ -84,9 +84,19 @@ impl JsFunction {
                             result => closure_context.record_new_result(result),
                         }
                     }
-                    JsValue::undefined_rc() // TODO: implement return
+                    JsValue::undefined_rc(&closure_context.nodes_graph) // TODO: implement return
                 })
             }
+        }
+    }
+
+    pub fn get_referenced_nodes(&self) -> Vec<JsValueNode> {
+        match self {
+            Self::Native(_, _) => vec![],
+            Self::UserDefined(_source, _name, _params, statements) => statements
+                .iter()
+                .flat_map(|statement| statement.get_referenced_nodes())
+                .collect(),
         }
     }
 }
@@ -99,7 +109,8 @@ mod tests {
     fn test_get_name() {
         assert_eq!(
             "abc",
-            JsFunction::Native("abc".to_string(), Default::default()).get_name()
+            JsFunction::Native("abc".to_string(), JsNativeFunctionImplementation::default())
+                .get_name()
         );
     }
 
@@ -107,11 +118,11 @@ mod tests {
     #[allow(clippy::eq_op)]
     fn test_partial_eq() {
         assert_ne!(
-            JsFunctionImplementation::default(),
-            JsFunctionImplementation::default(),
+            JsNativeFunctionImplementation::default(),
+            JsNativeFunctionImplementation::default(),
         );
 
-        let a = JsFunctionImplementation::default();
+        let a = JsNativeFunctionImplementation::default();
         assert_ne!(a, a);
     }
 }

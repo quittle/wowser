@@ -1,4 +1,4 @@
-use super::{globals::GlobalPrototypes, JsClosure, JsReference, JsStatementResult};
+use super::{globals::GlobalPrototypes, JsClosure, JsReference, JsStatementResult, JsValueGraph};
 
 #[derive(Debug)]
 pub struct JsClosureContext {
@@ -7,14 +7,18 @@ pub struct JsClosureContext {
     closures: Vec<JsClosure>,
     pub expression_results: Vec<JsStatementResult>,
     pub global_prototypes: GlobalPrototypes,
+    pub nodes_graph: JsValueGraph,
 }
 
 impl JsClosureContext {
     pub fn new(global: JsClosure) -> Self {
+        let global_prototypes = GlobalPrototypes::new(&global.node_graph);
+        let nodes_graph = global.node_graph.clone();
         Self {
             closures: vec![global],
             expression_results: vec![],
-            global_prototypes: GlobalPrototypes::default(),
+            global_prototypes,
+            nodes_graph,
         }
     }
 
@@ -22,7 +26,7 @@ impl JsClosureContext {
     where
         F: Fn(&mut Self) -> T,
     {
-        self.closures.push(Default::default());
+        self.closures.push(JsClosure::new(&self.nodes_graph));
         let ret = func(self);
         self.closures.pop();
         ret

@@ -12,6 +12,7 @@ pub use gc_node_graph::GcNodeGraph;
 mod tests {
     use super::{GarbageCollectable, GcNode, GcNodeGraph};
 
+    #[derive(PartialEq, Debug)]
     struct TestTree {
         value: u8,
         left: Option<GcNode<TestTree>>,
@@ -42,12 +43,12 @@ mod tests {
                 + self
                     .left
                     .as_ref()
-                    .and_then(|wrcn| wrcn.map_value(|tree| tree.value))
+                    .map(|wrcn| wrcn.map_value(|tree| tree.value))
                     .unwrap_or(0)
                 + self
                     .right
                     .as_ref()
-                    .and_then(|wrcn| wrcn.map_value(|tree| tree.value))
+                    .map(|wrcn| wrcn.map_value(|tree| tree.value))
                     .unwrap_or(0)
         }
     }
@@ -68,7 +69,7 @@ mod tests {
         let child = GcNodeGraph::create_node(&graph, TestTree::new(2));
         root.with_mut(|root| root.left = Some(child));
         assert_eq!(graph.borrow().size(), 2);
-        assert_eq!(root.map_value(|root| root.sum()), Some(3));
+        assert_eq!(root.map_value(|root| root.sum()), (3));
 
         GcNodeGraph::gc(&graph);
         assert_eq!(graph.borrow().size(), 2);
@@ -147,15 +148,11 @@ mod tests {
     #[test]
     fn test_create_new_node() {
         let (graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
-        assert_eq!(
-            Some(1),
-            root.map_value(|tree| tree.sum()),
-            "Just root value"
-        );
+        assert_eq!(1, root.map_value(|tree| tree.sum()), "Just root value");
 
         let child = root.create_new_node(TestTree::new(2));
         assert_eq!(
-            Some(1),
+            1,
             root.map_value(|tree| tree.sum()),
             "Child should not be associated with root value"
         );
@@ -164,7 +161,7 @@ mod tests {
         // Just to prove the connection
         GcNodeGraph::gc(&graph);
 
-        assert_eq!(Some(3), root.map_value(|tree| tree.sum()));
+        assert_eq!(3, root.map_value(|tree| tree.sum()));
     }
 
     #[test]
@@ -200,9 +197,55 @@ mod tests {
 
         GcNodeGraph::gc(&graph);
 
-        root.with_node(|node| {
-            assert_eq!(node.value.sum(), 103);
-            assert_eq!(graph.borrow().size(), 2);
-        });
+        assert_eq!(root.map_value(|node| node.sum()), 103);
+        assert_eq!(graph.borrow().size(), 2);
+    }
+
+    #[test]
+    fn test_drop_node_graph() {
+        let node = {
+            let (_graph, root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
+            root
+        };
+
+        assert!(!node.exists());
+    }
+
+    #[test]
+    #[should_panic = "Failed to load a node."]
+    fn test_drop_node_graph_with_value_panics() {
+        let node = {
+            let (_graph, root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
+            root
+        };
+
+        node.with_value(|_| ());
+    }
+
+    #[test]
+    #[should_panic = "Graph not present"]
+    fn test_drop_node_graph_get_node_graph_panics() {
+        let node = {
+            let (_graph, root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
+            root
+        };
+
+        node.get_node_graph();
+    }
+
+    #[test]
+    fn test_get_ref() {
+        let (_graph, root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
+        let root_tree: &TestTree = root.get_ref();
+        assert_eq!(root_tree.value, 100);
+    }
+
+    #[test]
+    fn test_is_same_ref() {
+        let (_graph, root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
+        assert!(root.is_same_ref(&root));
+        assert!(root.is_same_ref(&root.clone()));
+        let other = root.create_new_node(TestTree::new(100));
+        assert!(!root.is_same_ref(&other));
     }
 }

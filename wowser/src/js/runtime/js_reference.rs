@@ -1,15 +1,19 @@
-use std::rc::Rc;
-
-use super::JsValue;
+use super::JsValueNode;
 
 #[derive(Debug, Clone)]
 pub struct JsReference {
     pub name: String,
-    pub value: Rc<JsValue>,
+    pub value: JsValueNode,
+}
+
+impl JsReference {
+    pub fn get_referenced_nodes(&self) -> Vec<JsValueNode> {
+        vec![self.value.clone()]
+    }
 }
 
 impl PartialEq for JsReference {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.value, &other.value)
+        self.value.is_same_ref(&other.value)
     }
 }

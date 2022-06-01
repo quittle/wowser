@@ -6,6 +6,7 @@ use std::{
 use super::{gc_sweep_id::GcSweepId, inner_node::InnerNode, GarbageCollectable, GcNode};
 
 /// A graph of nodes that can be garbage collected
+#[derive(Debug)]
 pub struct GcNodeGraph<T: GarbageCollectable> {
     nodes: Vec<Rc<RefCell<InnerNode<T>>>>,
     root: Rc<RefCell<InnerNode<T>>>,
@@ -14,6 +15,7 @@ pub struct GcNodeGraph<T: GarbageCollectable> {
 
 impl<T: GarbageCollectable> GcNodeGraph<T> {
     /// Creates a new graph
+    ///
     /// `root_value` - The root value which connects to all other nodes.
     pub fn new(root_value: T) -> (Rc<RefCell<Self>>, GcNode<T>) {
         let strong_node = Rc::new(RefCell::new(InnerNode::new(root_value)));

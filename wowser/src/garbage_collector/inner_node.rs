@@ -4,6 +4,7 @@ use super::{
 };
 
 /// Not exposed outside the garbage collector, this holds all the metadata needed for managing the node.
+#[derive(Debug, PartialEq)]
 pub(super) struct InnerNode<T: GarbageCollectable> {
     pub value: Box<T>,
     pub gc_sweep_id: GcSweepId,

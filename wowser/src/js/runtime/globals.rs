@@ -1,11 +1,12 @@
 use super::{
-    build_object_prototype, build_prototype, JsClosure, JsFunction, JsFunctionImplementation,
-    JsValue,
+    build_object_prototype, build_prototype, JsClosure, JsClosureContext, JsFunction,
+    JsNativeFunctionImplementation, JsValue, JsValueGraph, JsValueNode,
 };
-use crate::util::Base64;
+use crate::{garbage_collector::GcNodeGraph, util::Base64};
 use std::rc::Rc;
 
-pub fn add_globals(global_closure: &mut JsClosure) {
+pub fn add_globals(closure_context: &mut JsClosureContext) {
+    let global_closure = closure_context.get_lastest_closure();
     add_global_function(global_closure, "atob", js_atob);
     add_global_function(global_closure, "btoa", js_btoa);
 }
@@ -13,50 +14,57 @@ pub fn add_globals(global_closure: &mut JsClosure) {
 fn add_global_function(
     global_closure: &mut JsClosure,
     name: &str,
-    func: impl Fn(Rc<JsValue>, &[Rc<JsValue>]) -> Rc<JsValue> + 'static,
+    func: impl Fn(JsValueNode, &[JsValueNode]) -> JsValueNode + 'static,
 ) {
+    let node_graph = global_closure.node_graph.clone();
     let reference = global_closure.get_or_declare_reference_mut(name);
-    reference.value = Rc::new(JsValue::Function(JsFunction::Native(
+    let value = JsValue::Function(JsFunction::Native(
         name.to_string(),
-        JsFunctionImplementation {
+        JsNativeFunctionImplementation {
             func: Rc::new(func),
         },
-    )));
+    ));
+    reference.value = GcNodeGraph::create_node(&node_graph, value);
 }
 
-fn js_atob(_this: Rc<JsValue>, args: &[Rc<JsValue>]) -> Rc<JsValue> {
+fn js_atob(this: JsValueNode, args: &[JsValueNode]) -> JsValueNode {
+    let node_graph = this.get_node_graph();
     match args.get(0) {
         Some(value) => {
-            if let Some(decoded) = value.to_string().base64_decode() {
+            if let Some(decoded) = value.map_value(|v| v.to_string().base64_decode()) {
                 if let Ok(decoded_string) = std::str::from_utf8(&decoded) {
-                    return JsValue::str_rc(decoded_string);
+                    return this.create_new_node(JsValue::str(decoded_string));
                 }
             }
-            JsValue::type_error_or_dom_exception_rc()
+            JsValue::type_error_or_dom_exception_rc(&node_graph)
         }
-        _ => JsValue::type_error_rc(),
+        _ => JsValue::type_error_rc(&node_graph),
     }
 }
 
-fn js_btoa(_this: Rc<JsValue>, args: &[Rc<JsValue>]) -> Rc<JsValue> {
+fn js_btoa(this: JsValueNode, args: &[JsValueNode]) -> JsValueNode {
+    let node_graph = this.get_node_graph();
     match args.get(0) {
-        Some(value) => JsValue::string_rc(value.to_string().base64_encode()),
-        _ => JsValue::type_error_rc(),
+        Some(value) => JsValue::string_rc(
+            &node_graph,
+            value.map_value(|v| v.to_string().base64_encode()),
+        ),
+        _ => JsValue::type_error_rc(&node_graph),
     }
 }
 
 #[derive(Debug)]
 pub struct GlobalPrototypes {
-    pub object: Rc<JsValue>,
-    pub boolean: Rc<JsValue>,
-    pub number: Rc<JsValue>,
-    pub string: Rc<JsValue>,
-    pub function: Rc<JsValue>,
+    pub object: JsValueNode,
+    pub boolean: JsValueNode,
+    pub number: JsValueNode,
+    pub string: JsValueNode,
+    pub function: JsValueNode,
 }
 
-impl Default for GlobalPrototypes {
-    fn default() -> Self {
-        let object = build_object_prototype();
+impl GlobalPrototypes {
+    pub fn new(node_graph: &JsValueGraph) -> Self {
+        let object = build_object_prototype(node_graph);
         let boolean = build_prototype(object.clone(), []);
         let number = build_prototype(object.clone(), []);
         let string = build_prototype(object.clone(), []);

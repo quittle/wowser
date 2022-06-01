@@ -7,26 +7,28 @@ use std::{
 use super::{inner_node::InnerNode, GarbageCollectable, GcNodeGraph};
 
 /// Represents an opaque node that can be garbage collected
+#[derive(Debug)]
 pub struct GcNode<T: GarbageCollectable> {
     node: Weak<RefCell<InnerNode<T>>>,
     pub(super) node_graph: Weak<RefCell<GcNodeGraph<T>>>,
 }
 
 impl<T: GarbageCollectable> GcNode<T> {
-    pub fn map_value<F, U>(&self, map: F) -> Option<U>
+    pub fn map_value<F, U>(&self, map: F) -> U
     where
         F: FnOnce(&T) -> U,
     {
-        let ref_cell = self.node.upgrade()?;
-        let value = &ref_cell.borrow().value;
-        Some(map(value.as_ref()))
+        let rc = self.node.upgrade().expect("Failed to load a node.");
+
+        let inner_node_ref = (&*rc).borrow();
+        map(&lazy_static::__Deref::deref(&inner_node_ref).value)
     }
 
-    pub fn with_value<F>(&self, map: F)
+    pub fn with_value<F>(&self, func: F)
     where
         F: FnOnce(&T),
     {
-        self.map_value(map);
+        self.map_value(func);
     }
 
     pub fn with_mut<F>(&mut self, func: F)
@@ -41,17 +43,59 @@ impl<T: GarbageCollectable> GcNode<T> {
         self.node.strong_count() > 0
     }
 
-    pub fn with_node_graph<F>(&mut self, func: F)
+    pub fn get_node_graph(&self) -> Rc<RefCell<GcNodeGraph<T>>> {
+        self.node_graph.upgrade().expect("Graph not present")
+    }
+
+    pub fn with_node_graph<F, O>(&self, func: F) -> O
     where
-        F: FnOnce(&Rc<RefCell<GcNodeGraph<T>>>),
+        F: FnOnce(&Rc<RefCell<GcNodeGraph<T>>>) -> O,
     {
-        let node_graph_rc = self.node_graph.upgrade().expect("Graph not present");
-        func(&node_graph_rc);
+        func(&self.get_node_graph())
     }
 
     pub fn create_new_node(&self, new_node_value: T) -> GcNode<T> {
-        let node_graph_rc = self.node_graph.upgrade().expect("Graph not present");
-        GcNodeGraph::create_node(&node_graph_rc, new_node_value)
+        GcNodeGraph::create_node(&self.get_node_graph(), new_node_value)
+    }
+
+    /// This unsafely gets an immutable reference to the internal data, tied to the lifetime of the node.
+    /// TODO: Revisit if there's a better way
+    pub fn get_ref(&self) -> &T {
+        // This block ensures that all the regular memory checks pass for getting the reference to increase safety.
+        // This DOES NOT ensure it will be safe to use the return value if a mutable reference gets created later.
+        {
+            let rc = &self
+                .node
+                .upgrade()
+                .expect("Attempting to get reference of garbage collected node");
+
+            let _ignore_borrowed_value = &rc.borrow().value;
+        }
+        let ptr = self.node.as_ptr();
+        let maybe_ref = unsafe { ptr.as_ref() };
+        let reference = maybe_ref.unwrap();
+        let refcell_ptr = reference.as_ptr();
+        let inner_ref = unsafe { refcell_ptr.as_ref() }.unwrap();
+        &inner_ref.value
+    }
+
+    pub fn is_same_ref(&self, other: &Self) -> bool {
+        self.map_value(|self_inner| {
+            other.map_value(|other_inner| {
+                let self_ptr: *const T = self_inner;
+                let other_ptr: *const T = other_inner;
+                self_ptr == other_ptr
+            })
+        })
+    }
+}
+
+impl<T: GarbageCollectable> PartialEq for GcNode<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let my_node = self.node.upgrade();
+        let other_node = other.node.upgrade();
+
+        my_node == other_node
     }
 }
 
@@ -71,17 +115,6 @@ impl<T: GarbageCollectable> GcNode<T> {
         node_graph: Weak<RefCell<GcNodeGraph<T>>>,
     ) -> Self {
         Self { node, node_graph }
-    }
-
-    #[allow(dead_code)]
-    pub(super) fn with_node<F>(&self, func: F)
-    where
-        F: FnOnce(&InnerNode<T>),
-    {
-        if let Some(ref_cell) = self.node.upgrade() {
-            let value = &ref_cell.borrow();
-            func(value);
-        }
     }
 
     pub(super) fn with_mut_node<F>(&mut self, func: F)

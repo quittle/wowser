@@ -1,4 +1,6 @@
-use super::{globals::add_globals, JsClosure, JsClosureContext, JsStatement};
+use crate::garbage_collector::GcNodeGraph;
+
+use super::{globals::add_globals, JsClosure, JsClosureContext, JsStatement, JsValue};
 
 #[derive(Debug)]
 pub struct JsDocument {
@@ -8,11 +10,13 @@ pub struct JsDocument {
 
 impl JsDocument {
     pub fn new(statements: Vec<JsStatement>) -> Self {
-        let mut global_closure = JsClosure::default();
-        add_globals(&mut global_closure);
+        let (nodes_graph, _node) = GcNodeGraph::new(JsValue::Null);
+        let global_closure = JsClosure::new(&nodes_graph);
+        let mut global_closure_context = JsClosureContext::new(global_closure);
+        add_globals(&mut global_closure_context);
         Self {
             statements,
-            global_closure_context: JsClosureContext::new(global_closure),
+            global_closure_context,
         }
     }
 

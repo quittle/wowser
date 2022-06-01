@@ -9,6 +9,7 @@ mod js_reference;
 mod js_statement;
 mod js_statement_result;
 mod js_value;
+mod js_value_graph;
 
 pub use js_closure::*;
 pub use js_closure_context::*;
@@ -20,3 +21,4 @@ pub use js_reference::*;
 pub use js_statement::*;
 pub use js_statement_result::*;
 pub use js_value::*;
+pub use js_value_graph::*;

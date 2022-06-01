@@ -13,6 +13,7 @@ mod number;
 mod reflection;
 mod roots;
 mod string;
+mod test;
 mod vec;
 mod vec_dequeue_ext;
 
@@ -29,5 +30,6 @@ pub use number::*;
 pub use reflection::*;
 pub use roots::*;
 pub use string::*;
+pub use test::*;
 pub use vec::*;
 pub use vec_dequeue_ext::*;

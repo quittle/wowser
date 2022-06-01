@@ -1,6 +1,8 @@
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
-use super::JsFunction;
+use crate::garbage_collector::{GarbageCollectable, GcNode, GcNodeGraph};
+
+use super::{JsFunction, JsValueGraph, JsValueNode};
 
 /// Represents any type
 #[derive(Debug, PartialEq)]
@@ -9,7 +11,7 @@ pub enum JsValue {
     Number(f64),
     String(String),
     Function(JsFunction),
-    Object(HashMap<String, Rc<JsValue>>),
+    Object(HashMap<String, JsValueNode>),
     Undefined,
     Null,
 }
@@ -17,59 +19,59 @@ pub enum JsValue {
 impl JsValue {
     pub const NAN: Self = Self::Number(f64::NAN);
 
-    pub fn bool_rc(b: bool) -> Rc<Self> {
-        Rc::new(Self::Boolean(b))
+    pub fn bool_rc(node_graph: &JsValueGraph, b: bool) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::Boolean(b))
     }
 
-    pub fn nan_rc() -> Rc<Self> {
-        Rc::new(Self::NAN)
+    pub fn nan_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::NAN)
     }
 
     pub fn str(s: &str) -> Self {
         JsValue::String(s.into())
     }
 
-    pub fn str_rc(s: &str) -> Rc<Self> {
-        Rc::new(Self::str(s))
+    pub fn str_rc(node_graph: &JsValueGraph, s: &str) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::str(s))
     }
 
-    pub fn string_rc(s: String) -> Rc<Self> {
-        Rc::new(Self::String(s))
+    pub fn string_rc(node_graph: &JsValueGraph, s: String) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::String(s))
     }
 
-    pub fn number_rc<F>(value: F) -> Rc<Self>
+    pub fn number_rc<F>(node_graph: &JsValueGraph, value: F) -> GcNode<Self>
     where
         F: Into<f64>,
     {
-        Rc::new(Self::Number(value.into()))
+        GcNodeGraph::create_node(node_graph, Self::Number(value.into()))
     }
 
-    pub fn undefined_rc() -> Rc<Self> {
-        Rc::new(Self::Undefined)
+    pub fn undefined_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::Undefined)
     }
 
-    pub fn null_rc() -> Rc<Self> {
-        Rc::new(Self::Null)
+    pub fn null_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::Null)
     }
 
-    pub fn object_rc(map: HashMap<String, Rc<JsValue>>) -> Rc<Self> {
-        Rc::new(Self::Object(map))
+    pub fn object_rc(node_graph: &JsValueGraph, map: HashMap<String, JsValueNode>) -> GcNode<Self> {
+        GcNodeGraph::create_node(node_graph, Self::Object(map))
     }
 
-    pub fn type_error_rc() -> Rc<Self> {
-        Self::undefined_rc() // TODO: These should raise exceptions when supported
+    pub fn type_error_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        Self::undefined_rc(node_graph) // TODO: These should raise exceptions when supported
     }
 
-    pub fn type_error_or_dom_exception_rc() -> Rc<Self> {
-        Self::undefined_rc() // TODO: These should raise exceptions when supported
+    pub fn type_error_or_dom_exception_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        Self::undefined_rc(node_graph) // TODO: These should raise exceptions when supported
     }
 
-    pub fn reference_error_rc() -> Rc<Self> {
-        Self::undefined_rc() // TODO: These should raise exceptions when supported
+    pub fn reference_error_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        Self::undefined_rc(node_graph) // TODO: These should raise exceptions when supported
     }
 
-    pub fn stack_overflow_error_rc() -> Rc<Self> {
-        Self::undefined_rc() // TODO: This should raise RangeError: Maximum call stack size exceeded when supported
+    pub fn stack_overflow_error_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
+        Self::undefined_rc(node_graph) // TODO: This should raise RangeError: Maximum call stack size exceeded when supported
     }
 }
 
@@ -142,8 +144,24 @@ impl From<&JsValue> for bool {
     }
 }
 
+impl GarbageCollectable for JsValue {
+    fn get_referenced_nodes(&self) -> Vec<GcNode<Self>> {
+        match self {
+            JsValue::Boolean(_) => vec![],
+            JsValue::Number(_) => vec![],
+            JsValue::String(_) => vec![],
+            JsValue::Undefined => vec![],
+            JsValue::Null => vec![],
+            JsValue::Function(function) => function.get_referenced_nodes(),
+            JsValue::Object(map) => map.values().into_iter().map(Clone::clone).collect(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::js::JsNativeFunctionImplementation;
+
     use super::*;
 
     #[test]
@@ -156,6 +174,7 @@ mod tests {
 
     #[test]
     fn test_to_string() {
+        let (node_graph, _root) = GcNodeGraph::new(JsValue::Undefined);
         assert_eq!(JsValue::NAN.to_string(), "NaN");
         assert_eq!(JsValue::Number(1.0).to_string(), "1");
         assert_eq!(JsValue::Number(1.2).to_string(), "1.2");
@@ -165,8 +184,11 @@ mod tests {
         assert_eq!(JsValue::Undefined.to_string(), "undefined");
         assert_eq!(JsValue::Null.to_string(), "null");
         assert_eq!(
-            JsValue::Function(JsFunction::Native("abc".to_string(), Default::default()))
-                .to_string(),
+            JsValue::Function(JsFunction::Native(
+                "abc".to_string(),
+                JsNativeFunctionImplementation::default()
+            ))
+            .to_string(),
             "function abc() { [native code] }"
         );
         assert_eq!(
@@ -182,7 +204,7 @@ mod tests {
         assert_eq!(
             JsValue::Object(HashMap::from([(
                 "key".to_string(),
-                JsValue::str_rc("value")
+                JsValue::str_rc(&node_graph, "value")
             )]))
             .to_string(),
             "[object Object]"
@@ -207,7 +229,7 @@ mod tests {
 
         assert!(f64::from(JsValue::Function(JsFunction::Native(
             "abc".to_string(),
-            Default::default()
+            JsNativeFunctionImplementation::default(),
         )))
         .is_nan());
         assert!(f64::from(JsValue::Object(HashMap::new())).is_nan());

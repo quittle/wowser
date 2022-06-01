@@ -1,7 +1,6 @@
-use std::rc::Rc;
-
-use super::{JsDocument, JsExpression, JsFunction, JsRule, JsStatement, JsValue};
+use super::{JsDocument, JsExpression, JsFunction, JsRule, JsStatement, JsValue, JsValueGraph};
 use crate::{
+    garbage_collector::GcNodeGraph,
     js::JsReference,
     parse::{
         extract_interpreter_children, extract_interpreter_n_children, extract_interpreter_token,
@@ -13,34 +12,37 @@ type JsASTNode<'a> = ASTNode<'a, JsRule>;
 
 pub struct JsInterpreter {}
 
-fn on_statements(statements: &JsASTNode) -> Vec<JsStatement> {
+fn on_statements(node_graph: &JsValueGraph, statements: &JsASTNode) -> Vec<JsStatement> {
     let children = extract_interpreter_children(statements, JsRule::Statements);
 
-    children.iter().map(on_statement).collect()
+    children
+        .iter()
+        .map(|statement| on_statement(node_graph, statement))
+        .collect()
 }
 
-fn on_statement(statement: &JsASTNode) -> JsStatement {
+fn on_statement(node_graph: &JsValueGraph, statement: &JsASTNode) -> JsStatement {
     let children = extract_interpreter_children(statement, JsRule::Statement);
 
     let first_child = &children[0];
     match first_child.rule {
         JsRule::Semicolon => JsStatement::Empty,
         JsRule::Expression => JsStatement::Expression(on_expression(first_child)),
-        JsRule::VarDeclaration => on_var_declaration(first_child),
-        JsRule::VariableAssignment => on_variable_assignment(first_child),
-        JsRule::FunctionDeclaration => on_function_declaration(first_child),
+        JsRule::VarDeclaration => on_var_declaration(node_graph, first_child),
+        JsRule::VariableAssignment => on_variable_assignment(node_graph, first_child),
+        JsRule::FunctionDeclaration => on_function_declaration(node_graph, first_child),
         JsRule::ReturnKeyword => JsStatement::Return(on_expression(&children[1])),
-        JsRule::IfStatement => on_if_statement(first_child),
+        JsRule::IfStatement => on_if_statement(node_graph, first_child),
         rule => panic!("Unexpected child of Statement: {rule}"),
     }
 }
 
-fn on_var_declaration(var_declaration: &JsASTNode) -> JsStatement {
+fn on_var_declaration(node_graph: &JsValueGraph, var_declaration: &JsASTNode) -> JsStatement {
     let children = extract_interpreter_children(var_declaration, JsRule::VarDeclaration);
 
     let reference = JsReference {
         name: on_variable_name(&children[1]),
-        value: JsValue::undefined_rc(),
+        value: JsValue::undefined_rc(node_graph),
     };
     if children.len() == 4 {
         JsStatement::VariableAssignment(reference, on_expression(&children[3]))
@@ -57,33 +59,39 @@ fn on_variable_name(variable_name: &JsASTNode) -> String {
     extract_interpreter_token(variable_name, JsRule::VariableName)
 }
 
-fn on_variable_assignment(variable_assignment: &JsASTNode) -> JsStatement {
+fn on_variable_assignment(
+    node_graph: &JsValueGraph,
+    variable_assignment: &JsASTNode,
+) -> JsStatement {
     let children =
         extract_interpreter_n_children(variable_assignment, JsRule::VariableAssignment, 3);
 
     JsStatement::VariableAssignment(
         JsReference {
             name: on_variable_name(&children[0]),
-            value: JsValue::undefined_rc(),
+            value: JsValue::undefined_rc(node_graph),
         },
         on_expression(&children[2]),
     )
 }
 
-fn on_function_declaration(node: &JsASTNode) -> JsStatement {
+fn on_function_declaration(node_graph: &JsValueGraph, node: &JsASTNode) -> JsStatement {
     let children = extract_interpreter_n_children(node, JsRule::FunctionDeclaration, 8);
     let function_name = on_variable_name(&children[1]);
     let params = on_function_params(&children[3]);
-    let statements = on_statements(&children[6]);
+    let statements = on_statements(node_graph, &children[6]);
     let raw_text = node.rebuild_full_text().trim().to_string();
     JsStatement::FunctionDeclaration(JsReference {
         name: function_name.clone(),
-        value: Rc::new(JsValue::Function(JsFunction::UserDefined(
-            raw_text,
-            function_name,
-            params,
-            statements,
-        ))),
+        value: GcNodeGraph::create_node(
+            node_graph,
+            JsValue::Function(JsFunction::UserDefined(
+                raw_text,
+                function_name,
+                params,
+                statements,
+            )),
+        ),
     })
 }
 
@@ -104,7 +112,7 @@ fn on_function_params(node: &JsASTNode) -> Vec<String> {
     params
 }
 
-fn on_if_statement(node: &JsASTNode) -> JsStatement {
+fn on_if_statement(node_graph: &JsValueGraph, node: &JsASTNode) -> JsStatement {
     let children = extract_interpreter_children(node, JsRule::IfStatement);
 
     let conditional_expression = on_expression(&children[2]);
@@ -113,14 +121,14 @@ fn on_if_statement(node: &JsASTNode) -> JsStatement {
         let execution_node = &children[4];
         match execution_node.rule {
             JsRule::Expression => vec![JsStatement::Expression(on_expression(execution_node))],
-            JsRule::Statement => vec![on_statement(execution_node)],
+            JsRule::Statement => vec![on_statement(node_graph, execution_node)],
             _ => panic!(
                 "Unexpected if statement execution node: {}",
                 execution_node.rule
             ),
         }
     } else {
-        on_statements(&children[5])
+        on_statements(node_graph, &children[5])
     };
 
     JsStatement::If(conditional_expression, execution_statements)
@@ -437,6 +445,9 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
     type Result = JsDocument;
 
     fn on_node(&self, document: &JsASTNode) -> Option<JsDocument> {
+        let mut js_document = JsDocument::new(vec![]);
+        let node_graph = &js_document.global_closure_context.nodes_graph;
+
         let children = extract_interpreter_children(document, JsRule::Document);
 
         let first_child = &children[0];
@@ -445,19 +456,21 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
             JsRule::Terminator => vec![],
             JsRule::Expression => vec![JsStatement::Expression(on_expression(first_child))],
             JsRule::VarDeclaration => {
-                vec![on_var_declaration(first_child)]
+                vec![on_var_declaration(node_graph, first_child)]
             }
-            JsRule::VariableAssignment => vec![on_variable_assignment(first_child)],
+            JsRule::VariableAssignment => vec![on_variable_assignment(node_graph, first_child)],
             JsRule::Statements => {
-                let mut statements = on_statements(first_child);
+                let mut statements = on_statements(node_graph, first_child);
                 let second_child = &children[1];
                 match second_child.rule {
                     JsRule::Expression => {
                         statements.push(JsStatement::Expression(on_expression(second_child)))
                     }
-                    JsRule::VarDeclaration => statements.push(on_var_declaration(second_child)),
+                    JsRule::VarDeclaration => {
+                        statements.push(on_var_declaration(node_graph, second_child))
+                    }
                     JsRule::VariableAssignment => {
-                        statements.push(on_variable_assignment(second_child))
+                        statements.push(on_variable_assignment(node_graph, second_child))
                     }
                     _ => {}
                 };
@@ -466,6 +479,8 @@ impl Interpreter<'_, JsRule> for JsInterpreter {
             rule => panic!("Unspported first rule: {rule}"),
         };
 
-        Some(JsDocument::new(statements))
+        js_document.statements = statements;
+
+        Some(js_document)
     }
 }

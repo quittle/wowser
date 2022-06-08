@@ -6,6 +6,7 @@ mod env;
 mod error;
 mod geometry;
 mod hasher;
+mod json;
 pub mod logging; // Don't expose any of these directly
 mod lru_cache;
 mod number;
@@ -22,6 +23,7 @@ pub use env::*;
 pub use error::*;
 pub use geometry::*;
 pub use hasher::*;
+pub use json::*;
 pub use lru_cache::*;
 pub use number::*;
 pub use reflection::*;

@@ -47,17 +47,7 @@ pub fn extract_interpreter_token<'a, R: Rule>(
     node: &'a ASTNode<'a, R>,
     expected_rule: R,
 ) -> String {
-    assert_eq!(
-        node.rule, expected_rule,
-        "Expected token rule of type {expected_rule}, but received {}",
-        node.rule,
-    );
-
-    let children_len = node.children.len();
-    assert_eq!(
-        0, children_len,
-        "Expected no children on a token node but found {children_len}",
-    );
+    extract_interpreter_n_children(node, expected_rule, 0);
 
     let token_str: &str = node
         .token

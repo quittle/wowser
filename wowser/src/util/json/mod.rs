@@ -97,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    fn test_string() {
+    fn test_string_parse() {
         assert_eq!(parse_json(r#" "" "#), Ok(JsonValue::String("".into())));
         assert_eq!(
             parse_json(r#" "abc" "#),
@@ -112,10 +112,15 @@ mod tests {
             parse_json(r#" " \" " "#),
             Ok(JsonValue::String(" \" ".into()))
         );
+        assert_eq!(
+            parse_json(r#""\\n""#),
+            Ok(JsonValue::String(r#"\n"#.into())),
+            "Order of escaping"
+        );
     }
 
     #[test]
-    fn test_array() {
+    fn test_array_parse() {
         assert_eq!(parse_json("[]"), Ok(JsonValue::Array(vec![])));
         assert_eq!(
             parse_json("[1]"),
@@ -134,7 +139,7 @@ mod tests {
     }
 
     #[test]
-    fn test_object() {
+    fn test_object_parse() {
         assert_eq!(parse_json("{}"), Ok(JsonValue::Object(vec![])));
         assert_eq!(
             parse_json(r#" {"key"} "#),
@@ -169,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complex_object() {
+    fn test_complex_object_parse() {
         assert_eq!(
             parse_json(
                 r#" {

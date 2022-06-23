@@ -1,20 +1,39 @@
+use std::ops::AddAssign;
+
 use super::{
-    json_number::JsonNumber, json_rule::JsonRule, json_token::JsonToken, json_value::JsonValue,
+    json_number::JsonNumber,
+    json_rule::JsonRule,
+    json_token::JsonToken,
+    json_value::{JsonValue, JSON_STRING_ESCAPE_MAPPING},
 };
 use crate::parse::*;
 
 pub(super) struct JsonInterpreter {}
 
+/// Parses a JSON string into a Rust string, evaluating escape sequences.
 fn expect_string_literal(value: &str) -> String {
-    value[1..value.len() - 1] // Trim quotes from beginning and end
-        .replace(r#"\""#, "\"")
-        .replace(r"\\", "\\")
-        .replace(r"\/", "/")
-        .replace(r"\b", "\x08")
-        .replace(r"\f", "\x0C")
-        .replace(r"\n", "\n")
-        .replace(r"\r", "\r")
-    // TODO: Handle hex digits \u1234
+    let trimmed = value[1..value.len() - 1].to_string(); // Trim quotes from beginning and end
+    let mut output = String::with_capacity(trimmed.len());
+
+    // This complication is required instead of the more obvious sequence of replace statements to
+    // avoid sequences like "\\n" being interpreted either as
+    // - <newline> (escaping backslash, then newline)
+    // - \<newline> (escaping newline, then backslash)
+    // when a given character should only be evaluated once.
+    let mut i = 0;
+    while i < trimmed.len() {
+        for (escape_sequence, literal) in JSON_STRING_ESCAPE_MAPPING {
+            if trimmed[i..].starts_with(escape_sequence) {
+                output.add_assign(literal);
+                i += escape_sequence.len();
+                continue;
+            }
+        }
+        output.add_assign(&trimmed[i..=i]);
+        i += 1;
+    }
+
+    output
 }
 
 fn expect_number_literal(value: &str) -> JsonNumber {

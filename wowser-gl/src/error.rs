@@ -9,6 +9,7 @@ pub type GlResult = Result<(), GlError>;
 pub enum GlError {
     NoError,
     Error(Vec<GlSingleError>),
+    UnexpectedError(&'static str),
 }
 
 impl Error for GlError {}
@@ -65,7 +66,7 @@ pub fn get_error() -> GlError {
 }
 
 /// Like `get_error`, except returns an Ok if `GlError::NoError` or
-/// returns Err(GlError) if not.
+/// returns `Err(GlError)` if not.
 pub fn get_error_result() -> GlResult {
     match get_error() {
         GlError::NoError => Ok(()),

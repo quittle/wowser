@@ -1,6 +1,6 @@
-use std::ptr::addr_of_mut;
+use std::{ffi::CStr, ptr::addr_of_mut};
 
-use crate::{GlError, GlSingleError};
+use crate::{GlError, GlSingleError, StateFloat, StateString};
 
 use super::{get_error_result, Alignment, AlignmentValue, Capability, GlResult, MatrixMode};
 use wowser_gl_sys::*;
@@ -59,7 +59,25 @@ pub fn raster_pos_2i(x: i32, y: i32) -> GlResult {
     }
 }
 
-fn get_boolean(param: GLenum) -> bool {
+pub fn get_string(state_string: StateString) -> Result<String, GlError> {
+    let param = state_string.into();
+
+    let byte_ptr = unsafe { glGetString(param) };
+
+    get_error_result()?;
+
+    if byte_ptr.is_null() {
+        Err(GlError::UnexpectedError(
+            "String pointer is null. GL Context is potentially uninitialized",
+        ))
+    } else {
+        let char_ptr = byte_ptr.cast();
+        let cstr = unsafe { CStr::from_ptr(char_ptr) };
+        Ok(cstr.to_string_lossy().to_string())
+    }
+}
+
+pub fn get_boolean(param: GLenum) -> bool {
     let mut boolean_val: GLboolean = 0;
 
     unsafe {
@@ -67,6 +85,21 @@ fn get_boolean(param: GLenum) -> bool {
     }
 
     boolean_val == 1
+}
+
+pub fn get_floats(state_float: StateFloat) -> Result<Vec<f32>, GlError> {
+    let mut ret = vec![0_f32; state_float.return_length()];
+
+    let gl_param: GLenum = state_float.into();
+    let raw_ret_pointer = ret.as_mut_ptr();
+
+    unsafe {
+        glGetFloatv(gl_param, raw_ret_pointer);
+    }
+
+    get_error_result()?;
+
+    Ok(ret)
 }
 
 pub fn pixel_store_i(alignment: Alignment, value: AlignmentValue) {

@@ -110,7 +110,8 @@ pub fn create_window(
     title: &str,
     share: Option<Window>,
 ) -> Result<Window, GlfwError> {
-    let c_title = CString::new(title).expect("Invalid string");
+    let c_title =
+        CString::new(title).expect("Invalid string. Potentially includes null byte characters");
     let share_ptr = match share {
         Some(window) => window.get_glfw_window_ptr(),
         None => ptr::null_mut(),

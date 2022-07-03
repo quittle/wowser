@@ -51,6 +51,12 @@ pub fn vertex_2i(x: i32, y: i32) {
     }
 }
 
+pub fn vertex_2f(x: f32, y: f32) {
+    unsafe {
+        glVertex2f(x, y);
+    }
+}
+
 pub fn begin(mode: DrawMode) {
     let gl_mode = mode.into();
 

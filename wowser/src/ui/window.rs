@@ -138,6 +138,8 @@ pub struct WindowMutator<'window> {
 }
 
 impl WindowMutator<'_> {
+    // Note that the `fill_color goes inside the `rect` while the `border_color` goes outside `rect`
+    // by `border_width` pixels.
     pub fn draw_rect(
         &mut self,
         rect: &Rect<i32>,
@@ -146,8 +148,9 @@ impl WindowMutator<'_> {
         border_width: f32,
     ) -> UiResult {
         if border_width > 0_f32 && !border_color.is_transparent() {
-            gl::point_size(10.0)?;
-            gl::line_width(border_width)?;
+            // Depending on the hardware and driver, GL may not support more than 1px wide line
+            // widths on all platforms. Using a quadstrip can emulate these lines and give increased
+            // standardization and control over rendering.
             gl::color_4ub(
                 border_color.r,
                 border_color.g,
@@ -155,11 +158,22 @@ impl WindowMutator<'_> {
                 border_color.a,
             );
 
-            gl::begin(gl::DrawMode::LineLoop);
-            gl::vertex_2i(rect.x, rect.y);
-            gl::vertex_2i(rect.x + rect.width, rect.y);
-            gl::vertex_2i(rect.x + rect.width, rect.y + rect.height);
-            gl::vertex_2i(rect.x, rect.y + rect.height);
+            let x = rect.x as f32;
+            let y = rect.y as f32;
+            let width = rect.width as f32;
+            let height = rect.height as f32;
+
+            gl::begin(gl::DrawMode::QuadStrip);
+            gl::vertex_2f(x, y);
+            gl::vertex_2f(x - border_width, y - border_width);
+            gl::vertex_2f(x, y + height);
+            gl::vertex_2f(x - border_width, y + height + border_width);
+            gl::vertex_2f(x + width + border_width, y + width + border_width);
+            gl::vertex_2f(x + width, y + height);
+            gl::vertex_2f(x + width + border_width, y - border_width);
+            gl::vertex_2f(x + width, y);
+            gl::vertex_2f(x - border_width, y - border_width);
+            gl::vertex_2f(x, y);
             gl::end()?;
         }
 

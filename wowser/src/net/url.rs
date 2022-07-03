@@ -6,12 +6,14 @@ use fancy_regex::Regex;
 /// Represents protocols supported by wowser. Future additions to include HTTPS, FTP, FILE, etc.
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 pub enum UrlProtocol {
+    File,
     Http,
 }
 
 impl UrlProtocol {
     fn parse(protocol: &str) -> Option<Self> {
         match protocol.to_ascii_lowercase().as_str() {
+            "file" => Some(Self::File),
             "http" => Some(Self::Http),
             _ => None,
         }
@@ -21,6 +23,7 @@ impl UrlProtocol {
 impl fmt::Display for UrlProtocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let protocol = match self {
+            UrlProtocol::File => "file",
             UrlProtocol::Http => "http",
         };
 
@@ -68,15 +71,25 @@ pub struct Url {
 
 impl fmt::Display for Url {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}://{}:{}", self.protocol, self.host, self.port)?;
+        write!(f, "{}://{}", self.protocol, self.host)?;
+        match self.protocol {
+            UrlProtocol::File => (),
+            UrlProtocol::Http => write!(f, ":{}", self.port)?,
+        };
         if !self.path.is_empty() {
             write!(f, "{}", self.path)?;
         }
-        if !self.query_string.is_empty() {
-            write!(f, "?{}", self.query_string)?;
-        }
-        if !self.fragment.is_empty() {
-            write!(f, "#{}", self.fragment)?;
+
+        match self.protocol {
+            UrlProtocol::File => (),
+            UrlProtocol::Http => {
+                if !self.query_string.is_empty() {
+                    write!(f, "?{}", self.query_string)?;
+                }
+                if !self.fragment.is_empty() {
+                    write!(f, "#{}", self.fragment)?;
+                }
+            }
         }
 
         Ok(())
@@ -111,7 +124,7 @@ impl Url {
 
     pub fn parse(url: &str) -> Option<Self> {
         let url_regex = Regex::new(
-            r"(\w+)://([a-zA-Z\d]+([\w\d\-\.]*[a-zA-Z\d]+)?)(:(\d+))?(/[^\?]*)?(\?([^#]*))?(#(.*))?",
+            r"(\w+)://([a-zA-Z\d]+([\w\d\-\.]*[a-zA-Z\d]+)?)?(:(\d+))?(/[^\?]*)?(\?([^#]*))?(#(.*))?",
         )
         .unwrap();
         let captures = url_regex.captures(url).ok()??;
@@ -120,11 +133,15 @@ impl Url {
             return None;
         }
         let protocol = captures.get(1)?.as_str();
+        let parsed_protocol = UrlProtocol::parse(protocol)?;
         let host = captures.get(2)?.as_str();
         let port = captures
             .get(5)
             .map(|capture| capture.as_str())
-            .unwrap_or("80");
+            .unwrap_or_else(|| match parsed_protocol {
+                UrlProtocol::File => "0",
+                UrlProtocol::Http => "80",
+            });
         let path = captures
             .get(6)
             .map(|capture| capture.as_str())
@@ -139,7 +156,7 @@ impl Url {
             .unwrap_or("");
 
         Some(Url {
-            protocol: UrlProtocol::parse(protocol)?,
+            protocol: parsed_protocol,
             host: UrlHost::parse(host)?,
             port: port.parse::<u16>().ok()?,
             path: path.to_string(),
@@ -171,6 +188,7 @@ mod tests {
 
     #[test]
     pub fn test_url_protocol() {
+        assert_eq!("file", UrlProtocol::File.to_string());
         assert_eq!("http", UrlProtocol::Http.to_string());
     }
 
@@ -193,6 +211,18 @@ mod tests {
     #[test]
     pub fn test_url_display_full() {
         assert_eq!(
+            "file://host-name/tmp/file.txt",
+            Url::new(
+                UrlProtocol::File,
+                UrlHost::DomainName("host-name".to_string()),
+                999,
+                "/tmp/file.txt",
+                "unused-query",
+                "unused-fragment",
+            )
+            .to_string()
+        );
+        assert_eq!(
             "http://example.com:80/path?query#fragment",
             Url::new(
                 UrlProtocol::Http,
@@ -208,6 +238,18 @@ mod tests {
 
     #[test]
     pub fn test_url_display_mimimal() {
+        assert_eq!(
+            "file:///",
+            Url::new(
+                UrlProtocol::File,
+                UrlHost::DomainName("".to_string()),
+                999,
+                "",
+                "unused-query",
+                "unused-fragment",
+            )
+            .to_string()
+        );
         assert_eq!(
             "http://example.com:80/",
             Url::new(

@@ -53,40 +53,40 @@ mod tests {
     }
 
     #[test]
-    pub fn test_empty() {
-        let (mut graph, _root) = GcNodeGraph::<TestTree>::new(TestTree::new(u8::MAX));
-        assert_eq!(graph.size(), 1);
-        graph.gc();
-        assert_eq!(graph.size(), 1);
+    fn test_empty() {
+        let (graph, _root) = GcNodeGraph::<TestTree>::new(TestTree::new(u8::MAX));
+        assert_eq!(graph.borrow().size(), 1);
+        GcNodeGraph::gc(&graph);
+        assert_eq!(graph.borrow().size(), 1);
     }
 
     #[test]
-    pub fn test_single_node() {
-        let (mut graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
-        assert_eq!(graph.size(), 1);
+    fn test_single_node() {
+        let (graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
+        assert_eq!(graph.borrow().size(), 1);
 
-        let child = graph.create_node(TestTree::new(2));
+        let child = GcNodeGraph::create_node(&graph, TestTree::new(2));
         root.with_mut(|root| root.left = Some(child));
-        assert_eq!(graph.size(), 2);
+        assert_eq!(graph.borrow().size(), 2);
         assert_eq!(root.map_value(|root| root.sum()), Some(3));
 
-        graph.gc();
-        assert_eq!(graph.size(), 2);
+        GcNodeGraph::gc(&graph);
+        assert_eq!(graph.borrow().size(), 2);
 
         root.with_mut(|root| root.left = None);
-        assert_eq!(graph.size(), 2);
+        assert_eq!(graph.borrow().size(), 2);
 
-        graph.gc();
-        assert_eq!(graph.size(), 1);
+        GcNodeGraph::gc(&graph);
+        assert_eq!(graph.borrow().size(), 1);
     }
 
     #[test]
-    pub fn test_cycle() {
-        let (mut graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
-        assert_eq!(graph.size(), 1);
+    fn test_cycle() {
+        let (graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
+        assert_eq!(graph.borrow().size(), 1);
 
-        let mut node1 = graph.create_node(TestTree::new(2));
-        let mut node2 = graph.create_node(TestTree::new(3));
+        let mut node1 = GcNodeGraph::create_node(&graph, TestTree::new(2));
+        let mut node2 = GcNodeGraph::create_node(&graph, TestTree::new(3));
 
         root.with_mut(|root| root.left = Some(node1.clone()));
 
@@ -98,7 +98,7 @@ mod tests {
         });
 
         node2.with_mut(|node| node.left = Some(node1.clone()));
-        assert_eq!(graph.size(), 3);
+        assert_eq!(graph.borrow().size(), 3);
 
         root.with_value(|root| {
             assert_eq!(root.value, 1, "Root Node");
@@ -122,33 +122,56 @@ mod tests {
             assert!(root.right.is_none(), "No right child of root");
         });
 
-        graph.gc();
-        assert_eq!(graph.size(), 3);
+        GcNodeGraph::gc(&graph);
+        assert_eq!(graph.borrow().size(), 3);
 
         // Remove the only reference to node 2
         node1.with_mut_node(|node| node.value.left = None);
-        assert_eq!(graph.size(), 3);
+        assert_eq!(graph.borrow().size(), 3);
         assert!(node2.exists());
-        graph.gc();
-        assert_eq!(graph.size(), 2);
+        GcNodeGraph::gc(&graph);
+        assert_eq!(graph.borrow().size(), 2);
         assert!(!node2.exists());
 
         // Remove the root reference to node 1
         root.with_mut_node(|root| root.value.left = None);
-        assert_eq!(graph.size(), 2);
+        assert_eq!(graph.borrow().size(), 2);
         assert!(node1.exists());
-        graph.gc();
-        assert_eq!(graph.size(), 1);
+        GcNodeGraph::gc(&graph);
+        assert_eq!(graph.borrow().size(), 1);
         assert!(!node1.exists());
 
         assert!(root.exists());
     }
 
     #[test]
-    pub fn test_garbage_collection() {
-        let (mut graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
-        let left_child = graph.create_node(TestTree::new(20));
-        let right_child = graph.create_node(TestTree::new(3));
+    fn test_create_new_node() {
+        let (graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(1));
+        assert_eq!(
+            Some(1),
+            root.map_value(|tree| tree.sum()),
+            "Just root value"
+        );
+
+        let child = root.create_new_node(TestTree::new(2));
+        assert_eq!(
+            Some(1),
+            root.map_value(|tree| tree.sum()),
+            "Child should not be associated with root value"
+        );
+
+        root.with_mut(|tree| tree.left = Some(child));
+        // Just to prove the connection
+        GcNodeGraph::gc(&graph);
+
+        assert_eq!(Some(3), root.map_value(|tree| tree.sum()));
+    }
+
+    #[test]
+    fn test_garbage_collection() {
+        let (graph, mut root) = GcNodeGraph::<TestTree>::new(TestTree::new(100));
+        let left_child = GcNodeGraph::create_node(&graph, TestTree::new(20));
+        let right_child = GcNodeGraph::create_node(&graph, TestTree::new(3));
 
         root.with_mut_node(|node| {
             node.gc_sweep_id = 123;
@@ -156,26 +179,30 @@ mod tests {
             node.value.right = Some(right_child);
 
             assert_eq!(node.value.sum(), 123);
-            assert_eq!(graph.size(), 3);
+            assert_eq!(graph.borrow().size(), 3);
         });
 
-        graph.gc();
+        GcNodeGraph::gc(&graph);
 
         root.with_mut_node(|node| {
             assert_eq!(node.value.sum(), 123);
-            assert_eq!(graph.size(), 3);
+            assert_eq!(graph.borrow().size(), 3);
 
             node.value.left = None;
 
             assert_eq!(node.value.sum(), 103);
-            assert_eq!(graph.size(), 3, "Should not be garbage collected yet");
+            assert_eq!(
+                graph.borrow().size(),
+                3,
+                "Should not be garbage collected yet"
+            );
         });
 
-        graph.gc();
+        GcNodeGraph::gc(&graph);
 
         root.with_node(|node| {
             assert_eq!(node.value.sum(), 103);
-            assert_eq!(graph.size(), 2);
+            assert_eq!(graph.borrow().size(), 2);
         });
     }
 }

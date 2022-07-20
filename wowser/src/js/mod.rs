@@ -725,4 +725,24 @@ mod tests {
             JsStatementResult::number(&node_graph, 4),
         );
     }
+
+    /// Note that this test should eventually fail
+    #[test]
+    fn test_garbage_collection() {
+        let (node_graph, results) = run_js("123");
+        let expected_result = JsStatementResult::number(&node_graph, 123);
+        let actual_result = results.last().unwrap();
+        assert_eq!(actual_result, &expected_result);
+
+        // This shrinks as all the globals get discarded and only the root node remains.
+        assert_eq!(node_graph.borrow().size(), 14);
+        GcNodeGraph::gc(&node_graph);
+        assert_eq!(node_graph.borrow().size(), 1);
+
+        if let JsStatementResult::Value(node) = actual_result {
+            assert!(!node.exists());
+        } else {
+            panic!("Invalid type of actual result");
+        }
+    }
 }

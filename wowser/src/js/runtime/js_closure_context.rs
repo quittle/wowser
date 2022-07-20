@@ -3,7 +3,7 @@ use super::{globals::GlobalPrototypes, JsClosure, JsReference, JsStatementResult
 #[derive(Debug)]
 pub struct JsClosureContext {
     // Global closure at the beginning. Immediate closure at the end.
-    // This should not be leaked to ensure there is always at least one entry in theclosure
+    // This should not be leaked to ensure there is always at least one entry in the closure
     closures: Vec<JsClosure>,
     pub expression_results: Vec<JsStatementResult>,
     pub global_prototypes: GlobalPrototypes,

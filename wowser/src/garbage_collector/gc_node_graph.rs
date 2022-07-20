@@ -6,7 +6,6 @@ use std::{
 use super::{gc_sweep_id::GcSweepId, inner_node::InnerNode, GarbageCollectable, GcNode};
 
 /// A graph of nodes that can be garbage collected
-#[derive(Debug)]
 pub struct GcNodeGraph<T: GarbageCollectable> {
     nodes: Vec<Rc<RefCell<InnerNode<T>>>>,
     root: Rc<RefCell<InnerNode<T>>>,
@@ -75,5 +74,22 @@ impl<T: GarbageCollectable> GcNodeGraph<T> {
                 queue.extend(node.value.get_referenced_nodes());
             });
         }
+    }
+}
+
+impl<T: GarbageCollectable> std::fmt::Debug for GcNodeGraph<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GcNodeGraph")
+            .field(
+                "nodes",
+                &self
+                    .nodes
+                    .iter()
+                    .map(|node| node.borrow())
+                    .collect::<Vec<_>>(),
+            )
+            .field("root", &self.root)
+            .field("gc_sweep_id", &self.gc_sweep_id)
+            .finish()
     }
 }

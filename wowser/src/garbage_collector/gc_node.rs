@@ -7,7 +7,6 @@ use std::{
 use super::{inner_node::InnerNode, GarbageCollectable, GcNodeGraph};
 
 /// Represents an opaque node that can be garbage collected
-#[derive(Debug)]
 pub struct GcNode<T: GarbageCollectable> {
     node: Weak<RefCell<InnerNode<T>>>,
     pub(super) node_graph: Weak<RefCell<GcNodeGraph<T>>>,
@@ -87,6 +86,14 @@ impl<T: GarbageCollectable> GcNode<T> {
                 self_ptr == other_ptr
             })
         })
+    }
+}
+
+impl<T: GarbageCollectable> std::fmt::Debug for GcNode<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GcNode")
+            .field("node", std::borrow::Borrow::borrow(&self.node))
+            .finish_non_exhaustive()
     }
 }
 

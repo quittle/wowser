@@ -54,7 +54,7 @@ jobs:
   automerge:
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: fastify/github-action-merge-dependabot@v3.2.0 
         with:

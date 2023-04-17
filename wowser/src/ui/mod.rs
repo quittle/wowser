@@ -1,7 +1,9 @@
 mod error;
+mod ui_event_processor;
 mod window;
 
 pub use error::{UiError, UiResult};
+pub use ui_event_processor::UiEventProcessor;
 pub use window::Window;
 
 #[cfg(test)]

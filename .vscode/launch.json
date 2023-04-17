@@ -1,0 +1,362 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'wowser'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "wowser",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'http'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=http",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "http",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'http'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=http",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "http",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'html'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=html",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "html",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'html'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=html",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "html",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'browser'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=browser",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "browser",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'browser'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=browser",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "browser",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'gui'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=gui",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "gui",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'gui'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=gui",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "gui",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'parse_font'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=parse_font",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "parse_font",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'parse_font'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=parse_font",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "parse_font",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'math'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=math",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "math",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'math'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=math",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "math",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'bitmap'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=bitmap",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "bitmap",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'bitmap'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=bitmap",
+                    "--package=wowser"
+                ],
+                "filter": {
+                    "name": "bitmap",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'wowser-gl'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=wowser-gl"
+                ],
+                "filter": {
+                    "name": "wowser-gl",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'wowser-gl-sys'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=wowser-gl-sys"
+                ],
+                "filter": {
+                    "name": "wowser-gl-sys",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'wowser-glfw'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=wowser-glfw"
+                ],
+                "filter": {
+                    "name": "wowser-glfw",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'wowser-glfw-sys'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=wowser-glfw-sys"
+                ],
+                "filter": {
+                    "name": "wowser-glfw-sys",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

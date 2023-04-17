@@ -1,14 +1,16 @@
-use super::ptr_holder::PtrHolder;
 use crate::{get_glfw_result, GlfwResult, Window};
-use lazy_static::lazy_static;
-use std::collections::HashMap;
-use std::sync::Mutex;
+use libc::c_void;
 use wowser_glfw_sys::*;
 
-type CallbackMap = HashMap<PtrHolder, fn(i32, i32)>;
-
-lazy_static! {
-    static ref WINDOW_RESIZE_CALLBACKS_MAP: Mutex<CallbackMap> = Mutex::new(HashMap::new());
+fn get_window_from_glfw_user_pointer(window: *mut GLFWwindow) -> Option<&'static mut Window> {
+    unsafe {
+        let ptr: *mut c_void = glfwGetWindowUserPointer(window);
+        if ptr.is_null() {
+            return None;
+        }
+        let wrapper_window_ptr: *mut Window = ptr as *mut Window;
+        Some(&mut *wrapper_window_ptr)
+    }
 }
 
 unsafe extern "C" fn unsafe_on_window_resize_callback(
@@ -20,32 +22,25 @@ unsafe extern "C" fn unsafe_on_window_resize_callback(
 }
 
 fn on_window_resize_callback(window: *mut GLFWwindow, width: i32, height: i32) {
-    let map = WINDOW_RESIZE_CALLBACKS_MAP.lock().unwrap();
-    if let Some(callback) = map.get(&PtrHolder::new(window)) {
-        callback(width, height);
+    if let Some(window) = get_window_from_glfw_user_pointer(window) {
+        window.window_resize_event = Some((width, height));
     }
 }
 
-pub fn set_window_size_callback(window: &Window, callback: Option<fn(i32, i32)>) -> GlfwResult {
-    let mut map = WINDOW_RESIZE_CALLBACKS_MAP.lock()?;
-    let ptr_holder = PtrHolder::new(window.get_glfw_window_ptr());
-    if let Some(callback) = callback {
-        map.insert(ptr_holder, callback);
-    } else {
-        map.remove(&ptr_holder);
-    }
+unsafe extern "C" fn unsafe_on_window_move_callback(window: *mut GLFWwindow, x: i32, y: i32) {
+    on_window_move_callback(window, x, y);
+}
 
-    unsafe {
-        glfwSetWindowSizeCallback(
-            window.get_glfw_window_ptr(),
-            // Can't be set outside of this statement or it results in a type error
-            if callback.is_some() {
-                Some(unsafe_on_window_resize_callback)
-            } else {
-                None
-            },
-        );
+fn on_window_move_callback(window: *mut GLFWwindow, x: i32, y: i32) {
+    if let Some(window) = get_window_from_glfw_user_pointer(window) {
+        window.window_move_event = Some((x, y));
     }
+}
+
+pub(super) fn initialize_glfw_callbacks(window: &mut Window) -> GlfwResult {
+    let glfw_window_ptr = window.get_glfw_window_ptr();
+    unsafe { glfwSetWindowSizeCallback(glfw_window_ptr, Some(unsafe_on_window_resize_callback)) };
+    unsafe { glfwSetWindowPosCallback(glfw_window_ptr, Some(unsafe_on_window_move_callback)) };
 
     get_glfw_result()
 }

@@ -1,12 +1,12 @@
 use wowser::browser::Tab;
 use wowser::startup;
-use wowser::ui::Window;
+use wowser::ui::{UiEventProcessor, Window};
 use wowser_glfw as glfw;
 
 fn main() {
     startup::start();
     {
-        let mut window = Window::new().unwrap();
+        let window_rc = Window::new().unwrap();
         let _link_fancy_html = r#"
             <html>
                 <style>
@@ -54,10 +54,13 @@ fn main() {
 
         let html = padding_based_html;
 
+        let mut window = window_rc.borrow_mut();
+
         let mut tab = Tab::load(&mut window, html);
 
         loop {
             glfw::poll_events().unwrap();
+            tab.process_events().expect("Failed to process event");
             tab.render();
         }
     }

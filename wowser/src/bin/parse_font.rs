@@ -34,13 +34,14 @@ fn main() -> Result<(), FontError> {
     // Draw character in GUI
     startup::start();
     {
-        let mut window = Window::new().expect("Unable to make ui.");
+        let window_rc = Window::new().expect("Unable to make ui.");
         thread::sleep(std::time::Duration::from_millis(1000));
         let mut offset: Point<f32> = Point {
             x: 10_f32,
             y: 10_f32,
         };
         {
+            let mut window = window_rc.borrow_mut();
             let mut window_mutator = window.mutate();
             for char in characters.flatten() {
                 window_mutator

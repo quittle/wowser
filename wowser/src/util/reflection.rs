@@ -3,10 +3,10 @@
 #[macro_export]
 macro_rules! fully_qualified_function_name {
     () => {{
-        // Fixed function name of known length
+        /// Fixed function name of known length
         fn f() {}
 
-        // Grabs the fully qualified name of the function
+        /// Grabs the fully qualified name of the function
         fn type_name_of<T>(_: T) -> &'static str {
             std::any::type_name::<T>()
         }

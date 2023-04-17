@@ -1,6 +1,8 @@
 use super::{
-    get_error, get_result_if_not_error, set_window_size_callback, GlfwError, GlfwResult, WindowHint,
+    get_error, get_result_if_not_error, initialize_glfw_callbacks, GlfwError, GlfwResult,
+    WindowHint,
 };
+use libc::c_void;
 use std::ffi::CString;
 use std::os::raw::c_int;
 use std::ptr::{self, NonNull};
@@ -38,6 +40,8 @@ pub fn terminate() -> GlfwResult {
 pub struct Window {
     window: NonNull<GLFWwindow>,
     is_alive: bool,
+    pub(crate) window_resize_event: Option<(i32, i32)>,
+    pub(crate) window_move_event: Option<(i32, i32)>,
 }
 
 impl Window {
@@ -46,16 +50,32 @@ impl Window {
         height: i32,
         title: &str,
         share: Option<Window>,
-    ) -> Result<Window, GlfwError> {
-        create_window(width, height, title, share)
+    ) -> Result<Box<Window>, GlfwError> {
+        let mut window = create_window(width, height, title, share)?;
+
+        let window_ptr: *mut Window = &mut *window;
+
+        let glfw_window_ptr = window.get_glfw_window_ptr();
+        unsafe {
+            glfwSetWindowUserPointer(glfw_window_ptr, window_ptr as *mut c_void);
+        }
+        get_glfw_result()?;
+
+        initialize_glfw_callbacks(&mut window)?;
+
+        Ok(window)
+    }
+
+    pub fn get_window_resize_event(&mut self) -> Option<(i32, i32)> {
+        self.window_resize_event.take()
+    }
+
+    pub fn get_window_move_event(&mut self) -> Option<(i32, i32)> {
+        self.window_move_event.take()
     }
 
     pub fn set_window_size(&self, width: i32, height: i32) -> GlfwResult {
         set_window_size(self, width, height)
-    }
-
-    pub fn set_window_size_callback(&self, callback: Option<fn(i32, i32)>) -> GlfwResult {
-        set_window_size_callback(self, callback)
     }
 
     pub fn set_window_pos(&self, xpos: i32, ypos: i32) -> GlfwResult {
@@ -88,7 +108,6 @@ impl Window {
     }
 
     pub fn close(&mut self) -> GlfwResult {
-        set_window_size_callback(self, None)?;
         destroy_window(self)?;
         Ok(())
     }
@@ -109,7 +128,7 @@ pub fn create_window(
     height: i32,
     title: &str,
     share: Option<Window>,
-) -> Result<Window, GlfwError> {
+) -> Result<Box<Window>, GlfwError> {
     let c_title =
         CString::new(title).expect("Invalid string. Potentially includes null byte characters");
     let share_ptr = match share {
@@ -121,12 +140,15 @@ pub fn create_window(
 
     let window =
         unsafe { glfwCreateWindow(width, height, c_title_ptr, ptr::null_mut(), share_ptr) };
+    get_glfw_result()?;
 
     if let Some(window) = NonNull::new(window) {
-        Ok(Window {
+        Ok(Box::new(Window {
             window,
             is_alive: true,
-        })
+            window_resize_event: None,
+            window_move_event: None,
+        }))
     } else {
         Err(get_error())
     }

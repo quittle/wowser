@@ -1,6 +1,6 @@
 use std::{ffi::CStr, ptr::addr_of_mut};
 
-use crate::{GlError, GlSingleError, StateFloat, StateString};
+use crate::{GlError, StateFloat, StateString};
 
 use super::{get_error_result, Alignment, AlignmentValue, Capability, GlResult, MatrixMode};
 use wowser_gl_sys::*;
@@ -53,7 +53,9 @@ pub fn raster_pos_2i(x: i32, y: i32) -> GlResult {
     get_error_result()?;
 
     if !get_boolean(GL_CURRENT_RASTER_POSITION_VALID) {
-        Err(GlError::Error(vec![GlSingleError::UnknownError(0)]))
+        Err(GlError::UnexpectedError(
+            "Current Render Position is not valid: Trying to draw offscreen",
+        ))
     } else {
         Ok(())
     }

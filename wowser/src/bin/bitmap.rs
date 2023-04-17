@@ -14,7 +14,8 @@ fn main() {
     let bitmap_path = args.get(1).expect("Bitmap file not passed in");
     let bitmap_bytes = fs::read(bitmap_path).unwrap();
     let bitmap = Bitmap::new(&bitmap_bytes).unwrap();
-    let mut window = ui::Window::new().unwrap();
+    let window_rc = ui::Window::new().unwrap();
+    let mut window = window_rc.borrow_mut();
     let mut x = -50;
     let mut y = -50;
     loop {

@@ -6,6 +6,7 @@ pub struct PtrHolder {
 }
 
 impl PtrHolder {
+    #[allow(dead_code)]
     pub fn new<T>(ptr: *mut T) -> PtrHolder {
         PtrHolder { ptr: ptr as u32 }
     }

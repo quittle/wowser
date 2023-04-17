@@ -8,7 +8,7 @@ use crate::{
         self, html_css_to_styles, normalize_style_nodes, style_html, AsyncRenderContext, Color,
         RectangleSceneNode, SceneNode,
     },
-    ui::Window,
+    ui::{UiEventProcessor, UiResult, Window},
     util::{Point, Rect},
 };
 
@@ -48,6 +48,13 @@ impl<'w> Tab<'w> {
 
     pub fn render(&mut self) {
         render_once(self.window, &self.html, &mut self.async_render_context);
+    }
+}
+
+impl UiEventProcessor for Tab<'_> {
+    fn process_events(&mut self) -> UiResult {
+        self.window.process_events()?;
+        Ok(())
     }
 }
 
@@ -214,15 +221,17 @@ mod tests {
         lock_for_ui_threads(|| {
             let result = catch_unwind(|| {
                 startup::start();
-                let mut window = Window::new().unwrap();
+                let window_rc = Window::new().unwrap();
+                let mut window = window_rc.borrow_mut();
                 window
-                    .resize(&Rect {
+                    .resize_synchronously(&Rect {
                         x: 0,
                         y: 0,
                         width: 150,
                         height: 150,
                     })
                     .unwrap();
+
                 setup(&mut window);
                 let actual_pixels = window.get_pixels_rgb().unwrap();
                 let bounds = window.get_bounds();
@@ -320,7 +329,7 @@ mod tests {
         "#;
         screenshot_test(function_name!(), |window| {
             window
-                .resize(&Rect {
+                .resize_synchronously(&Rect {
                     x: 0,
                     y: 0,
                     width: 200,

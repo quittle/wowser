@@ -4,7 +4,7 @@ mod glfw;
 mod ptr_holder;
 mod window_hint;
 
-pub use callback::*;
+use callback::*;
 pub use error::*;
 pub use glfw::*;
 pub use window_hint::*;

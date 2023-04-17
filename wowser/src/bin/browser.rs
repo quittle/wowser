@@ -25,7 +25,8 @@ fn run(url: &str) {
 
     startup::start();
     {
-        let mut window = Window::new().unwrap();
+        let window_rc = Window::new().unwrap();
+        let mut window = window_rc.borrow_mut();
 
         let mut tab = Tab::load(&mut window, html);
 

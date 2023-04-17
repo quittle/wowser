@@ -1,6 +1,6 @@
-use std::cmp;
+use std::{cell::RefCell, cmp, rc::Rc};
 
-use super::{UiError, UiResult};
+use super::{ui_event_processor::UiEventProcessor, UiError, UiResult};
 use crate::{
     render::Color,
     util::{Point, Rect},
@@ -9,12 +9,12 @@ use wowser_gl as gl;
 use wowser_glfw as glfw;
 
 pub struct Window {
-    window: glfw::Window,
+    window: Box<glfw::Window>,
     bounds: Rect<i32>,
 }
 
 impl Window {
-    pub fn new() -> Result<Window, String> {
+    pub fn new() -> Result<Rc<RefCell<Window>>, String> {
         let bounds = Rect {
             x: 100,
             y: 100,
@@ -22,33 +22,23 @@ impl Window {
             height: 600,
         };
 
-        let window = glfw::Window::new(1, 1, "Wowser - what a browser!", None)
+        let glfw_window = glfw::Window::new(1, 1, "Wowser - what a browser!", None)
             .map_err::<String, _>(Into::into)?;
-        window
+        glfw_window
             .make_context_current()
             .map_err::<String, _>(Into::into)?;
 
-        let mut window = Window {
-            window,
-            bounds: Rect {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
-            },
-        };
+        let window = Rc::new(RefCell::new(Window {
+            window: glfw_window,
+            bounds: Rect::default(),
+        }));
+        let mut window_ref = (*window).borrow_mut();
 
-        window
-            .window
-            .set_window_size_callback(Some(|width, height| {
-                // TODO: Update window bounds
-                log!(DEBUG: "new size:", width, "x", height);
-            }))
+        window_ref
+            .resize_synchronously(&bounds)
             .map_err::<String, _>(Into::into)?;
 
-        window.resize(&bounds).map_err::<String, _>(Into::into)?;
-
-        Ok(window)
+        Ok(window.clone())
     }
 
     /// Attempts to update the position and size of the window. Not all OS's support all possible
@@ -96,6 +86,24 @@ impl Window {
         Ok(())
     }
 
+    /// This should only be used for tests.
+    /// Resizing doesn't always result in the expected change. Resize repeatedly until the window
+    /// no longer changes size when set.
+    pub fn resize_synchronously(&mut self, new_bounds: &Rect<i32>) -> UiResult {
+        let mut prev_bounds;
+        loop {
+            prev_bounds = self.bounds.clone();
+            self.resize(new_bounds)?;
+            wowser_glfw::poll_events()?;
+            self.process_events()?;
+
+            if self.bounds == prev_bounds {
+                break;
+            }
+        }
+        Ok(())
+    }
+
     pub fn mutate(&mut self) -> WindowMutator {
         WindowMutator { window: self }
     }
@@ -132,14 +140,30 @@ impl Window {
     }
 }
 
+impl UiEventProcessor for Window {
+    fn process_events(&mut self) -> UiResult {
+        if let Some((width, height)) = self.window.get_window_resize_event() {
+            log!(DEBUG: "Window resized to (", width, "x", height, ")");
+            self.bounds.width = width;
+            self.bounds.height = height;
+        }
+        if let Some((x, y)) = self.window.get_window_move_event() {
+            log!(DEBUG: "Window moved to (", x, "x", y, ")");
+            self.bounds.x = x;
+            self.bounds.y = y;
+        }
+        Ok(())
+    }
+}
+
 /// Performs mutations to a window, drop when complete to actually render the update.
 pub struct WindowMutator<'window> {
     window: &'window mut Window,
 }
 
 impl WindowMutator<'_> {
-    // Note that the `fill_color goes inside the `rect` while the `border_color` goes outside `rect`
-    // by `border_width` pixels.
+    /// Note that the `fill_color goes inside the `rect` while the `border_color` goes outside `rect`
+    /// by `border_width` pixels.
     pub fn draw_rect(
         &mut self,
         rect: &Rect<i32>,
@@ -293,7 +317,8 @@ mod tests {
         lock_for_ui_threads(|| {
             startup::start();
 
-            let mut window = Window::new().unwrap();
+            let window_rc = Window::new().unwrap();
+            let mut window = window_rc.as_ref().borrow_mut();
 
             // Should be bigger than the window
             let length = 1000_i32;

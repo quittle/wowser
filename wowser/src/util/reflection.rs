@@ -21,7 +21,7 @@ macro_rules! fully_qualified_function_name {
 #[macro_export]
 macro_rules! function_name {
     () => {{
-        let name = crate::fully_qualified_function_name!();
+        let name = $crate::fully_qualified_function_name!();
         &name[name.rfind(':').unwrap() + 1..]
     }};
 }

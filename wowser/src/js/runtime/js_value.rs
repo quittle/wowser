@@ -153,7 +153,7 @@ impl GarbageCollectable for JsValue {
             JsValue::Undefined => vec![],
             JsValue::Null => vec![],
             JsValue::Function(function) => function.get_referenced_nodes(),
-            JsValue::Object(map) => map.values().into_iter().map(Clone::clone).collect(),
+            JsValue::Object(map) => map.values().map(Clone::clone).collect(),
         }
     }
 }

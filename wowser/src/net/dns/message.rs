@@ -128,7 +128,7 @@ impl AsRef<u16> for RecordClass {
 
 impl From<RecordClass> for u16 {
     fn from(record_class: RecordClass) -> u16 {
-        *(&record_class).as_ref()
+        *record_class.as_ref()
     }
 }
 
@@ -194,7 +194,7 @@ impl AsRef<u16> for RecordType {
 
 impl From<RecordType> for u16 {
     fn from(record_type: RecordType) -> u16 {
-        *(&record_type).as_ref()
+        *record_type.as_ref()
     }
 }
 

@@ -19,7 +19,7 @@ impl<T: GarbageCollectable> GcNode<T> {
     {
         let rc = self.node.upgrade().expect("Failed to load a node.");
 
-        let inner_node_ref = (&*rc).borrow();
+        let inner_node_ref = (*rc).borrow();
         map(&lazy_static::__Deref::deref(&inner_node_ref).value)
     }
 
@@ -129,7 +129,7 @@ impl<T: GarbageCollectable> GcNode<T> {
         F: FnOnce(&mut InnerNode<T>),
     {
         if let Some(rc) = self.node.upgrade() {
-            let mut ref_mut = (&*rc).borrow_mut();
+            let mut ref_mut = (*rc).borrow_mut();
             func(ref_mut.deref_mut());
         }
     }

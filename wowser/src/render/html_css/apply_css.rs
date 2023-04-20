@@ -41,9 +41,9 @@ fn recurse_style_html(
     child_styles
 }
 
-fn get_applicable_styles<'a>(
+fn get_applicable_styles(
     element: &ElementContents,
-    css_document: &'a CssDocument,
+    css_document: &CssDocument,
     parents: &[&ElementContents],
 ) -> Vec<Rc<CssProperty>> {
     css_document

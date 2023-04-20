@@ -59,7 +59,7 @@ impl Bitmap {
 
             return Ok(Bitmap {
                 width: bitmap_info_header.width as usize,
-                height: bitmap_info_header.height.abs() as usize,
+                height: bitmap_info_header.height.unsigned_abs() as usize,
                 pixels,
             });
         } else if bitmap_info_header.bits_per_pixel == 24 {
@@ -186,7 +186,7 @@ fn get_pixels(
 ) -> Result<Vec<Color>, String> {
     let mut pixels = Vec::with_capacity((height * width) as usize);
     let mut byte_offset = 0;
-    for _y in 0..height.abs() as usize {
+    for _y in 0..height.unsigned_abs() as usize {
         for x in 0..width as usize {
             let color_offset = bytes[byte_offset];
             if bits_per_pixel == 8 {

@@ -73,7 +73,7 @@ pub fn string_to_bytes(s: &str) -> Result<Vec<u8>, String> {
     let mut ret = vec![];
     for i in (0..normalized_string.len()).step_by(2) {
         let chars: Vec<char> = normalized_string.get(i..i + 2).expect("").chars().collect();
-        let a = chars.get(0).expect("").hex_to_byte();
+        let a = chars.first().expect("").hex_to_byte();
         let b = chars.get(1).expect("").hex_to_byte();
         match a {
             Ok(a) => match b {

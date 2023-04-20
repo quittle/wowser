@@ -315,7 +315,7 @@ fn parse_char(
 
     for row in nested_bitmap.iter().rev() {
         bitmap.extend(row);
-        if row.len() < width_in_bytes as usize {
+        if row.len() < width_in_bytes {
             bitmap.extend(iter::repeat(0_u8).take(d_width_x as usize - row.len()));
         }
     }

@@ -19,9 +19,10 @@ pub trait Hashable {
 }
 
 impl Hashable for str {
+    #[allow(unstable_name_collisions)]
     fn hash_u16(&self) -> u16 {
         let mut hasher = DefaultHasher::new();
-        hasher.write_str(self);
+        hasher.write_str(self); // If there ends up being a funciton name collision then we can rip out most of this code :D
         let hash: u64 = hasher.finish();
         hash as u16
     }

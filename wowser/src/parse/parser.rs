@@ -59,14 +59,13 @@ impl Parser {
         tokens: &'a [ParsedToken<'a, R::Token>],
         rule: &R,
     ) -> Result<ParserResult<'a, R>, &str> {
-        self._parse(tokens, rule)
+        Self::_parse(tokens, rule)
     }
 
     fn _parse<'a, 'b, R: Rule>(
-        &self,
         tokens: &'a [ParsedToken<'a, R::Token>],
         root_rule: &'b R,
-    ) -> Result<ParserResult<'a, R>, &str> {
+    ) -> Result<ParserResult<'a, R>, &'static str> {
         let first_token = tokens.get(0).ok_or("No tokens left")?;
 
         for child_rule_type in root_rule.children().iter() {
@@ -85,7 +84,7 @@ impl Parser {
                         Err("Not a match")
                     }
                 }
-                RuleType::Rule(rule) => match self._parse(tokens, rule) {
+                RuleType::Rule(rule) => match Self::_parse(tokens, rule) {
                     Ok(result) => Ok(ParserResult {
                         node: ASTNode {
                             rule: *root_rule,
@@ -99,7 +98,7 @@ impl Parser {
                 RuleType::RepeatableRule(rule) => {
                     let mut children = vec![];
                     let mut cur_tokens = tokens;
-                    while let Ok(result) = self._parse(cur_tokens, rule) {
+                    while let Ok(result) = Self::_parse(cur_tokens, rule) {
                         children.push(result.node);
                         cur_tokens = result.remaining_tokens;
                     }
@@ -119,7 +118,7 @@ impl Parser {
                     let mut failed = false;
 
                     for rule in rules {
-                        if let Ok(child) = self._parse(cur_tokens, rule) {
+                        if let Ok(child) = Self::_parse(cur_tokens, rule) {
                             children.push(child.node);
                             cur_tokens = child.remaining_tokens;
                         } else {

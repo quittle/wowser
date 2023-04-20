@@ -235,10 +235,10 @@ impl WindowMutator<'_> {
         let adjusted_y = point.y + height as i32 - bottom_offset;
 
         if left_offset >= width as i32
-            || adjusted_x >= bounds.width as i32
+            || adjusted_x >= bounds.width
             || adjusted_x < 0
             || bottom_offset >= height as i32
-            || adjusted_y > bounds.height as i32
+            || adjusted_y > bounds.height
             || adjusted_y < 0
         {
             return Ok(());

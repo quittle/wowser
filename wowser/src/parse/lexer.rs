@@ -32,15 +32,13 @@ impl<T: Token> Lexer<T> {
 
     /// Parses a source string into a series of tokens
     pub fn parse<'a>(&self, source: &'a str) -> Option<ParsedTokens<'a, T>> {
-        self.recursive_parse(0, source, &self.root_token)
-            .map(|mut v| {
-                v.reverse();
-                v
-            })
+        Self::recursive_parse(0, source, &self.root_token).map(|mut v| {
+            v.reverse();
+            v
+        })
     }
 
     fn recursive_parse<'a>(
-        &self,
         cur_source_offset: ParsedTokenOffset,
         source: &'a str,
         root_token: &T,
@@ -66,7 +64,7 @@ impl<T: Token> Lexer<T> {
                 let real_capture = real_capture.as_str();
                 let capture = captures.get(0).expect("Match must exist").as_str();
                 let capture_offset = capture.len();
-                if let Some(mut subpath) = self.recursive_parse(
+                if let Some(mut subpath) = Self::recursive_parse(
                     cur_source_offset + capture_offset,
                     &source[capture_offset..],
                     &token,

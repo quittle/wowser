@@ -1,11 +1,11 @@
 [package]
 name = "wowser-glfw"
-version = "0.0.1"
-authors = ["Dustin Toff <me@dustintoff.com>"]
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
 
 [dependencies]
-libc = "*"
-lazy_static = "*"
+libc.workspace = true
+lazy_static.workspace = true
 wowser-glfw-sys = { path = "../wowser-glfw-sys" }
 wowser-macros = { path = "../wowser-macros" }

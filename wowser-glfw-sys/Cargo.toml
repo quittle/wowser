@@ -1,14 +1,14 @@
 [package]
 name = "wowser-glfw-sys"
-version = "0.0.1"
-authors = ["Dustin Toff <me@dustintoff.com>"]
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
 links = "glfw3"
 
 [dependencies]
 wowser-gl-sys = { path = "../wowser-gl-sys" }
 
 [build-dependencies]
-cmake = "*"
-git2 = "*"
-bindgen = "*"
+bindgen.workspace = true
+cmake.workspace = true
+git2.workspace = true

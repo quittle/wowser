@@ -8,3 +8,20 @@ members = [
     "wowser-gl-sys",
     "wowser-glfw-sys",
 ]
+
+[workspace.package]
+version = "0.0.1"
+authors = ["Dustin Toff <me@dustintoff.com>"]
+edition = "2021"
+
+[workspace.dependencies]
+bindgen = "*"
+cmake = "*"
+fancy-regex = "*"
+futures = "*"
+futures-util = "*"
+git2 = "*"
+libc = "*"
+lazy_static = "*"
+quote = "*"
+syn = "*"

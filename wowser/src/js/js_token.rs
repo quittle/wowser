@@ -5,6 +5,7 @@ use wowser_macros::DisplayFromDebug;
 pub enum JsToken {
     Document,
     IfKeyword,
+    ElseKeyword,
     VarKeyword,
     FunctionKeyword,
     ReturnKeyword,
@@ -61,6 +62,7 @@ const POST_EXPRESSION: &[JsToken] = &[
     JsToken::CloseCurlyBrace,
     JsToken::Comma,
     JsToken::Semicolon,
+    JsToken::ElseKeyword,
     JsToken::Colon,
     JsToken::QuestionMark,
     JsToken::Terminator,
@@ -71,6 +73,7 @@ impl Token for JsToken {
         match self {
             Self::Document => "",
             Self::IfKeyword => r"\s*(if)\s*",
+            Self::ElseKeyword => r"\s*(else)\s*",
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
             Self::ReturnKeyword => r"\s*(return\s)\s*",
@@ -114,6 +117,15 @@ impl Token for JsToken {
             Self::IfKeyword => vec![
                 Self::OpenParen,
             ],
+            Self::ElseKeyword => [
+                &[
+                    Self::OpenParen,
+                    Self::OperatorAdd,
+                    Self::Terminator,
+                ],
+                EXPRESSION_START,
+                STATEMENT_START,
+            ].concat(),
             Self::VarKeyword => vec![
                 Self::VariableName,
             ],
@@ -159,7 +171,7 @@ impl Token for JsToken {
                     Self::OperatorMultiply,
                     Self::OperatorAdd,
                     Self::Comma,
-                Self::Terminator,
+                    Self::Terminator,
                 ],
                 EXPRESSION_START,
                 STATEMENT_START,
@@ -172,10 +184,6 @@ impl Token for JsToken {
                 STATEMENT_START,
             ].concat(),
             Self::CloseCurlyBrace => [
-                &[
-                    Self::CloseCurlyBrace,
-                    Self::Terminator,
-                ],
                 EXPRESSION_START,
                 STATEMENT_START,
                 POST_EXPRESSION,
@@ -194,6 +202,7 @@ impl Token for JsToken {
             Self::Semicolon => [
                 &[
                     Self::CloseCurlyBrace,
+                    Self::ElseKeyword,
                     Self::Terminator,
                 ],
                 EXPRESSION_START,

@@ -117,21 +117,49 @@ fn on_if_statement(node_graph: &JsValueGraph, node: &JsASTNode) -> JsStatement {
 
     let conditional_expression = on_expression(&children[2]);
 
-    let execution_statements = if children.len() == 5 {
-        let execution_node = &children[4];
-        match execution_node.rule {
-            JsRule::Expression => vec![JsStatement::Expression(on_expression(execution_node))],
-            JsRule::Statement => vec![on_statement(node_graph, execution_node)],
-            _ => panic!(
-                "Unexpected if statement execution node: {}",
-                execution_node.rule
-            ),
+    let execution_statements = match children.len() {
+        6 => {
+            let execution_node = &children[4];
+            match execution_node.rule {
+                JsRule::Expression => vec![JsStatement::Expression(on_expression(execution_node))],
+                JsRule::Statement => vec![on_statement(node_graph, execution_node)],
+                _ => panic!(
+                    "Unexpected if statement execution node: {}",
+                    execution_node.rule
+                ),
+            }
         }
-    } else {
-        on_statements(node_graph, &children[5])
+        8 => on_statements(node_graph, &children[5]),
+        num => panic!("Unexpected number of children in if statement: {num}"),
     };
 
-    JsStatement::If(conditional_expression, execution_statements)
+    let else_condition_statements = on_else_condition(
+        node_graph,
+        children
+            .last()
+            .expect("Expected if statements to end in else statement"),
+    );
+
+    JsStatement::If(
+        conditional_expression,
+        execution_statements,
+        else_condition_statements,
+    )
+}
+
+fn on_else_condition(node_graph: &JsValueGraph, node: &JsASTNode) -> Vec<JsStatement> {
+    let children = extract_interpreter_children(node, JsRule::ElseStatement);
+
+    match children.len() {
+        0 => vec![],
+        2 => match children[1].rule {
+            JsRule::Statement => vec![on_statement(node_graph, &children[1])],
+            JsRule::Expression => vec![JsStatement::Expression(on_expression(&children[1]))],
+            _ => panic!("Unsupported rule type in else condition"),
+        },
+        4 => on_statements(node_graph, &children[2]),
+        num => panic!("Unexpected number of children for else condition: {num}"),
+    }
 }
 
 fn on_expression(node: &JsASTNode) -> JsExpression {

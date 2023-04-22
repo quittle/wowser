@@ -481,6 +481,54 @@ mod tests {
     }
 
     #[test]
+    fn test_else_statements() {
+        let node_graph = get_node_graph();
+        run_test(
+            "if(true){1;} else {2;}",
+            vec![
+                JsStatementResult::number(&node_graph, 1),
+                JsStatementResult::Void,
+            ],
+        );
+        run_test(
+            "if(false){1;} else {2;}",
+            vec![
+                JsStatementResult::number(&node_graph, 2),
+                JsStatementResult::Void,
+            ],
+        );
+        run_test(
+            "if(false)1; else 2;",
+            vec![
+                JsStatementResult::number(&node_graph, 2),
+                JsStatementResult::Void,
+            ],
+        );
+        run_test(
+            "if(false)var i;else 2",
+            vec![
+                JsStatementResult::number(&node_graph, 2),
+                JsStatementResult::Void,
+            ],
+        );
+        run_test(
+            "if(false){2;}else 3",
+            vec![
+                JsStatementResult::number(&node_graph, 3),
+                JsStatementResult::Void,
+            ],
+        );
+        run_test(
+            "if (false) 1; else { 2; } 3",
+            vec![
+                JsStatementResult::number(&node_graph, 2),
+                JsStatementResult::Void,
+                JsStatementResult::number(&node_graph, 3),
+            ],
+        );
+    }
+
+    #[test]
     fn test_triple_equality() {
         let node_graph = get_node_graph();
         run_test("1 === 1", vec![JsStatementResult::bool(&node_graph, true)]);

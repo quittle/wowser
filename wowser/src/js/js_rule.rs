@@ -8,6 +8,8 @@ pub enum JsRule {
     Statement,
     IfKeyword,
     IfStatement,
+    ElseKeyword,
+    ElseStatement,
     VarDeclaration,
     VarKeyword,
     FunctionDeclaration,
@@ -130,7 +132,8 @@ impl Rule for JsRule {
                     Self::CloseParen,
                     Self::OpenCurlyBrace,
                     Self::Statements,
-                    Self::CloseCurlyBrace
+                    Self::CloseCurlyBrace,
+                    Self::ElseStatement,
                 ]),
                 RuleType::Sequence(vec![
                     Self::IfKeyword,
@@ -138,6 +141,7 @@ impl Rule for JsRule {
                     Self::Expression,
                     Self::CloseParen,
                     Self::Statement,
+                    Self::ElseStatement,
                 ]),
                 RuleType::Sequence(vec![
                     Self::IfKeyword,
@@ -145,10 +149,31 @@ impl Rule for JsRule {
                     Self::Expression,
                     Self::CloseParen,
                     Self::Expression,
+                    Self::ElseStatement,
                 ]),
+            ],
+            Self::ElseStatement => vec![
+                RuleType::Sequence(vec![
+                    Self::ElseKeyword,
+                    Self::OpenCurlyBrace,
+                    Self::Statements,
+                    Self::CloseCurlyBrace,
+                ]),
+                RuleType::Sequence(vec![
+                    Self::ElseKeyword,
+                    Self::Statement
+                ]),
+                RuleType::Sequence(vec![
+                    Self::ElseKeyword,
+                    Self::Expression,
+                ]),
+                RuleType::Sequence(vec![]),
             ],
             Self::IfKeyword => vec![
                 RuleType::Token(JsToken::IfKeyword),
+            ],
+            Self::ElseKeyword => vec![
+                RuleType::Token(JsToken::ElseKeyword),
             ],
             Self::TrueKeyword => vec![
                 RuleType::Token(JsToken::TrueKeyword),

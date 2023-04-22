@@ -8,7 +8,8 @@ pub enum JsStatement {
     VariableAssignment(JsReference, JsExpression),
     FunctionDeclaration(JsReference),
     Return(JsExpression),
-    If(JsExpression, Vec<JsStatement>),
+    /// (Condition, True Statement, False Statements)
+    If(JsExpression, Vec<JsStatement>, Vec<JsStatement>),
 }
 
 impl JsStatement {
@@ -37,17 +38,25 @@ impl JsStatement {
             Self::Return(expression) => {
                 JsStatementResult::ReturnValue(expression.run(closure_context))
             }
-            Self::If(condition_expression, execution_statements) => {
+            Self::If(
+                condition_expression,
+                true_execution_statements,
+                false_execution_statements,
+            ) => {
                 let result = condition_expression.run(closure_context);
                 let result_bool: bool = result.map_value(|value| value.into());
-                if result_bool {
-                    for statement in execution_statements {
-                        let result = statement.run(closure_context);
-                        match result {
-                            JsStatementResult::ReturnValue(_) => return result,
-                            _ => closure_context.record_new_result(result),
-                        };
-                    }
+                let statements = if result_bool {
+                    true_execution_statements
+                } else {
+                    false_execution_statements
+                };
+
+                for statement in statements {
+                    let result = statement.run(closure_context);
+                    match result {
+                        JsStatementResult::ReturnValue(_) => return result,
+                        _ => closure_context.record_new_result(result),
+                    };
                 }
                 JsStatementResult::Void
             }
@@ -66,10 +75,11 @@ impl JsStatement {
             .concat(),
             Self::FunctionDeclaration(reference) => reference.get_referenced_nodes(),
             Self::Return(expression) => expression.get_referenced_nodes(),
-            Self::If(expression, statements) => [
+            Self::If(expression, true_statements, false_statements) => [
                 expression.get_referenced_nodes(),
-                statements
+                true_statements
                     .iter()
+                    .chain(false_statements)
                     .flat_map(|statement| statement.get_referenced_nodes())
                     .collect(),
             ]

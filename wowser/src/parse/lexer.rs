@@ -32,9 +32,11 @@ impl<T: Token> Lexer<T> {
 
     /// Parses a source string into a series of tokens
     pub fn parse<'a>(&self, source: &'a str) -> Option<ParsedTokens<'a, T>> {
-        Self::recursive_parse(0, source, &self.root_token).map(|mut v| {
-            v.reverse();
-            v
+        Self::recursive_parse(0, source, &self.root_token).map(|v| {
+            v.into_iter()
+                .rev()
+                .filter(|token| !token.token.is_comment())
+                .collect()
         })
     }
 
@@ -44,12 +46,14 @@ impl<T: Token> Lexer<T> {
         root_token: &T,
     ) -> Option<ParsedTokens<'a, T>> {
         if root_token.is_terminator() {
-            let vec: ParsedTokens<'a, T> = Vec::new();
-            return Option::Some(vec);
+            return Some(vec![]);
         }
 
         let tokens = root_token.next_tokens();
-        for token in tokens.into_iter() {
+
+        let all_tokens = tokens.iter().chain(T::get_comment_tokens());
+
+        for token in all_tokens {
             if let Some(captures) = token.built_regex().captures(source).ok()? {
                 let real_capture;
                 if let Some(capture) = captures.name("token") {
@@ -64,13 +68,19 @@ impl<T: Token> Lexer<T> {
                 let real_capture = real_capture.as_str();
                 let capture = captures.get(0).expect("Match must exist").as_str();
                 let capture_offset = capture.len();
+
+                let new_root_token = if token.is_comment() {
+                    root_token
+                } else {
+                    token
+                };
                 if let Some(mut subpath) = Self::recursive_parse(
                     cur_source_offset + capture_offset,
                     &source[capture_offset..],
-                    &token,
+                    new_root_token,
                 ) {
                     subpath.push(ParsedToken {
-                        token,
+                        token: *token,
                         literal: real_capture,
                         offset: cur_source_offset,
                         full_match: capture,

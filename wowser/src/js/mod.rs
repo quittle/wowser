@@ -69,6 +69,43 @@ mod tests {
     }
 
     #[test]
+    fn test_comments() {
+        let node_graph = get_node_graph();
+        run_test("//", vec![]);
+        run_test("// abc", vec![]);
+        run_test("/**/", vec![]);
+        run_test("/* abc */", vec![]);
+        run_test(
+            "/* abc
+                               */",
+            vec![],
+        );
+        run_test(
+            "1; /* abc
+                                */2",
+            vec![
+                JsStatementResult::number(&node_graph, 1),
+                JsStatementResult::number(&node_graph, 2),
+            ],
+        );
+        run_test(
+            "var // abc
+             a = /* def */ 1; // ghi",
+            vec![JsStatementResult::number(&node_graph, 1)],
+        );
+        run_test(
+            "var /*
+                        */ a = /* def */ 1; // ghi",
+            vec![JsStatementResult::number(&node_graph, 1)],
+        );
+        run_test(
+            "var /* space -> 
+                        */ a = /* def */ 1; // ghi",
+            vec![JsStatementResult::number(&node_graph, 1)],
+        );
+    }
+
+    #[test]
     fn test_js() {
         let node_graph = get_node_graph();
         run_test("1", vec![JsStatementResult::number(&node_graph, 1.0)]);

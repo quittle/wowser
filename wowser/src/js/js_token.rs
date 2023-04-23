@@ -30,6 +30,8 @@ pub enum JsToken {
     Colon,
     Semicolon,
     QuestionMark,
+    InlineComment,
+    MultilineComment,
     Terminator,
 }
 
@@ -100,6 +102,8 @@ impl Token for JsToken {
             Self::Colon => r"\s*(:)\s*",
             Self::Semicolon => r"\s*(;)\s*",
             Self::QuestionMark => r"\s*(\?)\s*",
+            Self::InlineComment => r"\s*(//.*)",
+            Self::MultilineComment => r"\s*(/\*(.|\n)*?\*/)\s*",
             Self::Terminator => r"\s*$",
         }
     }
@@ -208,9 +212,15 @@ impl Token for JsToken {
                 EXPRESSION_START,
                 STATEMENT_START,
             ].concat(),
-            Self::QuestionMark =>  Vec::from(EXPRESSION_START),
+            Self::QuestionMark => Vec::from(EXPRESSION_START),
+            Self::InlineComment => vec![],
+            Self::MultilineComment => vec![],
             Self::Terminator => vec![],
         }
+    }
+
+    fn get_comment_tokens() -> &'static [Self] {
+        &[Self::InlineComment, Self::MultilineComment]
     }
 
     fn is_terminator(&self) -> bool {

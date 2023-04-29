@@ -59,19 +59,19 @@ impl JsValue {
     }
 
     pub fn type_error_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
-        Self::undefined_rc(node_graph) // TODO: These should raise exceptions when supported
+        Self::string_rc(node_graph, "TypeError".to_string()) // TODO: These should raise exceptions when supported
     }
 
     pub fn type_error_or_dom_exception_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
-        Self::undefined_rc(node_graph) // TODO: These should raise exceptions when supported
+        Self::string_rc(node_graph, "DomException".to_string()) // TODO: These should raise exceptions when supported
     }
 
     pub fn reference_error_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
-        Self::undefined_rc(node_graph) // TODO: These should raise exceptions when supported
+        Self::string_rc(node_graph, "ReferenceError".to_string()) // TODO: These should raise exceptions when supported
     }
 
     pub fn stack_overflow_error_rc(node_graph: &JsValueGraph) -> GcNode<Self> {
-        Self::undefined_rc(node_graph) // TODO: This should raise RangeError: Maximum call stack size exceeded when supported
+        Self::string_rc(node_graph, "StackOverflowError".to_string()) // TODO: This should raise RangeError: Maximum call stack size exceeded when supported
     }
 }
 

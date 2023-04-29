@@ -5,13 +5,13 @@ use super::{JsClosureContext, JsStatement, JsStatementResult, JsValue, JsValueNo
 #[derive(Clone)]
 #[allow(clippy::type_complexity)]
 pub struct JsNativeFunctionImplementation {
-    pub func: Rc<dyn Fn(JsValueNode, &[JsValueNode]) -> JsValueNode>,
+    pub func: Rc<dyn Fn(JsValueNode, &[JsValueNode]) -> JsFunctionResult>,
 }
 
 impl Default for JsNativeFunctionImplementation {
     fn default() -> Self {
         Self {
-            func: Rc::new(|this, _| JsValue::undefined_rc(&this.get_node_graph())),
+            func: Rc::new(|this, _| Ok(JsValue::undefined_rc(&this.get_node_graph()))),
         }
     }
 }
@@ -46,6 +46,8 @@ pub enum JsFunction {
     ),
 }
 
+pub type JsFunctionResult = Result<JsValueNode, JsValueNode>;
+
 impl JsFunction {
     pub fn get_name(&self) -> &str {
         match self {
@@ -59,12 +61,14 @@ impl JsFunction {
         closure_context: &mut JsClosureContext,
         this: JsValueNode,
         args: &[JsValueNode],
-    ) -> JsValueNode {
+    ) -> JsFunctionResult {
         match self {
             Self::Native(_, implementation) => implementation.func.as_ref()(this, args),
             Self::UserDefined(_source, _name, params, implementation) => {
                 if closure_context.get_closure_depth() > 255 {
-                    return JsValue::stack_overflow_error_rc(&closure_context.nodes_graph);
+                    return Err(JsValue::stack_overflow_error_rc(
+                        &closure_context.nodes_graph,
+                    ));
                 }
 
                 closure_context.with_new_context(|closure_context| {
@@ -80,11 +84,12 @@ impl JsFunction {
                     }
                     for statement in implementation {
                         match statement.run(closure_context) {
-                            JsStatementResult::ReturnValue(value) => return value,
+                            JsStatementResult::ReturnValue(value) => return Ok(value),
+                            JsStatementResult::ThrowValue(value) => return Err(value),
                             result => closure_context.record_new_result(result),
                         }
                     }
-                    JsValue::undefined_rc(&closure_context.nodes_graph) // TODO: implement return
+                    Ok(JsValue::undefined_rc(&closure_context.nodes_graph))
                 })
             }
         }

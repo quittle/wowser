@@ -1,6 +1,6 @@
 use super::{
     build_object_prototype, build_prototype, JsClosure, JsClosureContext, JsFunction,
-    JsNativeFunctionImplementation, JsValue, JsValueGraph, JsValueNode,
+    JsFunctionResult, JsNativeFunctionImplementation, JsValue, JsValueGraph, JsValueNode,
 };
 use crate::{garbage_collector::GcNodeGraph, util::Base64};
 use std::rc::Rc;
@@ -14,7 +14,7 @@ pub fn add_globals(closure_context: &mut JsClosureContext) {
 fn add_global_function(
     global_closure: &mut JsClosure,
     name: &str,
-    func: impl Fn(JsValueNode, &[JsValueNode]) -> JsValueNode + 'static,
+    func: impl Fn(JsValueNode, &[JsValueNode]) -> JsFunctionResult + 'static,
 ) {
     let node_graph = global_closure.node_graph.clone();
     let reference = global_closure.get_or_declare_reference_mut(name);
@@ -27,29 +27,29 @@ fn add_global_function(
     reference.value = GcNodeGraph::create_node(&node_graph, value);
 }
 
-fn js_atob(this: JsValueNode, args: &[JsValueNode]) -> JsValueNode {
+fn js_atob(this: JsValueNode, args: &[JsValueNode]) -> JsFunctionResult {
     let node_graph = this.get_node_graph();
     match args.get(0) {
         Some(value) => {
             if let Some(decoded) = value.map_value(|v| v.to_string().base64_decode()) {
                 if let Ok(decoded_string) = std::str::from_utf8(&decoded) {
-                    return this.create_new_node(JsValue::str(decoded_string));
+                    return Ok(this.create_new_node(JsValue::str(decoded_string)));
                 }
             }
-            JsValue::type_error_or_dom_exception_rc(&node_graph)
+            Err(JsValue::type_error_or_dom_exception_rc(&node_graph))
         }
-        _ => JsValue::type_error_rc(&node_graph),
+        _ => Err(JsValue::type_error_rc(&node_graph)),
     }
 }
 
-fn js_btoa(this: JsValueNode, args: &[JsValueNode]) -> JsValueNode {
+fn js_btoa(this: JsValueNode, args: &[JsValueNode]) -> JsFunctionResult {
     let node_graph = this.get_node_graph();
     match args.get(0) {
-        Some(value) => JsValue::string_rc(
+        Some(value) => Ok(JsValue::string_rc(
             &node_graph,
             value.map_value(|v| v.to_string().base64_encode()),
-        ),
-        _ => JsValue::type_error_rc(&node_graph),
+        )),
+        _ => Err(JsValue::type_error_rc(&node_graph)),
     }
 }
 

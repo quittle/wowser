@@ -479,7 +479,7 @@ mod tests {
     fn test_nan() {
         let _node_graph = get_node_graph();
         assert!(run_js("NaN").1[0].is_nan());
-        assert!(run_js("NaN * Nan + NaN").1[0].is_nan());
+        assert!(run_js("NaN * NaN + NaN").1[0].is_nan());
     }
 
     #[test]
@@ -685,7 +685,7 @@ mod tests {
         // Infinite recursion leads to undefined right now instead of a stack overflow exception
         assert_last_value_equals(
             "function recurse(num) {recurse(num + 1);} recurse(1)",
-            JsStatementResult::undefined(&node_graph),
+            JsStatementResult::ThrowValue(JsValue::stack_overflow_error_rc(&node_graph)),
         );
     }
 
@@ -808,6 +808,23 @@ mod tests {
         assert_last_value_equals(
             "1 + 1 ? 2 + 2 : 3 + 3",
             JsStatementResult::number(&node_graph, 4),
+        );
+    }
+
+    #[test]
+    fn test_throw() {
+        let node_graph = get_node_graph();
+        assert_last_value_equals(
+            "throw 1;",
+            JsStatementResult::ThrowValue(JsValue::number_rc(&node_graph, 1)),
+        );
+        assert_last_value_equals(
+            "function throws(val) { throw val; } throws('abc'); ",
+            JsStatementResult::ThrowValue(JsValue::str_rc(&node_graph, "abc")),
+        );
+        assert_last_value_equals(
+            "function throws(val) { if (val) { throw val; } } throws(''); ",
+            JsStatementResult::Value(JsValue::undefined_rc(&node_graph)),
         );
     }
 

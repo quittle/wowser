@@ -9,6 +9,7 @@ pub enum JsToken {
     VarKeyword,
     FunctionKeyword,
     ReturnKeyword,
+    ThrowKeyword,
     TrueKeyword,
     FalseKeyword,
     NullKeyword,
@@ -40,6 +41,7 @@ const STATEMENT_START: &[JsToken] = &[
     JsToken::VarKeyword,
     JsToken::FunctionKeyword,
     JsToken::ReturnKeyword,
+    JsToken::ThrowKeyword,
     JsToken::Semicolon,
 ];
 
@@ -79,11 +81,12 @@ impl Token for JsToken {
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
             Self::ReturnKeyword => r"\s*(return\s)\s*",
+            Self::ThrowKeyword => r"\s*(throw\s)\s*",
             Self::TrueKeyword => r"\s*(true)\s*",
             Self::FalseKeyword => r"\s*(false)\s*",
             Self::NullKeyword => r"\s*(null)\s*",
             Self::VariableName => {
-                r"\s*((?!((var|function|return|undefined|true|false|null|if|NaN)[^a-zA-Z_$]))[a-zA-Z_][\w\d]*)\s*"
+                r"\s*((?!((var|function|throw|return|undefined|true|false|null|if|NaN)[^a-zA-Z_$]))[a-zA-Z_][\w\d]*)\s*"
             }
             Self::Number => r"\s*(-?\d[\d_]*(\.\d[\d_]*)?)\s*",
             Self::String => r#"\s*(("[^"]*")|('[^']*'))\s*"#,
@@ -137,6 +140,7 @@ impl Token for JsToken {
                 Self::VariableName,
             ],
             Self::ReturnKeyword => Vec::from(EXPRESSION_START),
+            Self::ThrowKeyword => Vec::from(EXPRESSION_START),
             Self::TrueKeyword => Vec::from(POST_EXPRESSION),
             Self::FalseKeyword => Vec::from(POST_EXPRESSION),
             Self::NullKeyword => Vec::from(POST_EXPRESSION),

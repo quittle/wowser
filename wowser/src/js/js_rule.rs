@@ -16,6 +16,7 @@ pub enum JsRule {
     FunctionKeyword,
     FunctionParams,
     ReturnKeyword,
+    ThrowKeyword,
     ObjectLiteral,
     ObjectMembers,
     TrueKeyword,
@@ -79,6 +80,7 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::FunctionDeclaration),
                 RuleType::Rule(Self::IfStatement),
                 RuleType::Sequence(vec![Self::ReturnKeyword, Self::Expression, Self::Semicolon]),
+                RuleType::Sequence(vec![Self::ThrowKeyword, Self::Expression, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::VarDeclaration, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::Expression, Self::Semicolon]),
                 RuleType::Sequence(vec![Self::VariableAssignment, Self::Semicolon]),
@@ -114,6 +116,9 @@ impl Rule for JsRule {
             ],
             Self::ReturnKeyword => vec![
                 RuleType::Token(JsToken::ReturnKeyword),
+            ],
+            Self::ThrowKeyword => vec![
+                RuleType::Token(JsToken::ThrowKeyword),
             ],
             Self::ObjectLiteral => vec![
                 RuleType::Sequence(vec![Self::OpenCurlyBrace, Self::ObjectMembers, Self::CloseCurlyBrace]),

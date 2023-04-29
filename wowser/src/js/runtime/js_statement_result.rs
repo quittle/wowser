@@ -7,6 +7,7 @@ use super::{JsValue, JsValueGraph, JsValueNode};
 pub enum JsStatementResult {
     Value(JsValueNode),
     ReturnValue(JsValueNode),
+    ThrowValue(JsValueNode),
     Void,
 }
 

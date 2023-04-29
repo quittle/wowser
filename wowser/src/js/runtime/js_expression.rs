@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use super::{get_member_from_prototype_chain, JsClosureContext, JsValue, JsValueNode};
+use super::{
+    get_member_from_prototype_chain, JsClosureContext, JsFunctionResult, JsValue, JsValueNode,
+};
 
 #[derive(Debug, PartialEq)]
 pub enum JsExpression {
@@ -22,27 +24,27 @@ pub enum JsExpression {
 }
 
 impl JsExpression {
-    pub fn run(&self, closure_context: &mut JsClosureContext) -> JsValueNode {
+    pub fn run(&self, closure_context: &mut JsClosureContext) -> JsFunctionResult {
         match self {
             Self::Reference(variable_name) => closure_context
                 .get_reference_mut(variable_name)
                 .map(|reference| reference.value.clone())
-                .unwrap_or_else(|| JsValue::reference_error_rc(&closure_context.nodes_graph)),
-            Self::Boolean(b) => JsValue::bool_rc(&closure_context.nodes_graph, *b),
-            Self::Number(num) => JsValue::number_rc(&closure_context.nodes_graph, *num),
-            Self::String(num) => JsValue::str_rc(&closure_context.nodes_graph, num),
-            Self::Undefined => JsValue::undefined_rc(&closure_context.nodes_graph),
-            Self::Null => JsValue::null_rc(&closure_context.nodes_graph),
+                .ok_or(JsValue::reference_error_rc(&closure_context.nodes_graph)),
+            Self::Boolean(b) => Ok(JsValue::bool_rc(&closure_context.nodes_graph, *b)),
+            Self::Number(num) => Ok(JsValue::number_rc(&closure_context.nodes_graph, *num)),
+            Self::String(num) => Ok(JsValue::str_rc(&closure_context.nodes_graph, num)),
+            Self::Undefined => Ok(JsValue::undefined_rc(&closure_context.nodes_graph)),
+            Self::Null => Ok(JsValue::null_rc(&closure_context.nodes_graph)),
             Self::Object(members) => {
                 let mut map = HashMap::with_capacity(members.len());
                 for (key, value) in members {
-                    map.insert(key.to_string(), value.run(closure_context));
+                    map.insert(key.to_string(), value.run(closure_context)?);
                 }
-                JsValue::object_rc(&closure_context.nodes_graph, map)
+                Ok(JsValue::object_rc(&closure_context.nodes_graph, map))
             }
             Self::TripleEquals(match_equality, a, b) => {
-                let a_value = a.run(closure_context);
-                let b_value = b.run(closure_context);
+                let a_value = a.run(closure_context)?;
+                let b_value = b.run(closure_context)?;
                 let result = match (a_value.get_ref(), b_value.get_ref()) {
                     (JsValue::Boolean(a), JsValue::Boolean(b)) => a == b,
                     (JsValue::Number(a), JsValue::Number(b)) => a == b,
@@ -53,11 +55,14 @@ impl JsExpression {
                     (JsValue::Object(_), JsValue::Object(_)) => a_value.is_same_ref(&b_value),
                     (_, _) => false,
                 };
-                JsValue::bool_rc(&closure_context.nodes_graph, *match_equality == result)
+                Ok(JsValue::bool_rc(
+                    &closure_context.nodes_graph,
+                    *match_equality == result,
+                ))
             }
             Self::DoubleEquals(match_equality, a, b) => {
-                let a_value = a.run(closure_context);
-                let b_value = b.run(closure_context);
+                let a_value = a.run(closure_context)?;
+                let b_value = b.run(closure_context)?;
                 let result = match (a_value.get_ref(), b_value.get_ref()) {
                     (JsValue::String(a), JsValue::String(b)) => a == b,
                     (
@@ -94,11 +99,14 @@ impl JsExpression {
                     (_, JsValue::Object(_)) => false,
                     (JsValue::Function(a), JsValue::Function(b)) => a == b,
                 };
-                JsValue::bool_rc(&closure_context.nodes_graph, *match_equality == result)
+                Ok(JsValue::bool_rc(
+                    &closure_context.nodes_graph,
+                    *match_equality == result,
+                ))
             }
             Self::Add(a, b) => {
-                let a_value = a.run(closure_context);
-                let b_value = b.run(closure_context);
+                let a_value = a.run(closure_context)?;
+                let b_value = b.run(closure_context)?;
                 match (a_value.get_ref(), b_value.get_ref()) {
                     (
                         a @ JsValue::Number(_)
@@ -109,44 +117,51 @@ impl JsExpression {
                         | b @ JsValue::Boolean(_)
                         | b @ JsValue::Undefined
                         | b @ JsValue::Null,
-                    ) => JsValue::number_rc(
+                    ) => Ok(JsValue::number_rc(
                         &closure_context.nodes_graph,
                         f64::from(a) + f64::from(b),
-                    ),
-                    (a @ JsValue::Object(_), b) => JsValue::string_rc(
+                    )),
+                    (a @ JsValue::Object(_), b) => Ok(JsValue::string_rc(
                         &closure_context.nodes_graph,
                         a.to_string() + &b.to_string(),
-                    ),
-                    (a, b @ JsValue::Object(_)) => JsValue::string_rc(
+                    )),
+                    (a, b @ JsValue::Object(_)) => Ok(JsValue::string_rc(
                         &closure_context.nodes_graph,
                         a.to_string() + &b.to_string(),
-                    ),
-                    (a @ JsValue::String(_) | a @ JsValue::Function(_), b) => JsValue::string_rc(
-                        &closure_context.nodes_graph,
-                        a.to_string() + &b.to_string(),
-                    ),
-                    (a, b @ JsValue::String(_) | b @ JsValue::Function(_)) => JsValue::string_rc(
-                        &closure_context.nodes_graph,
-                        a.to_string() + &b.to_string(),
-                    ),
+                    )),
+                    (a @ JsValue::String(_) | a @ JsValue::Function(_), b) => {
+                        Ok(JsValue::string_rc(
+                            &closure_context.nodes_graph,
+                            a.to_string() + &b.to_string(),
+                        ))
+                    }
+                    (a, b @ JsValue::String(_) | b @ JsValue::Function(_)) => {
+                        Ok(JsValue::string_rc(
+                            &closure_context.nodes_graph,
+                            a.to_string() + &b.to_string(),
+                        ))
+                    }
                 }
             }
             Self::Multiply(a, b) => {
-                let a_value = a.run(closure_context);
-                let b_value = b.run(closure_context);
-                JsValue::number_rc(
+                let a_value = a.run(closure_context)?;
+                let b_value = b.run(closure_context)?;
+                Ok(JsValue::number_rc(
                     &closure_context.nodes_graph,
                     f64::from(a_value.get_ref()) * f64::from(b_value.get_ref()),
-                )
+                ))
             }
             Self::CastToNumber(expression) => {
-                let value = expression.run(closure_context);
-                JsValue::number_rc(&closure_context.nodes_graph, f64::from(value.get_ref()))
+                let value = expression.run(closure_context)?;
+                Ok(JsValue::number_rc(
+                    &closure_context.nodes_graph,
+                    f64::from(value.get_ref()),
+                ))
             }
             Self::InvokeFunction(reference_to_invoke, arg_expressions) => {
                 let (this_value, value) =
                     if let JsExpression::AccessMember(base, name) = reference_to_invoke.as_ref() {
-                        let this_value = base.run(closure_context);
+                        let this_value = base.run(closure_context)?;
                         let value = get_member_from_prototype_chain(
                             this_value.get_ref(),
                             name,
@@ -156,7 +171,7 @@ impl JsExpression {
                     } else {
                         (
                             JsValue::undefined_rc(&closure_context.nodes_graph),
-                            reference_to_invoke.run(closure_context),
+                            reference_to_invoke.run(closure_context)?,
                         )
                     };
 
@@ -164,19 +179,23 @@ impl JsExpression {
                     JsValue::Function(function) => {
                         let mut evaluated_args: Vec<_> = Vec::with_capacity(arg_expressions.len());
                         for expression in arg_expressions {
-                            evaluated_args.push(expression.run(closure_context))
+                            evaluated_args.push(expression.run(closure_context)?)
                         }
                         function.run(closure_context, this_value, &evaluated_args)
                     }
-                    _ => JsValue::type_error_rc(&closure_context.nodes_graph),
+                    _ => Err(JsValue::type_error_rc(&closure_context.nodes_graph)),
                 }
             }
             Self::AccessMember(reference, member_name) => {
-                let base_value = reference.run(closure_context);
-                get_member_from_prototype_chain(base_value.get_ref(), member_name, closure_context)
+                let base_value = reference.run(closure_context)?;
+                Ok(get_member_from_prototype_chain(
+                    base_value.get_ref(),
+                    member_name,
+                    closure_context,
+                ))
             }
             Self::Condition(conditional_expression, true_expression, false_expression) => {
-                let condition_result = conditional_expression.run(closure_context);
+                let condition_result = conditional_expression.run(closure_context)?;
                 let condition_truthiness: bool = condition_result.get_ref().into();
 
                 if condition_truthiness {

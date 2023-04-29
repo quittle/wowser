@@ -32,6 +32,7 @@ fn on_statement(node_graph: &JsValueGraph, statement: &JsASTNode) -> JsStatement
         JsRule::VariableAssignment => on_variable_assignment(node_graph, first_child),
         JsRule::FunctionDeclaration => on_function_declaration(node_graph, first_child),
         JsRule::ReturnKeyword => JsStatement::Return(on_expression(&children[1])),
+        JsRule::ThrowKeyword => JsStatement::Throw(on_expression(&children[1])),
         JsRule::IfStatement => on_if_statement(node_graph, first_child),
         rule => panic!("Unexpected child of Statement: {rule}"),
     }

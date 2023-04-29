@@ -3,8 +3,8 @@ use std::{collections::HashMap, rc::Rc};
 use crate::garbage_collector::GcNodeGraph;
 
 use super::{
-    JsClosureContext, JsFunction, JsNativeFunctionImplementation, JsValue, JsValueGraph,
-    JsValueNode,
+    JsClosureContext, JsFunction, JsFunctionResult, JsNativeFunctionImplementation, JsValue,
+    JsValueGraph, JsValueNode,
 };
 
 const PROTOTYPE_MEMBER: &str = "__proto__";
@@ -79,7 +79,7 @@ pub fn build_prototype<const N: usize>(
 fn build_function_entry(
     node_graph: &JsValueGraph,
     name: &str,
-    func: impl Fn(JsValueNode, &[JsValueNode]) -> JsValueNode + 'static,
+    func: impl Fn(JsValueNode, &[JsValueNode]) -> JsFunctionResult + 'static,
 ) -> (String, JsValueNode) {
     (
         name.to_string(),
@@ -95,6 +95,9 @@ fn build_function_entry(
     )
 }
 
-fn object_to_string(this: JsValueNode, _args: &[JsValueNode]) -> JsValueNode {
-    JsValue::string_rc(&this.get_node_graph(), this.get_ref().to_string())
+fn object_to_string(this: JsValueNode, _args: &[JsValueNode]) -> JsFunctionResult {
+    Ok(JsValue::string_rc(
+        &this.get_node_graph(),
+        this.get_ref().to_string(),
+    ))
 }

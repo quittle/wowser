@@ -12,6 +12,7 @@ pub enum JsRule {
     ElseStatement,
     VarDeclaration,
     VarKeyword,
+    ThisKeyword,
     FunctionDeclaration,
     FunctionKeyword,
     FunctionParams,
@@ -22,6 +23,7 @@ pub enum JsRule {
     TrueKeyword,
     FalseKeyword,
     NullKeyword,
+    RightHandSideVariable,
     VariableName,
     VariableAssignment,
     Expression,
@@ -92,6 +94,9 @@ impl Rule for JsRule {
             ],
             Self::VarKeyword => vec![
                 RuleType::Token(JsToken::VarKeyword),
+            ],
+            Self::ThisKeyword => vec![
+                RuleType::Token(JsToken::ThisKeyword),
             ],
             Self::FunctionDeclaration => vec![
                 RuleType::Sequence(vec![
@@ -189,6 +194,10 @@ impl Rule for JsRule {
             Self::NullKeyword => vec![
                 RuleType::Token(JsToken::NullKeyword),
             ],
+            Self::RightHandSideVariable => vec![
+                RuleType::Rule(Self::ThisKeyword),
+                RuleType::Rule(Self::VariableName),
+            ],
             Self::VariableName => vec![
                 RuleType::Token(JsToken::VariableName),
             ],
@@ -202,7 +211,7 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::ExpressionMultiply),
                 RuleType::Rule(Self::ExpressionFunctionInvoke),
                 RuleType::Rule(Self::DotAccess),
-                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::RightHandSideVariable),
                 RuleType::Rule(Self::LiteralValue),
             ],
             Self::ExpressionConditional => vec![
@@ -219,14 +228,14 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::ExpressionEquality),
                 RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::ExpressionMultiply),
-                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::RightHandSideVariable),
                 RuleType::Rule(Self::LiteralValue),
             ],
             Self::ExpressionEquality => vec![
                 RuleType::Sequence(vec![Self::ExpressionFunctionInvoke, Self::OperatorEquality, Self::ExpressionSubEquality]),
                 RuleType::Sequence(vec![Self::ExpressionAdd, Self::OperatorEquality, Self::ExpressionSubEquality]),
                 RuleType::Sequence(vec![Self::ExpressionMultiply, Self::OperatorEquality, Self::ExpressionSubEquality]),
-                RuleType::Sequence(vec![Self::VariableName, Self::OperatorEquality, Self::ExpressionSubEquality]),
+                RuleType::Sequence(vec![Self::RightHandSideVariable, Self::OperatorEquality, Self::ExpressionSubEquality]),
                 RuleType::Sequence(vec![Self::LiteralValue, Self::OperatorEquality, Self::ExpressionSubEquality]),
             ],
             Self::ExpressionSubEquality => vec![
@@ -234,13 +243,13 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::ExpressionEquality),
                 RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::ExpressionMultiply),
-                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::RightHandSideVariable),
                 RuleType::Rule(Self::LiteralValue),
             ],
             Self::ExpressionAdd => vec![
                 RuleType::Sequence(vec![Self::ExpressionFunctionInvoke, Self::OperatorAdd, Self::ExpressionSubAdd]),
                 RuleType::Sequence(vec![Self::ExpressionMultiply, Self::OperatorAdd, Self::ExpressionSubAdd]),
-                RuleType::Sequence(vec![Self::VariableName, Self::OperatorAdd, Self::ExpressionSubAdd]),
+                RuleType::Sequence(vec![Self::RightHandSideVariable, Self::OperatorAdd, Self::ExpressionSubAdd]),
                 RuleType::Sequence(vec![Self::LiteralValue, Self::OperatorAdd, Self::ExpressionSubAdd]),
                 RuleType::Sequence(vec![Self::OperatorAdd, Self::LiteralValue]),
             ],
@@ -248,24 +257,24 @@ impl Rule for JsRule {
                 RuleType::Rule(Self::ExpressionFunctionInvoke),
                 RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::ExpressionMultiply),
-                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::RightHandSideVariable),
                 RuleType::Rule(Self::ExpressionAdd),
                 RuleType::Rule(Self::LiteralValue),
             ],
             Self::ExpressionMultiply => vec![
                 RuleType::Sequence(vec![Self::ExpressionFunctionInvoke, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
-                RuleType::Sequence(vec![Self::VariableName, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
+                RuleType::Sequence(vec![Self::RightHandSideVariable, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
                 RuleType::Sequence(vec![Self::LiteralValue, Self::OperatorMultiply, Self::ExpressionSubMultiply]),
             ],
             Self::ExpressionSubMultiply => vec![
                 RuleType::Rule(Self::ExpressionFunctionInvoke),
                 RuleType::Rule(Self::ExpressionMultiply),
-                RuleType::Rule(Self::VariableName),
+                RuleType::Rule(Self::RightHandSideVariable),
                 RuleType::Rule(Self::LiteralValue),
             ],
             Self::ExpressionFunctionInvoke => vec![
                 RuleType::Sequence(vec![Self::DotAccess, Self::FunctionInvoke]),
-                RuleType::Sequence(vec![Self::VariableName, Self::FunctionInvoke]),
+                RuleType::Sequence(vec![Self::RightHandSideVariable, Self::FunctionInvoke]),
                 RuleType::Sequence(vec![Self::LiteralValue, Self::FunctionInvoke]),
             ],
             Self::FunctionInvoke => vec![
@@ -300,8 +309,8 @@ impl Rule for JsRule {
                 RuleType::Token(JsToken::OperatorEquality),
             ],
             Self::DotAccess => vec![
-                RuleType::Sequence(vec![JsRule::VariableName, JsRule::Dot, JsRule::DotAccess]),
-                RuleType::Sequence(vec![JsRule::VariableName, JsRule::Dot, JsRule::VariableName]),
+                RuleType::Sequence(vec![JsRule::RightHandSideVariable, JsRule::Dot, JsRule::DotAccess]),
+                RuleType::Sequence(vec![JsRule::RightHandSideVariable, JsRule::Dot, JsRule::VariableName]),
                 RuleType::Sequence(vec![JsRule::LiteralValue, JsRule::Dot, JsRule::DotAccess]),
                 RuleType::Sequence(vec![JsRule::LiteralValue, JsRule::Dot, JsRule::VariableName]),
             ],

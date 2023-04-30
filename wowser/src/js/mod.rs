@@ -828,6 +828,16 @@ mod tests {
         );
     }
 
+    #[ignore = "Currently only has syntax parsing support"]
+    #[test]
+    fn test_this() {
+        let node_graph = get_node_graph();
+        assert_last_value_equals(
+            "this;",
+            JsStatementResult::Value(JsValue::object_rc(&node_graph, Default::default())),
+        );
+    }
+
     /// Note that this test should eventually fail
     #[test]
     fn test_garbage_collection() {

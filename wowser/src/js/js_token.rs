@@ -8,6 +8,7 @@ pub enum JsToken {
     ElseKeyword,
     VarKeyword,
     FunctionKeyword,
+    ThisKeyword,
     ReturnKeyword,
     ThrowKeyword,
     TrueKeyword,
@@ -80,6 +81,7 @@ impl Token for JsToken {
             Self::ElseKeyword => r"\s*(else)\s*",
             Self::VarKeyword => r"\s*(var\s)\s*",
             Self::FunctionKeyword => r"\s*(function\s)\s*",
+            Self::ThisKeyword => r"\s*(this)\s*",
             Self::ReturnKeyword => r"\s*(return\s)\s*",
             Self::ThrowKeyword => r"\s*(throw\s)\s*",
             Self::TrueKeyword => r"\s*(true)\s*",
@@ -139,6 +141,14 @@ impl Token for JsToken {
             Self::FunctionKeyword => vec![
                 Self::VariableName,
             ],
+            Self::ThisKeyword => [
+                &[
+                    Self::OperatorEquals,
+                    Self::OpenParen,
+                    Self::Dot,
+                ],
+                POST_EXPRESSION,
+            ].concat(),
             Self::ReturnKeyword => Vec::from(EXPRESSION_START),
             Self::ThrowKeyword => Vec::from(EXPRESSION_START),
             Self::TrueKeyword => Vec::from(POST_EXPRESSION),

@@ -37,9 +37,17 @@ pub fn extract_interpreter_n_children<'a, R: Rule>(
     let actual_children_length = children.len();
     assert_eq!(
         actual_children_length, expected_children_length,
-        "Expected {expected_rule} children for {expected_children_length} but received {actual_children_length}",
+        "Expected {expected_children_length} child(ren) for {expected_rule} but received {actual_children_length}",
     );
     children
+}
+
+#[track_caller]
+pub fn extract_interpreter_single_child<'a, R: Rule>(
+    node: &'a ASTNode<'a, R>,
+    expected_rule: R,
+) -> &ASTNode<R> {
+    &extract_interpreter_n_children(node, expected_rule, 1)[0]
 }
 
 #[track_caller]

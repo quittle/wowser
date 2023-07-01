@@ -1,3 +1,4 @@
+pub mod api;
 mod js_interpreter;
 mod js_rule;
 mod js_token;

@@ -4,11 +4,13 @@ use crate::garbage_collector::{GarbageCollectable, GcNode, GcNodeGraph};
 
 use super::{JsFunction, JsValueGraph, JsValueNode};
 
+pub type JsNumberPrimitive = f64;
+
 /// Represents any type
 #[derive(Debug, PartialEq)]
 pub enum JsValue {
     Boolean(bool),
-    Number(f64),
+    Number(JsNumberPrimitive),
     String(String),
     Function(JsFunction),
     Object(HashMap<String, JsValueNode>),
@@ -17,7 +19,7 @@ pub enum JsValue {
 }
 
 impl JsValue {
-    pub const NAN: Self = Self::Number(f64::NAN);
+    pub const NAN: Self = Self::Number(JsNumberPrimitive::NAN);
 
     pub fn bool_rc(node_graph: &JsValueGraph, b: bool) -> GcNode<Self> {
         GcNodeGraph::create_node(node_graph, Self::Boolean(b))
@@ -41,7 +43,7 @@ impl JsValue {
 
     pub fn number_rc<F>(node_graph: &JsValueGraph, value: F) -> GcNode<Self>
     where
-        F: Into<f64>,
+        F: Into<JsNumberPrimitive>,
     {
         GcNodeGraph::create_node(node_graph, Self::Number(value.into()))
     }
@@ -96,14 +98,14 @@ impl ToString for JsValue {
     }
 }
 
-impl From<JsValue> for f64 {
-    fn from(value: JsValue) -> f64 {
+impl From<JsValue> for JsNumberPrimitive {
+    fn from(value: JsValue) -> JsNumberPrimitive {
         From::from(&value)
     }
 }
 
-impl From<&JsValue> for f64 {
-    fn from(value: &JsValue) -> f64 {
+impl From<&JsValue> for JsNumberPrimitive {
+    fn from(value: &JsValue) -> JsNumberPrimitive {
         match value {
             JsValue::Boolean(b) => {
                 if *b {
@@ -119,13 +121,15 @@ impl From<&JsValue> for f64 {
                 if trimmed.is_empty() {
                     0.0
                 } else {
-                    trimmed.parse::<f64>().unwrap_or(f64::NAN)
+                    trimmed
+                        .parse::<JsNumberPrimitive>()
+                        .unwrap_or(JsNumberPrimitive::NAN)
                 }
             }
-            JsValue::Undefined => f64::NAN,
+            JsValue::Undefined => JsNumberPrimitive::NAN,
             JsValue::Null => 0.0,
-            JsValue::Function(_) => f64::NAN,
-            JsValue::Object(_) => f64::NAN,
+            JsValue::Function(_) => JsNumberPrimitive::NAN,
+            JsValue::Object(_) => JsNumberPrimitive::NAN,
         }
     }
 }

@@ -7,6 +7,14 @@ macro_rules! log {
     );
 }
 
+#[macro_export]
+macro_rules! assert_in {
+    ($needle:expr, $($haystack:expr),+) => {
+        let haystack = Vec::from($($haystack),+);
+        assert!(haystack.contains(&$needle));
+    };
+}
+
 pub mod browser;
 pub mod css;
 pub mod font;

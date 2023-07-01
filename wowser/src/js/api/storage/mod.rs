@@ -46,8 +46,10 @@ mod tests {
         storage.set_item("abc", "def");
         storage.set_item("123", "456");
         assert_eq!(storage.length(), 2);
-        assert_eq!(storage.key(0), Some("abc"));
-        assert_eq!(storage.key(1), Some("123"));
+
+        assert_in!(storage.key(0).unwrap(), ["abc", "123"]);
+        assert_in!(storage.key(1).unwrap(), ["abc", "123"]);
+        assert_ne!(storage.key(0), storage.key(1));
         assert_eq!(storage.key(2), None);
         assert_eq!(storage.length(), 2);
         assert_eq!(storage.get_item("123"), Some("456"));

@@ -23,6 +23,16 @@ impl<T: GarbageCollectable> GcNode<T> {
         map(&lazy_static::__Deref::deref(&inner_node_ref).value)
     }
 
+    pub fn map_value_mut<F, U>(&mut self, map: F) -> U
+    where
+        F: FnOnce(&mut T) -> U,
+    {
+        let rc = self.node.upgrade().expect("Failed to load a node.");
+
+        let mut inner_node_ref = (*rc).borrow_mut();
+        map(&mut (inner_node_ref).value)
+    }
+
     pub fn with_value<F>(&self, func: F)
     where
         F: FnOnce(&T),
@@ -57,9 +67,8 @@ impl<T: GarbageCollectable> GcNode<T> {
         GcNodeGraph::create_node(&self.get_node_graph(), new_node_value)
     }
 
-    /// This unsafely gets an immutable reference to the internal data, tied to the lifetime of the node.
     /// TODO: Revisit if there's a better way
-    pub fn get_ref(&self) -> &T {
+    fn get_refcell_ptr(&self) -> *mut InnerNode<T> {
         // This block ensures that all the regular memory checks pass for getting the reference to increase safety.
         // This DOES NOT ensure it will be safe to use the return value if a mutable reference gets created later.
         {
@@ -73,9 +82,21 @@ impl<T: GarbageCollectable> GcNode<T> {
         let ptr = self.node.as_ptr();
         let maybe_ref = unsafe { ptr.as_ref() };
         let reference = maybe_ref.unwrap();
-        let refcell_ptr = reference.as_ptr();
+        reference.as_ptr()
+    }
+
+    /// This unsafely gets an immutable reference to the internal data, tied to the lifetime of the node.
+    pub fn get_ref(&self) -> &T {
+        let refcell_ptr = self.get_refcell_ptr();
         let inner_ref = unsafe { refcell_ptr.as_ref() }.unwrap();
         &inner_ref.value
+    }
+
+    /// This unsafely gets a mutable reference to the internal data, tied to the lifetime of the node.
+    pub fn get_mut(&mut self) -> &mut T {
+        let refcell_ptr = self.get_refcell_ptr();
+        let inner_ref = unsafe { refcell_ptr.as_mut() }.unwrap();
+        &mut inner_ref.value
     }
 
     pub fn is_same_ref(&self, other: &Self) -> bool {

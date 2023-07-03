@@ -1,6 +1,10 @@
+mod file_based_storage;
 mod in_memory_storage;
+mod storage_error;
 
+pub use file_based_storage::*;
 pub use in_memory_storage::*;
+pub use storage_error::*;
 
 /// <https://developer.mozilla.org/en-US/docs/Web/API/Storage>
 /// This should match the JS API in behavior
